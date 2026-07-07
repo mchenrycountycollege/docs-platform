@@ -10,4 +10,9 @@ jobs:
     uses: mchenrycountycollege/docs-platform/.github/workflows/reusable-cascade-publish.yml@v1
     with:
       docs-dir: docs
-    secrets: inherit
+    secrets:
+      CASCADE_API_KEY: ${{ secrets.CASCADE_API_KEY }}
+      CASCADE_BASE_URL: ${{ secrets.CASCADE_BASE_URL }}
+      CASCADE_SITE_NAME: ${{ secrets.CASCADE_SITE_NAME }}
+      CASCADE_DOC_CONTENT_TYPE_ID: ${{ secrets.CASCADE_DOC_CONTENT_TYPE_ID }}
+      CASCADE_NAV_CONTENT_TYPE_ID: ${{ secrets.CASCADE_NAV_CONTENT_TYPE_ID }}

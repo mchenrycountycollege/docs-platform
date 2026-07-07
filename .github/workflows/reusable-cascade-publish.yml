@@ -3,7 +3,7 @@ name: Reusable - Publish Cascade docs
 # Callers reference this as:
 #   uses: mchenrycountycollege/docs-platform/.github/workflows/reusable-cascade-publish.yml@v1
 #
-# Example ~8-line caller workflow, for a consuming component repo
+# Example caller workflow, for a consuming component repo
 # (.github/workflows/publish-docs.yml):
 #
 #   name: Publish docs
@@ -16,7 +16,19 @@ name: Reusable - Publish Cascade docs
 #       uses: mchenrycountycollege/docs-platform/.github/workflows/reusable-cascade-publish.yml@v1
 #       with:
 #         docs-dir: docs
-#       secrets: inherit
+#       secrets:
+#         CASCADE_API_KEY: ${{ secrets.CASCADE_API_KEY }}
+#         CASCADE_BASE_URL: ${{ secrets.CASCADE_BASE_URL }}
+#         CASCADE_SITE_NAME: ${{ secrets.CASCADE_SITE_NAME }}
+#         CASCADE_DOC_CONTENT_TYPE_ID: ${{ secrets.CASCADE_DOC_CONTENT_TYPE_ID }}
+#         CASCADE_NAV_CONTENT_TYPE_ID: ${{ secrets.CASCADE_NAV_CONTENT_TYPE_ID }}
+#
+# (`secrets: inherit` looks simpler but only works when the caller and this
+# repo are in the same organization/enterprise -- confirmed against a real
+# cross-owner run, which failed with "Secret X is required, but not provided
+# while calling" even though the secrets existed with the right names. Explicit
+# per-secret passing works regardless of ownership, so use it even for
+# same-org callers to avoid this trap if repos ever move between owners.)
 
 on:
   workflow_call:
