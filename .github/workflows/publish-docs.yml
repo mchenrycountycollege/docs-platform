@@ -1,0 +1,13 @@
+name: Publish docs
+
+on:
+  push:
+    branches: [main]
+    paths: ['docs/**']
+
+jobs:
+  publish:
+    uses: mchenrycountycollege/docs-platform/.github/workflows/reusable-cascade-publish.yml@v1
+    with:
+      docs-dir: docs
+    secrets: inherit
