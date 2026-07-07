@@ -1,0 +1,61 @@
+#set($banner = $currentPage.getStructuredDataNode('banner'))
+#set($hideBannerOnMobile = $banner.getChild('hideBannerOnMobile').textValue)
+#set($bannerClass = "")
+
+#if($hideBannerOnMobile == 'yes')
+    #set($bannerClass = "banner-hide-on-mobile")
+#end
+
+#if($banner)
+    #set($style  = $banner.getChild('style').textValue)
+    #if($style != 'None')
+        #set($image = $banner.getChild('image').asset.link)                         ## required
+        #set($alt   = $_EscapeTool.xml($banner.getChild('alt').textValue))          ## required
+        #set($heading = $banner.getChild('heading').textValue)                      ## optional
+        #set($caption = $banner.getChild('caption').textValue)                      ## optional 
+        #set($link = $banner.getChild('link').asset.link)                           ## optional
+        #set($linkLabel = $banner.getChild('link-label').textValue)                 ## optional
+        
+        #if($style == 'Image and Navigation')
+            <div class="large-8 medium-7 small-12 columns mid-main onecol workforce__banner ${bannerClass}">
+                <figure>
+                    <img src="${image}" alt="${alt}" />
+                </figure>
+                #bannerCaption()
+            </div>
+            <!--#protect</div>#protect-->
+        #elseif($style == 'Image and Caption')
+            <div class="small-12 columns onecol#if($currentPage.dataDefinition.name.contains('One Column Pathway')) large-8 medium-7#end ${bannerClass}">
+                <div class="workforce__banner" style="background: url('[system-asset]${image}[/system-asset]') no-repeat; background-size: cover; background-position: center right;" title="${alt}">
+                    #bannerCaption()
+                </div>
+            </div>
+        #elseif($style == 'Slider')
+            #set($sliders = $banner.getChildren('slider'))
+            #import("/_cms/formats/_shared/sliders")
+            #outputSliders($sliders $bannerClass)
+        #end 
+    #end
+#end
+
+#####
+#macro (bannerCaption)
+    #if(!$_PropertyTool.isEmpty($heading) || !$_PropertyTool.isEmpty($caption) || !$_PropertyTool.isEmpty($link))
+        <div class="overlay-text">
+            <section>
+                #if(!$_PropertyTool.isEmpty($heading) && $style == "Image and Caption")    
+                    <header><h2>$_EscapeTool.xml($heading)</h2></header>
+                #end 
+                #if(!$_PropertyTool.isEmpty($caption) && $style == "Image and Caption")
+                    <p>$_EscapeTool.xml($caption)</p>
+                #end 
+                #if(!$_PropertyTool.isEmpty($link))
+                    #if($_PropertyTool.isEmpty($linkLabel))
+                        #set($linkLabel = $banner.getChild('link').asset.label)
+                    #end
+                    <a href="${link}">$_EscapeTool.xml($linkLabel)</a>
+                #end
+            </section>
+        </div>
+    #end 
+#end

@@ -1,0 +1,110 @@
+#macro (outputGallery $block $count)
+    #set ($type     = $block.getStructuredDataNode("type").textValue)
+    #set ($title    = "") 
+    #set ($title    = $_EscapeTool.xml($block.getStructuredDataNode("title").textValue))        ## Optional
+    #set ($summary  = "")
+    #set ($summary  = $block.getStructuredDataNode("summary").textValue)                        ## Optional
+    #set ($size     = $_EscapeTool.xml($block.getStructuredDataNode("size").textValue))         ## Required
+    #set ($options  = $block.getStructuredDataNode("options").textValues)
+    #if (!$_PropertyTool.isEmpty($title))
+        <h2>${title}</h2>
+    #end
+    #if (!$_PropertyTool.isEmpty($summary))
+        <div>${summary}</div>
+    #end
+    <!--#protect<div class="gallery" id="gallery_${count}" data-nanogallery2='{
+        #if ($type == 'mosaic')
+            "thumbnailHeight":  	500,
+            "thumbnailWidth":   	500,
+            "galleryMosaic":    	[
+                                       { "w": 5, "h": 3, "c": 2, "r": 1 },
+                                       { "w": 2, "h": 2, "c": 1, "r": 2 },
+                                       { "w": 6, "h": 5, "c": 9, "r": 1 }, #* added *#
+                                       { "w": 2, "h": 2, "c": 7, "r": 2 },
+                                       { "w": 2, "h": 2, "c": 2, "r": 4 },
+                                       { "w": 3, "h": 4, "c": 4, "r": 4 },
+                                       { "w": 3, "h": 4, "c": 7, "r": 4 },
+                                       { "w": 4, "h": 2, "c": 11, "r": 6 },
+                                       { "w": 2, "h": 2, "c": 10, "r": 5 }
+                                    ],
+            "galleryMaxRows":       1,
+        #elseif ($type == 'cascading')
+            "thumbnailHeight": 		"auto",
+    	    "thumbnailWidth": 		"${size}",
+        #elseif ($type == 'justified')
+            "thumbnailHeight":      "${size}",
+            "thumbnailWidth":       "auto",
+            "galleryMaxRows":       10,
+        #elseif ($type == 'slider')
+            #set ($width = $_MathTool.toInteger($size) * 1.778)
+            "thumbnailHeight":      "${size}",
+            "thumbnailWidth":       "${width}",
+            "galleryMaxRows":       1,
+        #end
+        #if($options.contains("random"))"gallerySorting" : "random",
+        #end
+        #if(!$options.contains("lightbox"))"thumbnailOpenImage" : false,
+        #end
+            "galleryTheme": {
+            	"thumbnail" : {
+            		"background" : "#FFF",
+            		"backgroundImage" : "linear-gradient(315deg, #111 0%, #445 90%)",
+            		"borderColor" : "#FFF"
+            	}
+        	},
+            "viewerTheme": {
+            	"background" : "rgba(0,0,0,.7)",
+            	"barBackground" : "none",
+            	"barBorder" : "none",
+            	"barColor" : "#FFF"
+        	},
+            "galleryDisplayMode":"pagination",
+            "thumbnailGutterWidth":0,
+           	"thumbnailGutterHeight":0,
+           	"thumbnailBorderVertical":5,
+           	"thumbnailBorderHorizontal":5,
+           	"thumbnailLabel": {
+           		"display":false
+            },
+            "viewerToolbar": {
+            	"standard": "label"
+        	},
+        	"viewerTools": {
+        		"topLeft" : "pageCounter",
+        		"topRight" : "closeButton"
+        	},
+        	"icons" : {
+        		"buttonClose" : 	"<i class=\"fa fa-times fa-lg\"></i>",
+        		"viewerImgPrevious":"<i class=\"fa fa-angle-left fa-2x\"></i>",
+        		"viewerImgNext":    "<i class=\"fa fa-angle-right fa-2x\"></i>"
+        	}
+        }'>#protect-->
+    	## Output images & video blocks in current folder
+        #foreach ($asset in $block.parentFolder.children)
+            #if ($asset.assetType == 'file')
+                <a href="[system-asset]${asset.link}[/system-asset]" data-ngThumb="[system-asset]${asset.link}[/system-asset]">$!_EscapeTool.xml($asset.metadata.title)</a>
+            #elseif ($asset.assetType == 'block' && $asset.dataDefinitionPath == 'Gallery Video')
+                #set ($image = "")
+                #set ($type  = $asset.getStructuredDataNode("source").textValue)
+                #if ($type == "local")
+                    #set ($url = "[system-asset]" + "$asset.getStructuredDataNode('local').asset.link" + "[/system-asset]")
+                #else
+                    #set ($id  = $_EscapeTool.xml($asset.getStructuredDataNode("videoId").textValue))
+                    #if ($type == "youtube")
+                        #set ($url = "https://www.youtube.com/watch?v=${id}")
+                    #elseif ($type == "vimeo")
+                        #set ($url = "https://vimeo.com/${id}")
+                    #elseif ($type == "dailymotion")
+                        #set ($url = "https://www.dailymotion.com/video/${id}")
+                    #end
+                #end
+                #if ($type == "local" || $type == "vimeo")
+                    #set ($image = $asset.getStructuredDataNode("image").asset.link)
+                #end
+                <a href="${url}" #if(!$_PropertyTool.isEmpty($image))data-ngThumb="[system-asset]${image}[/system-asset]"#end>$!_EscapeTool.xml($asset.metadata.title)</a>
+            #end
+        #end
+    <!--#protect</div>#protect-->
+#end
+## For Testing
+## #outputGallery($currentPage.getStructuredDataNodes("gallery")[4].asset 0)

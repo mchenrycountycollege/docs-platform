@@ -1,0 +1,64 @@
+Prompt for Claude Code (Planning Mode)
+I want you to produce a detailed implementation plan for a custom documentation/knowledge-base system — think "BookStack-like experience" — that uses Cascade CMS (by Hannon Hill) as the sole persistence layer. There is no traditional database and no persistent app server. Do not propose adding one. The finished product has two write paths into the same Cascade-backed content: (1) a web-app UI editor for non-technical editors, and (2) a git-based pipeline where markdown files in GitHub repos publish to the docs site via GitHub Actions. The plan should be thorough enough that I can execute it phase by phase in later sessions.
+
+Context
+I'm a web developer at a community college. We run Cascade CMS, which publishes our main website as static files to a web server we already operate. I want an internal documentation tool for my team (and eventually other departments) with a modern web-app editing experience, where editors never see or touch Cascade directly. All content, files, and structure persist as Cascade assets and publish out as static files alongside our existing site.
+
+I already run a similar (smaller) pattern in production: a Cloudflare-hosted function that proxies authenticated requests to the Asana API for a ticket form. This project follows the same shape at a larger scale.
+
+My highest-frequency documentation workflow is developer-side: I build new Cascade experiences (content types, data definitions, structured-data WYSIWYG components) in VS Code, then use Claude Code to draft a doc page for the new component, and I want to publish that doc with a single git push from the same repo where the component code lives — no web UI involved. Minimizing friction on that path is a primary goal, equal in priority to the web editor.
+
+Architecture (settled — plan within these decisions, don't relitigate them)
+Persistence & reads (Cascade):
+
+A "Documentation Page" content type + data definition in Cascade. Fields: title, body content, integer order field for sibling sorting, tags, and a metadata field to record the real editor's name (since all API writes will appear as the service account).
+Folder hierarchy in Cascade under a dedicated docs/ subtree models the Shelf → Book → Chapter → Page structure.
+Velocity Formats generate, at publish time: (1) the rendered static HTML pages, (2) recursive sidebar navigation per book, (3) tag index pages, and (4) a search-index.json containing title/path/tags/excerpt for every doc page (the static-site-generator search pattern).
+Images/attachments are Cascade File assets in an uploads/ subtree, pushed via API, published like everything else.
+Known concern to address in the plan: publish-dependency wiring so derived artifacts (nav, search index, tag pages) regenerate when any page under docs/ changes. A scheduled nightly full-section republish is an acceptable fallback.
+
+Writes (serverless proxy):
+
+Editors use a custom web app. The browser NEVER holds Cascade credentials or calls the Cascade REST API directly.
+A thin, stateless serverless layer holds the Cascade API key as a secret, authenticates the user, validates that requested operations only touch assets under the docs/ subtree, proxies create/edit/move/delete calls to Cascade's REST API, stamps the real user's identity into the metadata field, and triggers publish.
+The Cascade API credential belongs to a dedicated Cascade user account scoped ONLY to the docs/ subtree — not an admin key.
+Default to Cloudflare (Workers / Pages Functions) since I already run the Asana proxy there, but note in the plan if you see a concrete reason to prefer Vercel functions instead.
+Editor authentication: gate the app with SSO against our institutional identity provider (assume Microsoft Entra ID unless the plan needs to branch on this — flag it as a decision point). Cloudflare Access is an acceptable gating mechanism.
+Concurrency: how can we engineer this so we don’t have conflicts and race conditions?
+Accepted tradeoffs, don't over-engineer around them: publish latency of seconds-to-minutes between save and live static page.  ( due to the loop through cascade publishing to our web server) 
+
+Editor front end:
+
+Next.js app shell.
+BlockNote (free/liberally-licensed core packages only — no @blocknote/xl-* packages) as the page editor. Or recommend another library thst will give the closest bookstack ui experience
+react-arborist for the sidebar tree: browse the book/chapter/page hierarchy, drag-and-drop reorder (translating moves into order field updates and/or Cascade move operations via the proxy), inline rename.
+cmdk + Fuse.js for Cmd+K fuzzy search over the published search-index.json.
+shadcn/ui + Tailwind for everything else.
+Body storage format (settled): the canonical page body stored in Cascade is HTML, so both write paths converge on one format — the web editor round-trips via BlockNote's built-in HTML import/export, and the git path converts markdown→HTML at publish time. The plan should still call out any round-trip fidelity risks with BlockNote's HTML conversion and how to mitigate them.
+
+Git-based write path (GitHub Actions):
+
+Docs authored as markdown files with YAML frontmatter (title, book, chapter, tags, order), living in a docs/ folder co-located with component code in each project repo.
+The file's repo path deterministically maps to a Cascade asset path, giving idempotent create-vs-update behavior — pushing the same file again updates the same page.
+A GitHub Action fires on push to main when files under docs/ change: parse frontmatter → convert markdown body to HTML → call the Cascade REST API (same scoped docs/-only service account) to create-or-update the Page asset, set placement/tags/order → trigger publish.
+Because this pattern will repeat across many small component repos over time, the publish logic should live once as a reusable GitHub Actions workflow in a central repo, with each project repo referencing it via a few-line caller workflow. Structure the underlying Cascade-publish logic as a shared library so it could also be exposed later as a small local CLI, but the CLI itself is optional/deferred — don't plan it as a required deliverable.
+Handle deletes/renames explicitly in the plan (recommend a default: e.g., renames treated as delete+create or a move, and whether removing a file from the repo should remove the Cascade page or merely orphan it).
+
+What the plan must include
+Phased implementation plan with clear milestones, ordered so I get an end-to-end vertical slice early before building out the full feature set. Note: the git-based path is likely the cheaper vertical slice (markdown file → Action → Cascade → published page) and also my most-used workflow, so consider sequencing it first, with the web editor's create → edit → publish → view slice as the second milestone — but use your judgment and justify the ordering.
+Proposed repo/project structure across all pieces: the Next.js app, the serverless proxy, and the central repo holding the reusable GitHub Actions workflow + shared Cascade-publish library, plus what a consuming component repo's docs/ folder and caller workflow look like.
+The proxy's API surface (endpoints, request/response shapes) mapped to the corresponding Cascade REST API operations, including path-scoping validation logic — and note where the GitHub Actions path and the web-app proxy can share Cascade-API client code versus where they justifiably diverge.
+The Cascade-side content architecture: data definition XML sketch, folder conventions, Format responsibilities, publish/dependency strategy.
+Risks and open questions, each with your recommended default.
+A dedicated "Manual configuration steps" section — everything I must do by hand outside the codebase, in order, including at minimum:
+Creating the scoped Cascade service user, its role/permissions restricted to the docs/ subtree, and generating its API key
+Creating the data definition, content type, metadata set, and asset factories in Cascade
+Creating/assigning the Velocity Formats and any index blocks, and configuring publish destinations for the docs subtree
+Setting up the publish dependency or scheduled republish for derived artifacts
+GitHub setup: creating the central reusable-workflow repo, adding the Cascade API key as an Actions secret (org-level vs. per-repo — recommend one), and the per-repo steps to onboard a new component repo onto the doc-publish workflow
+Cloudflare setup: project creation, secrets/environment variables, Cloudflare Access application + identity provider wiring
+SSO/identity provider app registration steps (flag what I'll need to request from IT vs. what I can do myself)
+DNS/hostname decisions for the editor app vs. the published static docs
+Anything else the plan introduces that requires console/UI configuration rather than code
+
+Ask me clarifying questions before finalizing the plan if anything above is ambiguous or if Cascade version/capability details would change your approach.

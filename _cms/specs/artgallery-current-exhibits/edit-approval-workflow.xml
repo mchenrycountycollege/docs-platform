@@ -1,0 +1,64 @@
+<system-workflow-definition name="Edit - Art Gallery Approval" initial-step="init">
+
+  <triggers>
+    <trigger name="version" class="com.cms.workflow.function.Version"/>
+    <trigger name="merge" class="com.cms.workflow.function.Merge"/>
+    <trigger name="publish" class="com.cms.workflow.function.Publish"/>
+    <trigger name="email" class="com.cms.workflow.function.SendMail"/>
+    <trigger name="assign-to-workflow-owner" class="com.cms.workflow.function.AssignToWorkflowOwner"/>
+  </triggers>
+
+  <steps>
+    <!-- Step 1: System — version the asset, notify Administrators -->
+    <step type="system" identifier="init" label="Initialization">
+      <actions>
+        <action identifier="init-action" label="Submit" move="forward">
+          <trigger name="version"/>
+          <trigger name="email"/>
+        </action>
+      </actions>
+    </step>
+
+    <!-- Step 2: Transition — Administrators approve or reject -->
+    <step type="transition" identifier="approve" label="Pending Approval"
+          default-group="Administrators">
+      <actions>
+        <action identifier="approve-action" label="Approve" move="forward">
+        </action>
+        <action identifier="reject-action" label="Reject" next-id="make-changes">
+          <trigger name="assign-to-workflow-owner"/>
+          <trigger name="email"/>
+        </action>
+      </actions>
+    </step>
+
+    <!-- Step 3: System — merge working copy and publish -->
+    <step type="system" identifier="save-and-publish" label="Save and Publish">
+      <actions>
+        <action identifier="save-publish-action" label="Save and Publish" move="forward">
+          <trigger name="merge"/>
+          <trigger name="publish"/>
+        </action>
+      </actions>
+    </step>
+
+    <!-- Step 4: System — workflow complete -->
+    <step type="system" identifier="finished" label="Finished">
+      <actions>
+        <action identifier="finished-action" label="Finished"/>
+      </actions>
+    </step>
+  </steps>
+
+  <!-- Non-ordered: Edit step for rejected changes sent back to workflow owner -->
+  <non-ordered-steps identifier="non-ordered-steps">
+    <step type="edit" identifier="make-changes" label="Make Changes">
+      <actions>
+        <action identifier="resubmit-action" label="Resubmit" next-id="approve">
+          <trigger name="email"/>
+        </action>
+      </actions>
+    </step>
+  </non-ordered-steps>
+
+</system-workflow-definition>

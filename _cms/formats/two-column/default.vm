@@ -1,0 +1,308 @@
+#set( $addBanner = $currentPage.getStructuredDataNode("addBanner").textValues.contains("yes") )
+#set( $subtitle  = $_EscapeTool.xml($currentPage.getStructuredDataNode("subtitle").textValue) )
+#set( $rows      = $currentPage.getStructuredDataNodes("content") )
+
+<main role="main" class="large-8 medium-7 small-12 columns mid-main">
+    #if( $addBanner )
+        #set( $style = $currentPage.getStructuredDataNode("style").textValue)
+        #if( $style == "single-image")
+            #set( $image = $currentPage.getStructuredDataNode("banner").asset.link )
+            #set( $alt   = $_EscapeTool.xml($currentPage.getStructuredDataNode("alt").textValue) )
+            <figure class="main-banner">
+                <img src="${image}" alt="${alt}" />
+            </figure>
+        #elseif( $style == "slider")
+            #set($sliders = $currentPage.getStructuredDataNodes('slider'))
+            #import("/_cms/formats/_shared/sliders")
+            #outputSliders($sliders)
+        #end
+    #end
+    #if( $currentPagePath == "_examples/start" )
+        <script src="//app.contentaccess.com/v1/ContentAccess.js" data-scene="aa400648-40bf-48e5-88b5-ac36b8978732"></script>
+<div id="ca-global-programs" data-theme="purple"></div>
+		
+    #end
+    #if( !($currentPageSiteName == "McHenry" && $currentPagePath == "macs/index") )
+        <h1 id="startcontent" class="main-header">$_EscapeTool.xml($currentPage.metadata.title)</h1>
+    #end
+    #if( !$_PropertyTool.isEmpty($subtitle) )
+        <p class="adm-content">${subtitle}</p>
+    #end
+    #if( $currentPage.dataDefinitionPath == "Two Column - Pathway" )
+		#import("site://McHenry/_cms/formats/Pathway Info")
+	#end
+    #foreach( $row in $rows )
+        #set( $type = $row.getChild("type").textValue )
+        #if( $type == "wysiwyg")
+            $!row.getChild("wysiwyg").textValue
+        #elseif( $type == "listing" )
+            <article>
+                #set( $lists = $row.getChildren("listing") )
+                #foreach( $list in $lists )
+                    #set( $title   = "" )
+                    #set( $link    = "" )
+                    #set( $image   = $list.getChild("image").asset.link )                   ## required
+                    #set( $alt     = $_EscapeTool.xml($list.getChild("alt").textValue) )    ## required
+                    #set( $title   = $_EscapeTool.xml($list.getChild("title").textValue) )
+                    #set( $link    = $_EscapeTool.xml($list.getChild("link").asset.link) )
+                    #set( $wysiwyg = $list.getChild("wysiwyg").textValue )                  ## required
+                    <section class="admmision-profiles">
+                        <figure class="float-left">
+                            <img src="${image}" alt="$!{alt}" width="125px"/>
+                        </figure>
+                        <div class="admmision-profiles__content">
+                            #if( !$_PropertyTool.isEmpty($title) )
+                                <header>
+                                    <h2>
+                                        #if( !$_PropertyTool.isEmpty($link) )
+                                            <a href="${link}">
+                                        #end
+                                        ${title}
+                                        #if( !$_PropertyTool.isEmpty($link) )
+                                            </a>
+                                        #end
+                                    </h2>
+                                </header>
+                            #end
+                            $!{wysiwyg}
+                        </div>
+                    </section>
+                #end
+            </article>
+            <div style="clear:both"></div>
+        #elseif( $type == "help-block" )
+            <div class="clearfix"></div>
+            #set($helpBlock = $row.getChild("help-block").asset)
+            ## Check if this is a course accordion block by checking for the accordion identifier
+            #if($helpBlock.getStructuredDataNodes("accordion").size() > 0 && $helpBlock.getStructuredDataNodes("accordion").get(0).getChild("title"))
+                ## This is a course accordion block - render it with the course macro
+                #import("/_cms/formats/_shared/accordions-collegeinhs")
+                #outputCourseAccordions($helpBlock.getStructuredDataNodes("accordion"))
+            #else
+                ## Regular help block - render normally
+                $!helpBlock.xHTML
+            #end
+        #elseif( $type == "spotlight-cards")
+            #import("site://Spotlights/_cms/formats/_shared/spotlight-cards")
+            #spotlightCards($row)
+        #elseif( $type == "sponsor-tier")
+            #set($heading = $row.getChild('heading'))
+            #set ($BLOCK_CHOOSER_ID = "sponsor-block-chooser") 
+            #set ($blockChooser = $row.getChild($BLOCK_CHOOSER_ID))
+            #set ($block = $blockChooser.asset)
+            #if ($block)
+                #set ($tiers = $block.getStructuredDataNodes("tiers"))
+                <section style="padding-bottom:20px;">
+                #if(!$_PropertyTool.isEmpty($heading.textValue))
+                   <header><h2>$_EscapeTool.xml($heading.textValue)</h2></header>
+                #end
+                </section>
+                <div class="sponsor-component-wrapper">
+                    #foreach ($tier in $tiers)
+                        #set ($tierName = $tier.getChild("tier-name").textValue)
+                        #set ($sizeClass = $tier.getChild("tier-class").textValue)
+                        #set ($logos = $tier.getChildren("logo")) 
+                        <div class="sponsor-tier tier-${sizeClass}">
+                            #if ($tierName != "" && $tierName != $null)
+                                <h2 class="tier-heading">$_EscapeTool.xml($tierName)</h2>
+                            #end
+                            #set ($gridClass = "logo-grid")
+                            #if ($logos.size() == 1)
+                                #set ($gridClass = "logo-grid single-logo")
+                            #end
+                            <div class="${gridClass}">
+        #foreach ($logo in $logos)
+            #set ($link = "")
+            #set ($imageNode = $logo.getChild("image"))
+            #set ($imgPath = $imageNode.asset.path)
+            #if (! $imgPath)
+                #set ($imgPath = $imageNode.textValue)
+            #end
+            #set ($altText = $_EscapeTool.xml($logo.getChild("alt").textValue))
+            #set ($link = $_EscapeTool.xml($logo.getChild("link").textValue))
+            #if ($imgPath && $imgPath != "" && $imgPath != "/") 
+                <div class="logo-item">
+                    #if ($link != "" && $link != $null)
+                        <a href="${link}" target="_blank" rel="noopener">
+                    #end
+                    <img src="${imgPath}" alt="${altText}" loading="lazy" />
+                    #if ($link != "" && $link != $null)
+                        </a>
+                    #end
+                </div>
+            #end
+        #end
+                            </div>
+                        </div>
+                    #end
+                </div>
+            #end
+        #elseif( $type == "golf-sponsor-tier")
+            ## Golf Invitational Sponsors — tiered logo display (left-label layout)
+            ## Block DD identifiers: tier (group, multiple), tier-name, tier-subtitle,
+            ##   logo (group, multiple), image (asset/file, required), alt (text, required),
+            ##   link (text, optional — full URL e.g. https://www.example.com)
+            #set($sectionHeading = $row.getChild('heading'))
+            #set($block          = $row.getChild('sponsor-block-chooser').asset)
+            
+            #if($block)
+                #set($tiers = $block.getStructuredDataNodes("tier"))
+                
+                <section class="golf-sponsor-tiers" aria-label="Event Sponsors">
+                
+                #if(!$_PropertyTool.isEmpty($sectionHeading.textValue))
+                    <h2 class="golf-sponsor-tiers__heading">$_EscapeTool.xml($sectionHeading.textValue)</h2>
+                #end
+                
+                #foreach($tier in $tiers)
+                    #set($tierName     = $_EscapeTool.xml($tier.getChild("tier-name").textValue))
+                    #set($tierSubtitle = $_EscapeTool.xml($tier.getChild("tier-subtitle").textValue))
+                    #set($logos        = $tier.getChildren("logo"))
+                    
+                    ## Only render this tier if it has at least one logo — empty tiers disappear automatically
+                    #if($logos && $logos.size() > 0)
+                    <div class="golf-sponsor-tier">
+                        <div class="golf-sponsor-tier__label">
+                            #if(!$_PropertyTool.isEmpty($tierName))
+                                <h3 class="golf-sponsor-tier__name">$tierName</h3>
+                            #end
+                            #if(!$_PropertyTool.isEmpty($tierSubtitle))
+                                <p class="golf-sponsor-tier__subtitle">$tierSubtitle</p>
+                            #end
+                        </div>
+                        <div class="golf-sponsor-tier__logos">
+                            <ul class="golf-sponsor-logo-grid" aria-label="${tierName} sponsors">
+                            #foreach($logo in $logos)
+                                ## Cache asset — one DB round trip per logo image
+                                #set($imgAsset = $logo.getChild("image").asset)
+                                #if($imgAsset && !$_PropertyTool.isNull($imgAsset))
+                                    ## Normalize path — imgAsset.path may omit the leading slash
+                                    #set($imgPath = $imgAsset.path)
+                                    #if(!$imgPath.startsWith("/"))
+                                        #set($imgPath = "/$imgPath")
+                                    #end
+                                    ## Base URL differs by site — dev site publishes to dev.mchenry.edu
+                                    #if($currentPageSiteName == "DEV-Sean")
+                                        #set($mchenryBase = "https://dev.mchenry.edu")
+                                    #else
+                                        #set($mchenryBase = "https://www.mchenry.edu")
+                                    #end
+                                    #set($rawSrc  = "${mchenryBase}${imgPath}")
+                                    ## Resolve background color — editors can specify a hex code (no #) for logos
+                                    ## with white/light artwork on transparent backgrounds; falls back to white.
+                                    ## Pre-set to "" so a null return from getChild/textValue doesn't carry over
+                                    ## from the previous loop iteration (Velocity ignores #set when RHS is null).
+                                    #set($bgColorVal = "")
+                                    #set($bgColorNode = $logo.getChild("bg-color"))
+                                    #if($bgColorNode && $bgColorNode.textValue)
+                                        #set($bgColorVal = $bgColorNode.textValue)
+                                    #end
+                                    #if(!$_PropertyTool.isEmpty($bgColorVal))
+                                        #set($cloudinaryBg = "b_rgb:${bgColorVal}")
+                                    #else
+                                        #set($cloudinaryBg = "b_white")
+                                    #end
+                                    ## c_pad + dynamic bg: normalize every logo to a 4:3 (400×300) canvas
+                                    #set($imgSrc  = "https://res.cloudinary.com/dgujxrqyd/image/fetch/c_pad,${cloudinaryBg},w_400,h_300,q_auto,f_auto/$rawSrc")
+                                    #set($altText = $_EscapeTool.xml($logo.getChild("alt").textValue))
+                                    #set($linkUrl = $_EscapeTool.xml($logo.getChild("link").textValue))
+                                    <li class="golf-sponsor-logo">
+                                        #if(!$_PropertyTool.isEmpty($linkUrl))
+                                        <a class="golf-sponsor-logo__link" href="$linkUrl" target="_blank" rel="noopener noreferrer" aria-label="${altText} (opens in new tab)">
+                                        #end
+                                        <div class="golf-sponsor-logo__card">
+                                            <img class="golf-sponsor-logo__img" src="$imgSrc" alt="$altText" loading="lazy" />
+                                        </div>
+                                        #if(!$_PropertyTool.isEmpty($linkUrl))
+                                        </a>
+                                        #end
+                                    </li>
+                                #end
+                            #end
+                            </ul>
+                        </div>
+                    </div>
+                    #end
+                #end
+                
+                </section>
+            #end
+        #elseif( $type == "art-gallery-exhibits")
+            #set($exhibitsBlock = $row.getChild('exhibits-block').asset)
+            #if($exhibitsBlock)
+                #import("/_cms/formats/artgallery/current-exhibits")
+                #outputExhibits($exhibitsBlock)
+            #end
+        #elseif( $type == "accordions")
+            #import("/_cms/formats/_shared/accordions")
+            #outputAccordions($row.getChildren("accordion"))
+        #elseif( $type == "dualAccordions")
+            #import("site://McHenry/_cms/formats/_shared/accordions-dual")
+            #outputDualAccordions($row.getChild("dualAccordions"))
+        #elseif( $type == "photo-gallery")
+            #import("/_cms/formats/_shared/photo-gallery")
+            #outputPhotoGallery($row)
+        #elseif( $type == "news")
+            #import("/_cms/formats/_shared/news")
+            #outputNews($row)
+        #elseif ($type == "media-gallery")
+    	    #import("site://Mediagallery/_cms/formats/_gallery")
+    	    <div class="clearfix"></div>
+    	    #outputGallery($row.getChild("gallery-block").asset $foreach.count)        
+	    #elseif ($type == "course-accordions")
+            #import("/_cms/formats/_shared/accordions-collegeinhs")
+            #outputCourseAccordions($row.getChildren("course-accordion"))	    #elseif ($type == "Profiles")
+            #if( $_PropertyTool.isNull( $profileTeaserCount ) && $_PropertyTool.isEmpty( $profileTeaserCount ) )
+                #import("/_cms/formats/_shared/Profile-Teaser")
+            #end
+            #showProfileTeaser($row)
+        #elseif( $type == "weekly-menu" )
+            #set($rowIdx      = $foreach.count)
+            #set($menuHeading = $_EscapeTool.xml($row.getChild("heading").textValue))
+            #set($menuGroup   = $row.getChild("weekly-menu"))
+            #set($menuTabs    = $menuGroup.getChildren("menu-tab"))
+            #if( !$_PropertyTool.isEmpty($menuHeading) )
+                <h2>$menuHeading</h2>
+            #end
+            <ul class="tabs" data-tabs="" id="tablist-${rowIdx}" style="margin-left:0; padding-left:0;">
+            #foreach( $tab in $menuTabs )
+                #set($tabLabel = $_EscapeTool.xml($tab.getChild("tab-label").textValue))
+                #set($panelId  = "panel-${rowIdx}-${foreach.count}")
+                #if( $foreach.count == 1 )
+                <li class="tabs-title is-active"><a aria-selected="true" href="#${panelId}">$tabLabel</a></li>
+                #else
+                <li class="tabs-title"><a href="#${panelId}">$tabLabel</a></li>
+                #end
+            #end
+            </ul>
+            <div class="tabs-content" data-tabs-content="tablist-${rowIdx}">
+            #foreach( $tab in $menuTabs )
+                #set($tabIdx       = $foreach.count)
+                #set($panelId      = "panel-${rowIdx}-${tabIdx}")
+                #set($panelHeading = $_EscapeTool.xml($tab.getChild("panel-heading").textValue))
+                #set($menuItems    = $tab.getChildren("menu-item"))
+                #if( $tabIdx == 1 )
+                <div class="tabs-panel is-active" id="${panelId}">
+                #else
+                <div class="tabs-panel" id="${panelId}">
+                #end
+                    #if( !$_PropertyTool.isEmpty($panelHeading) )
+                        <h3>$panelHeading</h3>
+                    #end
+                    #if( $menuItems && $menuItems.size() > 0 )
+                    <ul>
+                    #foreach( $item in $menuItems )
+                        #set($itemLabel   = $_EscapeTool.xml($item.getChild("item-label").textValue))
+                        #set($itemContent = $_EscapeTool.xml($item.getChild("item-content").textValue))
+                        <li>
+                            #if( !$_PropertyTool.isEmpty($itemLabel) )<strong>${itemLabel}:</strong> #end${itemContent}
+                        </li>
+                    #end
+                    </ul>
+                    #end
+                </div>
+            #end
+            </div>
+        #end 
+    #end
+</main>

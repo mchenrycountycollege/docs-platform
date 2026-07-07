@@ -1,0 +1,72 @@
+#import("/_cms/formats/two-column/default")
+#set($incidentBlocks = $_.locateFolder("/", "Campus Safety"))
+#set($years = [])
+#set($incidents = {})
+##
+#iBLoop($incidentBlocks)
+#macro(iBLoop $iBData)
+    #foreach($iB in $iBData.children)
+        #if($iB.assetType == "folder")
+            #iBLoop($iB)
+        #elseif($iB.assetType == "block")
+            #if($iB.dataDefinitionPath == "Incident Report" && !$_PropertyTool.isEmpty($iB.getStructuredDataNode("date").textValue))
+                #set($year = $_DateTool.format("yyyy", $_DateTool.getDate($iB.getStructuredDataNode("date").textValue)))
+                #if(!$years.contains($year))
+                    #set($_void = $years.add($year))
+                #end
+                #set($incidents[$iB.identifier.Id] = {})
+                #set($incidents[$iB.identifier.Id]["number"] = $_EscapeTool.xml($iB.getStructuredDataNode("caseNumber").textValue))
+                #set($incidents[$iB.identifier.Id]["location"] = $_EscapeTool.xml($iB.getStructuredDataNode("location").textValue))
+                #set($incidents[$iB.identifier.Id]["offense"] = $_EscapeTool.xml($iB.getStructuredDataNode("offense").textValue))
+                #set($incidents[$iB.identifier.Id]["disposition"] = $_EscapeTool.xml($iB.getStructuredDataNode("disposition").textValue))
+                #set($incidents[$iB.identifier.Id]["dateReported"] = $iB.getStructuredDataNode("date").textValue)
+                #set($incidents[$iB.identifier.Id]["dateIncident"] = $iB.getStructuredDataNode("dateIncident").textValue)
+            #end
+        #end
+    #end
+#end
+#set($sortedIncidents = $_SortTool.sort($incidents, "dateReported:desc"))
+#set($sortedYears     = $_ListTool.reverse($_SortTool.sort($years)))
+##
+<main class="large-8 medium-7 small-12 columns mid-main" role="main">
+    <div class="right">
+        <label for="year" style="display:inline; margin-right: 5px;">View archived crime/incident log </label>
+        <select id="year" style="width:auto">
+            #foreach ($year in $sortedYears)
+                <option value="${year}">${year}</option>
+            #end
+        </select>
+    </div>
+    <table class="incident-table">
+        #foreach($incident in $sortedIncidents)
+            <tbody data-year="$_DateTool.format('yyyy', $_DateTool.getDate($incident['dateReported']))">
+                <tr>
+                    <th scope="row">Case Number</th>
+                    <td>$incident['number']</td>
+                </tr>
+                <tr>
+                    <th scope="row">Date and Time Reported</th>
+                    <td>$_DateTool.format("M/dd/yyyy h:mm:ss a", $_DateTool.getDate($incident['dateReported']))</td>
+                </tr>
+                <tr>
+                    <th scope="row">Location</th>
+                    <td>$incident['location']</td>
+                </tr>
+                #if (!$_PropertyTool.isEmpty($incident['dateIncident']))
+                    <tr>
+                        <th scope="row">Date and Time of Incident</th>
+                        <td>$_DateTool.format("M/dd/yyyy h:mm:ss a", $_DateTool.getDate($incident['dateIncident']))</td>
+                    </tr>
+                #end
+                <tr>
+                    <th scope="row">Offense/Incident</th>
+                    <td>$incident['offense']</td>
+                </tr>
+                <tr>
+                    <th scope="row">Disposition</th>
+                    <td>$incident['disposition']</td>
+                </tr>
+            </tbody>
+        #end
+    </table>
+</main>

@@ -1,0 +1,198 @@
+/* Program Categories Component Styles */
+.program-categories-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 1rem;
+}
+
+.program-category {
+    padding: 2rem 1.5rem;
+    margin-bottom: 3rem;
+    border-radius: 8px;
+    border-left: 6px solid;
+}
+
+/* Theme Colors - Unified Purple Theme */
+.program-category.purple {
+    background-color: #f8f7fb;
+    border-left-color: #5639a4;
+}
+
+.category-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 1.5rem;
+}
+
+.category-header h2 {
+    margin: 0;
+    font-size: 1.953rem;
+    font-weight: 700;
+    color: #4b3190; /* Accessible purple for all headings */
+}
+
+.category-description {
+    margin-bottom: 2rem;
+}
+
+.category-description p {
+    color: #444;
+    font-size: 1rem;
+    line-height: 1.6;
+    margin: 0;
+}
+
+.option-cards {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.option-card {
+    background-color: #fff;
+    border: 1px solid #e0e0e0;
+    border-radius: 6px;
+    padding: 1.5rem;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+/* Hover effects - Unified purple theme */
+.program-category.purple .option-card:hover {
+    border-color: #5639a4;
+    box-shadow: 0 4px 12px rgba(86, 57, 164, 0.1);
+    transform: translateY(-2px);
+}
+
+.card-content h3 {
+    margin: 0 0 0.75rem 0;
+    font-size: 1.25rem;
+}
+
+.option-link {
+    display: flex;
+    align-items: center;
+    text-decoration: none;
+    font-weight: 600;
+    transition: color 0.3s ease;
+}
+
+.option-link {
+    display: flex;
+    align-items: center;
+    text-decoration: underline; /* Always show underline for all links */
+    font-weight: 600;
+    transition: color 0.3s ease;
+    color: #4b3190; /* Accessible purple for all links */
+}
+
+.option-link:hover,
+.option-link:focus {
+    color: #2d4319; /* Even darker green for hover - 7:1 ratio */
+    text-decoration: underline; /* Keep underline on hover */
+}
+
+.arrow-icon {
+    font-size: 1.5rem;
+    margin-right: 0.75rem;
+    transition: transform 0.3s ease;
+    font-weight: bold;
+    color: #4b3190; /* Purple arrows for all cards */
+}
+
+.option-link:hover .arrow-icon,
+.option-link:focus .arrow-icon {
+    transform: translateX(4px);
+    color: #2d4319; /* Match the darker hover color */
+}
+
+.card-content p {
+    color: #555; /* Darker gray for better contrast - 7:1 ratio */
+    font-size: 0.95rem;
+    line-height: 1.5;
+    margin: 0;
+}
+
+/* Responsive Design */
+@media screen and (min-width: 768px) {
+    .program-categories-container {
+        padding: 2rem;
+    }
+    
+    .program-category {
+        padding: 2.5rem;
+        margin-bottom: 4rem;
+    }
+    
+    .option-cards {
+        gap: 1.25rem;
+    }
+    
+    .option-card {
+        padding: 2rem;
+    }
+}
+
+@media screen and (min-width: 1024px) {
+    .option-cards {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+        gap: 1.5rem;
+    }
+}
+
+/* Accessibility improvements */
+.option-link:focus {
+    outline: 3px solid #2d4319; /* Thicker, higher contrast focus outline */
+    outline-offset: 2px;
+    border-radius: 2px;
+}
+
+/* Ensure adequate touch targets for mobile */
+@media screen and (max-width: 767px) {
+    .option-link {
+        min-height: 44px; /* WCAG minimum touch target */
+        display: flex;
+        align-items: center;
+        padding: 0.5rem 0;
+    }
+    
+    .option-card {
+        padding: 1.75rem; /* Increased padding for better touch targets */
+    }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+    .option-card {
+        border-color: #444;
+        border-width: 2px;
+    }
+    
+    .option-card:hover {
+        border-color: #000;
+        border-width: 3px;
+    }
+    
+    .program-category {
+        border-left-width: 8px;
+    }
+    
+    .option-link {
+        font-weight: 700; /* Bolder text in high contrast mode */
+    }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+    .option-card,
+    .arrow-icon,
+    .option-link {
+        transition: none;
+    }
+    
+    .option-link:hover .arrow-icon,
+    .option-link:focus .arrow-icon {
+        transform: none; /* Remove animation for users who prefer reduced motion */
+    }
+}

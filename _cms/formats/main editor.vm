@@ -1,0 +1,3 @@
+#set($editor = $_XPathTool.selectSingleNode($contentRoot, "/system-data-structure/editor"))
+##$editor.value
+$_SerializerTool.serialize($editor, true)

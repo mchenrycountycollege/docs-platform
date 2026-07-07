@@ -1,0 +1,20 @@
+#macro (outputEventsBlock $row $pageType)
+    #set($hhEventsHeading = "")
+    #set($block = $row.getChild("block"))
+    #set($hhEventsBlock = $_.locateBlock($block.asset.path, $block.asset.site.name))
+    #set($hS = $hhEventsBlock.getStructuredDataNode("hSize").textValue.toLowerCase())
+    #set($hhEventsHeading = $_EscapeTool.xml($hhEventsBlock.getStructuredDataNode("heading").textValue))
+    #set($hhEventsLayout = $hhEventsBlock.getStructuredDataNode("blockLayout").textValue)
+    #if($hhEventsLayout == "Default" || $hhEventsLayout == "Custom-Program")
+        #import("site://Events/_cms/formats/block")
+        #outputHHEventsBlock($hhEventsBlock )
+    #elseif($hhEventsLayout == "Custom")
+        <div class="medium-#if($pageType == 'home')6 #{else}12#end #if($pageType != 'oneCol')columns#end upcoming-mcc-sec">
+            #if($hhEventsHeading != "")
+                <h2 class="columns">${hhEventsHeading}<a href="site://Events/index" class="more"><img src="[system-asset:id=266f1b13ac1e009621c7857a6d5b40f5]/_files/img/more.png[/system-asset]" alt="More Upcoming Events"/></a></h2>
+            #end
+            #import("site://Events/_cms/formats/block")
+            #outputHHEventsBlock($hhEventsBlock )
+        </div>
+    #end
+#end

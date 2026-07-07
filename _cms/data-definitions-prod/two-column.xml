@@ -1,0 +1,169 @@
+<system-data-structure>
+    <text field-id="9489f3fcac1e009675b1d73addea67e9" identifier="addBanner" label="Add Banner?" type="checkbox">
+        <checkbox-item checked="true" label="Yes" show-fields="style" value="yes"/>
+    </text>
+    <text default="single-image" field-id="79d6b2d3ac1e00960e8b616dc1604b3e" identifier="style" label="Style" type="radiobutton">
+        <radio-item label="Single Image" show-fields="banner, alt" value="single-image"/>
+        <radio-item label="Slider" show-fields="slider" value="slider"/>
+    </text>
+    <asset field-id="9489f3fcac1e009675b1d73adb6b18e8" help-text="814 x 458 px no more than 96 ppi" identifier="banner" label="Banner Image" required="true" type="file"/>
+    <text field-id="9489f3fcac1e009675b1d73abe4d4f03" help-text="Describe the image" identifier="alt" label="Alternative Text" required="true"/>
+    <group collapsed="true" identifier="slider" label="Slider" multiple="true">
+        <asset field-id="74213cfaac1e00960e8b616daa5c141a" identifier="image" label="Image" required="true" type="file"/>
+        <text field-id="74213cfaac1e00960e8b616d7aa300d2" identifier="alt" label="Alternative Text" required="true"/>
+        <text field-id="74213cfaac1e00960e8b616d809eeda8" identifier="heading" label="Caption Heading"/>
+        <text field-id="74213cfaac1e00960e8b616d12e3932f" identifier="caption" label="Caption" size="50"/>
+        <asset field-id="74213cfaac1e00960e8b616d986f98ac" identifier="link" label="Link" type="page,file,symlink"/>
+        <text field-id="74213cfaac1e00960e8b616d7638098e" identifier="link-label" label="Link Label"/>
+        <text default="none" field-id="74213cfaac1e00960e8b616db88e2d57" identifier="videotype" label="Video Type" type="radiobutton">
+            <radio-item label="None" value="none"/>
+            <radio-item label="Local Video" show-fields="slider/video, slider/videoTitle" value="local"/>
+            <radio-item label="Video URL" show-fields="slider/url, slider/videoTitle" value="url"/>
+        </text>
+        <asset field-id="74213cfaac1e00960e8b616d1b006d5f" identifier="video" label="Video" required="true" type="file"/>
+        <text field-id="74213cfaac1e00960e8b616d68ae831a" help-text="For Example: https://www.youtube.com/embed/aqz-KE-bpKQ" identifier="url" label="Video URL" required="true"/>
+        <text field-id="282caab5ac1e00962284b005a23ea4b5" identifier="videoTitle" label="Video Title"/>
+    </group>
+    <text field-id="9489f3fcac1e009675b1d73a884077a1" identifier="subtitle" label="Subtitle"/>
+    <group collapsed="true" identifier="content" label="Content Row" multiple="true">
+        <text default="wysiwyg" field-id="9489f3fcac1e009675b1d73abed06465" identifier="type" label="Type" type="dropdown">
+            <dropdown-item label="Content Editor" show-fields="content/wysiwyg" value="wysiwyg"/>
+            <dropdown-item label="Listing" show-fields="content/listing" value="listing"/>
+            <dropdown-item label="Help Block" show-fields="content/help-block" value="help-block"/>
+            <dropdown-item label="Spotlight Cards" show-fields="content/spotlight-cards" value="spotlight-cards"/>
+            <dropdown-item label="Accordions" show-fields="content/accordion" value="accordions"/>
+            <dropdown-item label="Dual Accordions" show-fields="content/dualAccordions" value="dualAccordions"/>
+            <dropdown-item label="Photo Gallery" show-fields="content/caption, content/image" value="photo-gallery"/>
+            <dropdown-item label="News" show-fields="content/heading, content/news" value="news"/>
+            <dropdown-item label="Media Gallery" show-fields="content/gallery-block" value="media-gallery"/>
+            <dropdown-item label="Sponsor Logos (Tiered Block)" show-fields="content/heading, content/sponsor-block-chooser" value="sponsor-tier"/>
+            <dropdown-item label="Sponsor Logos (Golf Invitational)" show-fields="content/heading, content/sponsor-block-chooser" value="golf-sponsor-tier"/>
+            <dropdown-item label="Weekly Menu" show-fields="content/heading, content/weekly-menu" value="weekly-menu"/>
+            <dropdown-item show-fields="content/profiles" value="Profiles"/>
+        </text>
+        <text field-id="50443f30ac1e00960e8b616d954cd92b" identifier="heading" label="Heading"/>
+        <text configuration="Main Editor" field-id="9489f3fcac1e009675b1d73ae9a13e81" help-text="If inserting wufoo form, add title=&quot;&quot; value to the div for screen readers" identifier="wysiwyg" label="Content" wysiwyg="true"/>
+        <asset field-id="f76b0fceac1e00960c052861cba67fd5" identifier="gallery-block" label="Media Gallery Block" required="true" type="block"/>
+        <asset field-id="ea9dde8eac1e006c2633b01b8b72dee0" identifier="sponsor-block-chooser" label="Select Sponsor Block" type="block"/>
+        <group collapsed="true" identifier="listing" label="Listing" multiple="true">
+            <asset field-id="9489f3fcac1e009675b1d73aaff2f7e1" identifier="image" label="Image" required="true" type="file"/>
+            <text field-id="9489f3fcac1e009675b1d73a4c14920d" help-text="Describe the image" identifier="alt" label="Alternative Text" required="true"/>
+            <text field-id="9489f3fcac1e009675b1d73a63864014" identifier="title" label="Title"/>
+            <asset field-id="9489f3fdac1e009675b1d73ab12e2d2b" identifier="link" label="Link" type="page,file,symlink"/>
+            <text field-id="9489f3fdac1e009675b1d73a652c1053" help-text="If inserting wufoo form, add title=&quot;&quot; value to the div for screen readers" identifier="wysiwyg" label="Content" required="true" wysiwyg="true"/>
+        </group>
+        <shared-field field-id="05810d15ac1e00962212845d4989b69c" identifier="spotlight-cards" maximum-number="2" minimum-number="1" path="site://Spotlights/Spotlight Cards"/>
+        <asset field-id="9489f3fdac1e009675b1d73a02ffdece" identifier="help-block" label="Help Block" type="block"/>
+        <group collapsed="true" identifier="accordion" label="Accordion" multiple="true">
+            <text field-id="b2b0d108ac1e00960e8b616d7dd67660" help-text="Must be unique on this page" identifier="anchor" label="Anchor"/>
+            <text field-id="469e5ab3ac1e00960e8b616da205ca22" identifier="label" label="Label" required="true"/>
+            <text field-id="469e5ab4ac1e00960e8b616d300d1273" help-text="If inserting wufoo form, add title=&quot;&quot; value to the div for screen readers" identifier="content" label="Content" required="true" wysiwyg="true"/>
+            <text field-id="469e5ab5ac1e00960e8b616d300d1274" help-text="URL to transcript page for this video. Leave blank if no transcript." identifier="transcriptUrl" label="Transcript URL"/>
+        </group>
+        <group identifier="dualAccordions" label="Dual Accordions">
+            <group collapsed="true" identifier="left" label="Left Accordions">
+                <group collapsed="true" identifier="accordion" label="Accordion" multiple="true">
+                    <text field-id="f9fe60f4ac1e006c6a80bdb7ccba9c38" help-text="Must be unique on this page" identifier="anchor" label="Anchor"/>
+                    <text field-id="f9fe60f4ac1e006c6a80bdb74763e03b" identifier="label" label="Label" required="true"/>
+                    <text field-id="f9fe60f4ac1e006c6a80bdb7b68dfaca" help-text="If inserting wufoo form, add title=&quot;&quot; value to the div for screen readers" identifier="content" label="Content" required="true" wysiwyg="true"/>
+                </group>
+            </group>
+            <group collapsed="true" identifier="right" label="Right Accordions">
+                <group collapsed="true" identifier="accordion" label="Accordion" multiple="true">
+                    <text field-id="f9fe60f5ac1e006c6a80bdb7353a6dfa" help-text="Must be unique on this page" identifier="anchor" label="Anchor"/>
+                    <text field-id="f9fe60f5ac1e006c6a80bdb7821b2708" identifier="label" label="Label" required="true"/>
+                    <text field-id="f9fe60f6ac1e006c6a80bdb76a3e2349" help-text="If inserting wufoo form, add title=&quot;&quot; value to the div for screen readers" identifier="content" label="Content" required="true" wysiwyg="true"/>
+                </group>
+            </group>
+        </group>
+        <text field-id="1e70460dac1e00961dc58f6807e22fb7" help-text="Shows caption under the image in the gallery." identifier="caption" label="Caption?" type="checkbox">
+            <checkbox-item label="Yes" value="yes"/>
+        </text>
+        <group identifier="image" label="Image" multiple="true">
+            <asset field-id="4b2706d9ac1e00960e8b616de394dc86" help-text="900 pixel width for portrait and landcscape" identifier="image" label="Image" required="true" type="file"/>
+            <text field-id="4b2706d9ac1e00960e8b616d0bc6f7f9" identifier="alt" label="Alternative Text / Caption" required="true"/>
+        </group>
+        <group identifier="profiles" label="Profile Teaser">
+            <text field-id="15a63d22ac1e00962284b005b3037c18" identifier="title" label="Title"/>
+            <text field-id="15a63d22ac1e00962284b0050b6da0cb" help-text="A CSV or multiple Email Id inputs" identifier="id" label="Email Id(s)" multiple="true"/>
+        </group>
+        <asset field-id="4c77a19cac1e00960e8b616d6ea21148" identifier="news" label="News" multiple="true" required="true" restrict-to-folder="/site:///site/" type="page"/>
+        <group collapsed="true" identifier="weekly-menu" label="Weekly Menu">
+            <group identifier="menu-tab" label="Tab" multiple="true">
+                <text field-id="e5791903ac1e006c6a80bdb7b6f7017e" identifier="tab-label" label="Tab Label" required="true"/>
+                <text field-id="e5791903ac1e006c6a80bdb708527a34" identifier="panel-heading" label="Panel Heading"/>
+                <group collapsed="true" identifier="menu-item" label="Menu Item" multiple="true">
+                    <text field-id="e5791903ac1e006c6a80bdb725aa3596" identifier="item-label" label="Item Label"/>
+                    <text field-id="e5791904ac1e006c6a80bdb75e9d3a13" identifier="item-content" label="Item" required="true"/>
+                </group>
+            </group>
+        </group>
+    </group>
+    <text default="Yes" field-id="6538421aac1e006c1122fea8a7d6d7d8" identifier="showSidebar" label="Show Sidebar?" required="true" type="radiobutton">
+        <radio-item label="Yes" show-fields="sidebar" value="Yes"/>
+        <radio-item label="Yes, without navigation" show-fields="sidebar" value="YesNoNav"/>
+        <radio-item label="No" value="No"/>
+    </text>
+    <group collapsed="true" identifier="sidebar" label="Sidebar" multiple="true">
+        <text default="none" field-id="9489f3fdac1e009675b1d73af4f13f59" identifier="type" label="Type" type="dropdown">
+            <dropdown-item label="Calendar" show-fields="sidebar/category" value="calendar"/>
+            <dropdown-item label="Upcoming Events" show-fields="sidebar/category, sidebar/max, sidebar/block" value="events"/>
+            <dropdown-item label="Notice" show-fields="sidebar/title, sidebar/start, sidebar/end, sidebar/wysiwyg" value="notice"/>
+            <dropdown-item label="Contact" show-fields="sidebar/title, sidebar/wysiwyg, sidebar/contact-share-block, sidebar/hours, sidebar/location, sidebar/phone, sidebar/email, sidebar/facebook, sidebar/twitter, sidebar/instagram, sidebar/linkedin, sidebar/cta, sidebar/contact-content" value="contact"/>
+            <dropdown-item label="Content Editor" show-fields="sidebar/wysiwyg" value="wysiwyg"/>
+            <dropdown-item label="Transfer Resources" show-fields="sidebar/transfer" value="transfer"/>
+            <dropdown-item label="Noncredit Schedule" show-fields="sidebar/noncredit" value="noncredit"/>
+            <dropdown-item label="Catalyst" show-fields="sidebar/catalyst" value="catalyst"/>
+            <dropdown-item label="NC Cancellation" show-fields="sidebar/nccancellation" value="nccancellation"/>
+            <dropdown-item label="Contact Enrollment Coach" show-fields="sidebar/title, sidebar/wysiwyg, sidebar/contact-share-block" value="conactEnrollment"/>
+        </text>
+        <shared-field field-id="9489f3fdac1e009675b1d73a98ac624e" identifier="category" path="/Calendar Category"/>
+        <text default="4" field-id="9489f3fdac1e009675b1d73a4bd0b212" identifier="max" input-data-format="Must be a valid number" label="Max Number of Events to Display" regular-expression="^[0-9]*$" required="true" size="5"/>
+        <asset field-id="47f3f835ac1e006c169481bca8a761b0" identifier="block" label="Events Block" restrict-to-folder="/site:///site/" type="block"/>
+        <text field-id="9489f3fdac1e009675b1d73a9eae5269" identifier="title" label="Title" required="true"/>
+        <text field-id="9489f3fdac1e009675b1d73a78c916f1" identifier="start" label="Start Date" type="datetime"/>
+        <text field-id="9489f3fdac1e009675b1d73a8425ba10" identifier="end" label="End Date" type="datetime"/>
+        <text field-id="9489f3fdac1e009675b1d73af60e7e0d" identifier="wysiwyg" label="Content" wysiwyg="true"/>
+        <asset field-id="9560d87cac1e00960c0345825250b49e" identifier="contact-share-block" label="Contact Share Block" render-content-depth="2" type="block"/>
+        <group collapsed="true" identifier="hours" label="Office Hours">
+            <text field-id="78af0c8cac1e006c5a7adcdfacea2799" identifier="content" label="Content" wysiwyg="true"/>
+        </group>
+        <group collapsed="true" identifier="location" label="Location">
+            <text field-id="78af0c8cac1e006c5a7adcdfe1712f0a" identifier="label" label="Label"/>
+            <text field-id="9b011d67ac1e006c27e1f505d0e1ecaf" identifier="url" label="URL Link"/>
+        </group>
+        <group collapsed="true" identifier="phone" label="Phone">
+            <text field-id="78af0c8cac1e006c5a7adcdfa443b303" identifier="content" label="Content"/>
+        </group>
+        <group collapsed="true" identifier="email" label="Email">
+            <text field-id="78af0c8cac1e006c5a7adcdf28a559ef" identifier="content" label="Content"/>
+        </group>
+        <group collapsed="true" identifier="contact-content" label="Content">
+            <text field-id="78af0c8cac1e006c5a7adcdf516c96ac" identifier="content" label="Content" wysiwyg="true"/>
+        </group>
+        <group collapsed="true" identifier="facebook" label="Facebook">
+            <text field-id="78af0c8cac1e006c5a7adcdfa9044cab" identifier="label" label="Label"/>
+            <text field-id="9b011d67ac1e006c27e1f505df037fd6" identifier="url" label="URL Link"/>
+        </group>
+        <group collapsed="true" identifier="twitter" label="Twitter">
+            <text field-id="78af0c8cac1e006c5a7adcdfb60b5af3" identifier="label" label="Label"/>
+            <text field-id="9b011d67ac1e006c27e1f505c05962fb" identifier="url" label="URL Link"/>
+        </group>
+        <group collapsed="true" identifier="instagram" label="Instagram">
+            <text field-id="78af0c8cac1e006c5a7adcdf87c4c602" identifier="label" label="Label"/>
+            <text field-id="9b011d67ac1e006c27e1f5054900b2c2" identifier="url" label="URL Link"/>
+        </group>
+        <group collapsed="true" identifier="linkedin" label="LinkedIn">
+            <text field-id="9b011d67ac1e006c27e1f505c3ab5e6d" identifier="label" label="Label"/>
+            <text field-id="9b011d67ac1e006c27e1f505e8948f73" identifier="url" label="URL Link"/>
+        </group>
+        <group collapsed="true" identifier="cta" label="CTA">
+            <text field-id="78af0c8cac1e006c5a7adcdf8ca041d8" identifier="label" label="Label"/>
+            <asset field-id="78af0c8cac1e006c5a7adcdf49f65818" identifier="link" label="Link" type="page,file,symlink"/>
+        </group>
+        <asset field-id="df21610cac1e00967f5ee53d773f7fd2" identifier="transfer" label="Transfer Resources" type="block"/>
+        <asset field-id="f5cdb135ac1e00962cc08b43887321d8" identifier="noncredit" label="Noncredit Schedule" render-content-depth="2" type="block"/>
+        <asset field-id="d99d66d9ac1e00966d9dd6b33b1f645a" identifier="catalyst" label="Catalyst" render-content-depth="1" type="block"/>
+        <asset field-id="45951723ac1e009618f53aea6bb8adb0" identifier="nccancellation" label="NC Cancellation" render-content-depth="1" type="block"/>
+    </group>
+</system-data-structure>

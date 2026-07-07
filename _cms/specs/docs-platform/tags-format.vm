@@ -1,0 +1,39 @@
+## Tags Format -- assigned directly to the default region of one container
+## page at docs/_system/tags.json (same Query API scope as
+## search-index-format.vm, Documentation Page Content Type, just a
+## different output/Format pair). Output: _system/tags.json -- tag ->
+## [{title, path}] for every Documentation Page carrying that tag.
+
+#import('/_cms/formats/docs-platform/_shared')
+
+#set($pageAssets = $_.query().byContentType("Documentation Page").preloadStructuredData().preloadDynamicMetadata().maxResults(-1).execute())
+
+#set($allPages = [])
+#foreach($pageAsset in $pageAssets)
+    #extractDocFields($pageAsset)
+    #set($pageMap = {"title": $docTitle, "path": $docPath, "tags": $docTags})
+    #set($discard = $allPages.add($pageMap))
+#end
+
+#set($allTags = [])
+#foreach($page in $allPages)
+    #foreach($tag in $page.tags)
+        #if(!$allTags.contains($tag))
+            #set($discard = $allTags.add($tag))
+        #end
+    #end
+#end
+#set($allTags = $_SortTool.sort($allTags))
+
+#set($tagGroups = [])
+#foreach($tag in $allTags)
+    #set($pagesForTag = [])
+    #foreach($page in $allPages)
+        #if($page.tags.contains($tag))
+            #set($discard = $pagesForTag.add({"title": $page.title, "path": $page.path}))
+        #end
+    #end
+    #set($discard = $tagGroups.add({"tag": $tag, "pages": $pagesForTag}))
+#end
+
+$_SerializerTool.toJson({"tags": $tagGroups})

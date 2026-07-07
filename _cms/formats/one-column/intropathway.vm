@@ -1,0 +1,8 @@
+#if( $currentPage.path != "faculty/directory/detail" && $currentPage.path != "faculty/detail" )
+<h1 id="startcontent">$_EscapeTool.xml($currentPage.label)</h1>
+#end
+#set($intro = $currentPage.getStructuredDataNode('intro-w').textValue)
+#if(!$_PropertyTool.isEmpty($intro))
+    $intro
+#end 
+ <div class="row"><div class="large-12 columns"><p class="pdisc"><strong>Transfer Pathways</strong> are for students who plan to continue their education at a four-year college or university to earn a bachelor’s degree. Students take courses toward an associate degree at MCC, then transfer credits to the college of their choice. It is important that students work closely with an MCC academic advisor and their transfer school to verify degree requirements. <a class="acalog" data-acalog-catalog-type="Catalog" data-acalog-data="pages" data-acalog-link-text="See Transfer Degree details" data-acalog-page-name="Transfer Degrees" href="#">See Transfer Degree details</a></p></div></div>

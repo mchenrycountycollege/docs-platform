@@ -1,0 +1,67 @@
+#set($eventsBlock = $currentPage.getStructuredDataNode("events/block").asset)
+#if(!$_PropertyTool.isEmpty($eventsBlock))
+    #import("site://McHenry/_cms/formats/_shared/eventsBlock")
+	#outputEventsBlock($currentPage.getStructuredDataNode("events") "home")
+#else
+    #set($currDateTime = $_NumberTool.toNumber($_DateTool.toCalendar($_DateTool.getDate()).timeInMillis))
+    #set($currYear     = $_DateTool.format('yyyy', $currDateTime))
+    ##set($events       = $_.query().byContentType('site://Calendar/Event').hasMetadata("homeFeature", "yes").siteName('Calendar').indexableOnly(true).execute())
+    #set($events       = $_.query().byContentType('site://Calendar/Event').hasMetadata("homeFeature", "yes").siteName('Calendar').indexableOnly(true).sortBy("endDate").maxResults(4).execute())
+    #set ($counter = 0)
+    ##locatorSortAsc($events)
+    <div class="medium-6 columns upcoming-mcc-sec">
+        <header role="region"  aria-label="Events">
+            <h2>Upcoming Events<a href="site://Calendar/index" class="more"><img src="/_files/img/more.png" alt="More Events"/></a></h2>
+        </header>
+        <div class="smal-12">
+            #foreach($event in $events)
+                #set($start = $_NumberTool.toNumber($event.getStructuredDataNode('starts').textValue))
+                #set($end   = $_NumberTool.toNumber($event.getStructuredDataNode('ends').textValue))
+                #set($loc   = $event.getStructuredDataNode('location'))  ## optional 
+                
+                #if(!$event.path.contains('_cms') && $currDateTime < $end)
+                #set ($counter = $counter+1)
+                #if ($counter > 4) #break #end
+                    #set($month   = $_DateTool.format('MMM', $start))
+                    #set($day     = $_DateTool.format('d', $start))
+                    #set($endTime = $_DateTool.format('h:mm a', $start).replaceAll(':00', '').replaceAll('M', '.M.').toLowerCase())
+        
+                <div class="events columns">
+                    <div class="date-sec">
+                        <span>${month}</span>
+                        <p>${day}</p>
+                    </div>
+                    <div class="cal-info">
+                        <h3><a href="${event.link}">${_EscapeTool.xml($event.label)}</a></h3>
+                        <p>${endTime} #if(!$_PropertyTool.isEmpty($loc.textValue))${_EscapeTool.xml($loc.textValue)}#end</p>
+                    </div>
+                </div>
+                #end 
+            #end
+        </div>
+    </div>
+#end
+
+#macro(locatorSortAsc $arr)
+   #foreach($item in $arr)
+       #sortArr($arr 1)
+   #end
+
+   #macro(sortArr $arr $switch)
+       #foreach($item in $arr)
+           #set($switch = 0)
+           #set($i = $foreach.index)
+           #set($j = $foreach.count)
+           #set($a = $arr[$i])
+           #if(!$foreach.last)
+               #set($b = $arr[$j])
+               #if($_NumberTool.toNumber($a.getStructuredDataNode("starts").textValue) > $_NumberTool.toNumber($b.getStructuredDataNode("starts").textValue))
+                   #set($arr[$i] = $b)
+                   #set($arr[$j] = $a)
+                   #set($switch = $switch + 1)
+               #end  
+           #end
+       #end
+   #end
+#end
+

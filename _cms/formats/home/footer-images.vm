@@ -1,0 +1,19 @@
+#set($section = $currentPage.getStructuredDataNode('footer-images'))
+#set($heading = $section.getChild('heading').textValue) ## required
+
+<div class="row life-at" >
+    <div class="row">
+        <div class="medium-6 columns mcc-numbers">
+            <header><h2>$_EscapeTool.xml($heading)</h2></header>
+        </div>
+    </div>
+    <div class="row life-img">
+        #foreach($img in $section.getChildren('image'))
+            #set($image = $img.getChild('image').asset.link)                ## required
+            #set($alt   = $_EscapeTool.xml($img.getChild('alt').textValue)) ## required
+            <div class="medium-4 large-2 columns">
+                <img src="${image}" alt="${alt}"/>
+            </div>
+        #end 
+    </div>
+</div>

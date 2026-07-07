@@ -1,0 +1,30 @@
+#set($updates  = $currentPage.getStructuredDataNode('updates'))
+#set($heading  = $updates.getChild('heading').textValue)     ## required
+#set($morelink = $updates.getChild('link').asset.link)       ## optional, but outside of a loop
+
+<div class="medium-6 columns upcoming-mcc-sec">
+    <header role="region"  aria-label="Updates">
+        <h2>$_EscapeTool.xml($heading)
+            #if($morelink)
+                <a href="${morelink}" class="more"><img src="/_files/img/more.png" alt="More Updates"/></a>
+            #end 
+        </h2>
+    </header>
+    <div class="smal-12 columns">
+        #foreach($update in $updates.getChildren('update'))
+            #set($title   = $update.getChild('heading').textValue) ## required
+            #set($content = $update.getChild('content-w'))         ## optional 
+            #set($link    = $update.getChild('link'))              ## optional
+            <div class="columns mccUpdates">
+                #if($link.asset)
+                    <h3><a href="${link.asset.link}">$_EscapeTool.xml($title)</a></h3>
+                #else 
+                    <h3>$_EscapeTool.xml($title)</h3>
+                #end 
+                #if(!$_PropertyTool.isEmpty($content.textValue))
+                    $content.textValue
+                #end 
+            </div>
+    	#end 
+    </div>
+</div>

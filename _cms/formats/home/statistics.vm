@@ -1,0 +1,40 @@
+#set($statistics = $currentPage.getStructuredDataNode('statistics'))
+#set($heading    = $statistics.getChild('heading').textValue) ## required
+#set($disclaimer = $statistics.getChild('disclaimer'))        ## optional
+#set($width      = 6)
+#if($_PropertyTool.isEmpty($disclaimer.textValue))
+    #set($disclaimer = false)
+    #set($width = 12)
+#end
+
+<div class="row mcc-by-num">
+    <div class="row">
+        <div class="small-12 medium-${width} columns mcc-numbers">
+            <header role="region"  aria-label="Statistics">
+                <h2>$_EscapeTool.xml($heading)#if($disclaimer)<sup>*</sup>#end</h2>
+            </header>
+        </div>
+        #if($disclaimer)
+        <div class="medium-6 small-12 columns num-notice">
+            <p>*${_EscapeTool.xml($disclaimer.textValue)}</p>
+        </div>
+        #end 
+    </div>
+    <div class="row">
+        <div class="small-12 columns num-content-wrapper">
+            <ul>
+                #foreach($stat in $statistics.getChildren('stat'))
+                    #set($icon = $stat.getChild('icon').asset.link)              ## required
+                    #set($num  = $stat.getChild('number').textValue)             ## required
+                    #set($text = $stat.getChild('text').textValue.toUpperCase()) ## required
+                    <li class="ico-${foreach.count}">
+                        <div>
+                            <h3 style="background:url('[system-asset]${icon}[/system-asset]') no-repeat left;">$_EscapeTool.xml($num)</h3>
+                            <p>$_EscapeTool.xml($text)</p>
+                        </div>
+                    </li>
+                #end 
+            </ul>
+        </div>
+    </div>
+</div>

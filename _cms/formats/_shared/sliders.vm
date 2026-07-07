@@ -1,0 +1,69 @@
+#macro(outputSliders $sliders $bannerClass)
+    <div class="main-slider custom-slider ${bannerClass} small-12 columns#if($currentPage.dataDefinition.name.contains('One Column Pathway')) large-8 medium-7#end">
+        <div class="orbit" role="region" aria-label="Banner Images" data-orbit="">
+            <ul class="orbit-container">
+                #if ( $sliders.size() > 1 )
+                    <button class="orbit-previous"><span class="show-for-sr">Previous Slide</span>&#9664;&#xFE0E;</button>
+                    <button class="orbit-next"><span class="show-for-sr">Next Slide</span>&#9654;&#xFE0E;</button>
+                #end
+                #foreach($slider in $sliders)
+                    #set($heading = "")
+                    #set($caption = "")
+                    #set($link = "")
+                    #set($linkLabel = "")
+                    #set($image = $slider.getChild('image').asset.link)
+                    #set($alt = $_EscapeTool.xml($slider.getChild('alt').textValue))
+                    #set($heading = $_EscapeTool.xml($slider.getChild('heading').textValue))
+                    #set($caption = $_EscapeTool.xml($slider.getChild('caption').textValue))
+                    #set($link = $slider.getChild('link').asset.link)
+                    #set($linkLabel = $_EscapeTool.xml($slider.getChild('link-label').textValue))
+                    #if($_PropertyTool.isEmpty($linkLabel))
+                        #set($linkLabel = $_EscapeTool.xml($slider.getChild('link').asset.label))
+                    #end
+                    #set($videoType = $slider.getChild('videotype').textValue)
+                    #set($title = "")
+                    #set($title = $_EscapeTool.xml($slider.getChild("videoTitle").textValue))
+                    <li class="orbit-slide#if ($foreach.index == 0) is-active#end" #if ($videoType != "local")style="background:url('[system-asset]${image}[/system-asset]')"#end title="$!{alt}">
+                        #if($videoType == "url")
+                            #set($url = $_EscapeTool.xml($slider.getChild('url').textValue))
+                            <iframe width="100%" height="100%" src="${url}" referrerpolicy="no-referrer-when-downgrade"#if(!$_PropertyTool.isEmpty($title)) title="${title}"#end></iframe>
+                        #elseif($videoType == "local")
+                            #set($video = $slider.getChild('video').asset.link)
+                            <video width="100%" height="100%" poster="[system-asset]${image}[/system-asset]" controls=""#if(!$_PropertyTool.isEmpty($title)) title="${title}"#end>
+                                <source src="${video}" type="video/mp4" />
+                                Your browser does not support the video tag.
+                            </video>
+                        #end
+                        #if(!$_PropertyTool.isEmpty($heading) || !$_PropertyTool.isEmpty($caption) || !$_PropertyTool.isEmpty($link))
+                            <figcaption class="orbit-caption">
+                                <div class="caption">
+                                    #if(!$_PropertyTool.isEmpty($heading))
+                                        <h2>${heading}</h2>
+                                    #end
+                                    #if(!$_PropertyTool.isEmpty($caption))
+                                        <p>${caption}</p>
+                                    #end
+                                    #if(!$_PropertyTool.isEmpty($link))
+                                        <a href="${link}">${linkLabel}</a>
+                                    #end
+                                </div>
+                            </figcaption>
+                        #end
+                    </li>
+                #end
+            </ul>
+            #if ($sliders.size() > 1 )
+            <nav class="orbit-bullets">
+                #foreach($slider in $sliders)
+                    <button #if ($foreach.index == 0) class="is-active"#end data-slide="${foreach.index}">
+                        <span class="show-for-sr">Slide ${foreach.count} details.</span>
+                        #if($foreach.index == 0)
+                            <span class="show-for-sr">Current Slide</span>
+                        #end
+                    </button>
+                #end
+            </nav>
+            #end
+        </div>
+    </div>
+#end

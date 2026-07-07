@@ -1,0 +1,696 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Art Gallery Current Exhibits — Prototype</title>
+  <!-- Foundation CSS via CDN -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/foundation-sites@6.8.1/dist/css/foundation.min.css" crossorigin="anonymous">
+  <!-- Font Awesome (available site-wide per spec) -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" crossorigin="anonymous">
+
+  <style>
+    /* -----------------------------------------------------------------------
+       SITE SIMULATION
+       In the real implementation these properties come from site-wide CSS.
+       Replace with actual site class references.
+    ----------------------------------------------------------------------- */
+    body {
+      font-family: Georgia, 'Times New Roman', serif;
+      color: #222;
+      background: #fff;
+    }
+    h1, h2, h3 {
+      font-family: Georgia, 'Times New Roman', serif;
+    }
+
+    /* -----------------------------------------------------------------------
+       COMPONENT STYLES
+       These map to the CSS class list in the spec's Custom CSS Requirements.
+    ----------------------------------------------------------------------- */
+
+    /* Sticky sub-nav */
+    .exhibit-nav {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: #fff;
+      border-bottom: 1px solid #ccc;  /* site border color */
+      padding: 0.5rem 0;
+    }
+    .exhibit-nav ul {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-wrap: nowrap;
+      overflow-x: auto;         /* horizontally scrollable on small screens */
+      gap: 1.75rem;
+      justify-content: center;
+      -webkit-overflow-scrolling: touch;
+    }
+    .exhibit-nav li {
+      white-space: nowrap;
+    }
+    .exhibit-nav a {
+      font-family: Arial, Helvetica, sans-serif; /* site body font */
+      font-size: 0.875rem;
+      text-decoration: none;
+      color: #222;
+      padding: 0.3rem 0;
+      border-bottom: 2px solid transparent;
+      transition: border-color 0.15s ease;
+      display: inline-block;
+    }
+    .exhibit-nav a:hover,
+    .exhibit-nav a:focus {
+      border-bottom-color: #222;
+      outline: none;
+    }
+    .exhibit-nav a:focus-visible {
+      outline: 2px solid #005fcc;
+      outline-offset: 2px;
+    }
+
+    /* Mobile nav toggle button (small screens only) */
+    .exhibit-nav-toggle {
+      display: none;  /* hidden by default; shown via media query */
+      width: 100%;
+      background: none;
+      border: none;
+      padding: 0.4rem 0;
+      font-family: Arial, Helvetica, sans-serif;
+      font-size: 0.875rem;
+      font-weight: 700;
+      cursor: pointer;
+      color: #222;
+      text-align: left;
+    }
+    .exhibit-nav-toggle:focus-visible {
+      outline: 2px solid #005fcc;
+      outline-offset: 2px;
+    }
+    .exhibit-nav-toggle-icon {
+      display: inline-block;
+      margin-left: 0.4rem;
+      transition: transform 0.2s ease;
+    }
+    .exhibit-nav-toggle[aria-expanded="true"] .exhibit-nav-toggle-icon {
+      transform: rotate(180deg);
+    }
+
+    /* Small screens: toggle visible, list hidden until open */
+    @media screen and (max-width: 39.9375em) {   /* Foundation small-only */
+      .exhibit-nav-toggle {
+        display: block;
+      }
+      .exhibit-nav ul {
+        display: none;
+        flex-direction: column;
+        gap: 0;
+        justify-content: flex-start;
+        padding: 0.5rem 0;
+      }
+      .exhibit-nav ul.is-open {
+        display: flex;
+      }
+      .exhibit-nav li {
+        white-space: normal;
+      }
+      .exhibit-nav a {
+        display: block;
+        padding: 0.45rem 0;
+        border-bottom: none;
+        border-left: 2px solid transparent;
+        padding-left: 0.75rem;
+      }
+      .exhibit-nav a:hover,
+      .exhibit-nav a:focus {
+        border-left-color: #222;
+        border-bottom-color: transparent;
+      }
+    }
+
+    /* Each exhibit section */
+    .exhibit-section {
+      padding-top: 3rem;
+      padding-bottom: 3rem;
+      border-bottom: 1px solid #e0e0e0;
+      scroll-margin-top: 56px;  /* accounts for sticky nav height */
+    }
+    .exhibit-section:last-of-type {
+      border-bottom: none;
+    }
+
+    /* Gallery name label */
+    .exhibit-gallery-label {
+      display: block;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      font-size: 0.78rem;
+      font-family: Arial, Helvetica, sans-serif;
+      color: #666;
+      margin-bottom: 0.6rem;
+    }
+
+    /* Exhibit title/subtitle */
+    .exhibit-artist-name {
+      font-size: 1.75rem;
+      line-height: 1.2;
+      margin-bottom: 0.2rem;
+    }
+    .exhibit-title {
+      font-size: 1.15rem;
+      font-style: italic;
+      color: #444;
+      margin-bottom: 1.25rem;
+    }
+
+    /* Logistics list */
+    .exhibit-logistics {
+      list-style: none;
+      margin: 0 0 0.5rem 0;
+      padding: 0;
+    }
+    .exhibit-logistics li {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.6rem;
+      margin-bottom: 0.6rem;
+      font-family: Arial, Helvetica, sans-serif;
+      font-size: 0.9rem;
+      line-height: 1.5;
+    }
+    .exhibit-logistics li i {
+      margin-top: 2px;
+      color: #666;
+      flex-shrink: 0;
+      width: 1em;
+      text-align: center;
+    }
+
+    /* Artwork image container — 4:3 with object-fit: contain */
+    .exhibit-image-container {
+      aspect-ratio: 4 / 3;
+      background-color: #f2f2f2;  /* site light gray */
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+    .exhibit-image-container img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      display: block;
+    }
+
+    /* Caption below image */
+    .exhibit-image-caption {
+      margin-top: 0.5rem;
+      font-family: Arial, Helvetica, sans-serif;
+      font-size: 0.825rem;
+      font-style: italic;
+      color: #666;
+      line-height: 1.4;
+    }
+
+    /* Accordion wrapper */
+    .exhibit-accordion-wrap {
+      margin-top: 2rem;
+    }
+    .exhibit-accordion {
+      border-top: 1px solid #ccc;
+    }
+    .exhibit-accordion-item {
+      border-bottom: 1px solid #ccc;
+    }
+    .exhibit-accordion-trigger {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      width: 100%;
+      background: none;
+      border: none;
+      padding: 1rem 0;
+      font-family: Arial, Helvetica, sans-serif;
+      font-size: 0.95rem;
+      font-weight: 700;
+      cursor: pointer;
+      text-align: left;
+      color: #222;
+    }
+    .exhibit-accordion-trigger:hover {
+      color: #000;
+    }
+    .exhibit-accordion-trigger:focus-visible {
+      outline: 2px solid #005fcc;
+      outline-offset: 2px;
+    }
+    .accordion-icon {
+      font-size: 1.25rem;
+      line-height: 1;
+      flex-shrink: 0;
+      margin-left: 1rem;
+      font-family: Arial, Helvetica, sans-serif;
+      font-weight: 400;
+    }
+    .exhibit-accordion-trigger[aria-expanded="false"] .accordion-icon::before { content: '+'; }
+    .exhibit-accordion-trigger[aria-expanded="true"]  .accordion-icon::before { content: '−'; }
+
+    .exhibit-accordion-panel[hidden] {
+      display: none;
+    }
+
+    /* Accordion body text */
+    .exhibit-accordion-content {
+      max-width: 70ch;
+      line-height: 1.7;
+      padding-bottom: 1.5rem;
+      font-family: Georgia, 'Times New Roman', serif;
+      font-size: 0.95rem;
+    }
+    .exhibit-accordion-content p {
+      margin-bottom: 0.75rem;
+    }
+
+    /* Page intro */
+    .page-intro {
+      padding: 1.75rem 0;
+      border-bottom: 1px solid #e0e0e0;
+      margin-bottom: 0;
+    }
+    .page-intro p {
+      font-size: 1rem;
+      line-height: 1.75;
+      max-width: 70ch;
+      margin: 0;
+    }
+
+    /* Responsive: stack image above info on < large */
+    @media screen and (max-width: 63.9375em) {   /* Foundation medium-down */
+      .exhibit-columns-reverse {
+        display: flex;
+        flex-direction: column;
+      }
+      .exhibit-columns-reverse .exhibit-image-col {
+        order: -1;          /* image first */
+        margin-bottom: 1.25rem;
+      }
+    }
+
+    /* -----------------------------------------------------------------------
+       PROTOTYPE CHROME — labels, page header, etc.
+    ----------------------------------------------------------------------- */
+    .proto-chrome-header {
+      background: #1a1a1a;
+      color: #fff;
+      padding: 0.5rem 1rem;
+      font-family: monospace;
+      font-size: 12px;
+      letter-spacing: 0.05em;
+    }
+    .proto-label {
+      background: #f0f0f0;
+      padding: 7px 14px;
+      margin: 40px 0 0 0;
+      font-family: monospace;
+      font-size: 12px;
+      color: #444;
+      border-left: 4px solid #888;
+    }
+    .proto-placeholder {
+      padding: 1rem;
+      background: #fafafa;
+      border: 1px dashed #ccc;
+      font-family: monospace;
+      font-size: 12px;
+      color: #777;
+      margin-bottom: 0;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- PROTOTYPE CHROME -->
+  <div class="proto-chrome-header">
+    ART GALLERY CURRENT EXHIBITS — Prototype &nbsp;|&nbsp; _cms/specs/artgallery-current-exhibits/prototype.html &nbsp;|&nbsp; Resize browser to test responsive behavior
+  </div>
+
+  <!-- SIMULATED SITE HEADER / H1 (rendered by template, not component) -->
+  <div class="row" style="padding-top:1.5rem; padding-bottom:0.5rem;">
+    <div class="small-12 columns">
+      <h1 style="font-size:2.1rem; margin-bottom:0.25rem;">Current Exhibits</h1>
+    </div>
+  </div>
+
+  <!-- =====================================================================
+       STICKY ANCHOR NAVIGATION
+       Dynamically built from each exhibit's gallery-name field.
+  ====================================================================== -->
+  <nav class="exhibit-nav" aria-label="Exhibit Navigation">
+    <div class="row">
+      <div class="small-12 columns">
+        <!-- Mobile toggle (visible on small screens only) -->
+        <button
+          class="exhibit-nav-toggle"
+          aria-expanded="false"
+          aria-controls="exhibit-nav-list"
+          id="exhibit-nav-toggle-btn">
+          Jump to Exhibit
+          <span class="exhibit-nav-toggle-icon" aria-hidden="true">&#9660;</span>
+        </button>
+        <ul id="exhibit-nav-list">
+          <li><a href="#exhibit-galleries-one-two">Galleries One &amp; Two</a></li>
+          <li><a href="#exhibit-east-gallery">East Gallery</a></li>
+          <li><a href="#exhibit-south-gallery">South Gallery</a></li>
+        </ul>
+      </div>
+    </div>
+  </nav>
+
+  <!-- MAIN CONTENT REGION -->
+  <div class="row">
+    <div class="small-12 columns">
+
+      <!-- =================================================================
+           PAGE INTRO (optional wysiwyg — shown when populated)
+      ================================================================= -->
+      <div class="proto-label">Section: page-intro (optional wysiwyg — hidden entirely when empty)</div>
+
+      <div class="page-intro">
+        <p>The McHenry County College Art Gallery is pleased to present our Spring 2026 exhibitions, featuring works by regional and nationally recognized artists. Gallery hours are Monday–Friday, 9 AM–4 PM, and by appointment. Admission is always free and open to the public.</p>
+      </div>
+
+
+      <!-- =================================================================
+           EXHIBIT 1 — All fields populated
+           gallery-name, artist-name, exhibit-title, dates, artist-talk,
+           reception, main-image, image-caption, statement, bio → all present
+      ================================================================= -->
+      <div class="proto-label">Exhibit 1 — All fields populated (Galleries One &amp; Two)</div>
+
+      <section class="exhibit-section" id="exhibit-galleries-one-two">
+        <div class="row exhibit-columns-reverse">
+
+          <!-- LEFT: Info column -->
+          <div class="large-6 medium-12 small-12 columns">
+            <span class="exhibit-gallery-label">Galleries One &amp; Two</span>
+            <h2 class="exhibit-artist-name">Maria Elena Vásquez</h2>
+            <p class="exhibit-title">Fragmentos del Tiempo</p>
+
+            <ul class="exhibit-logistics">
+              <li>
+                <i class="fa-regular fa-calendar" aria-hidden="true"></i>
+                <span>January 15 — March 28, 2026</span>
+              </li>
+              <li>
+                <i class="fa-regular fa-clock" aria-hidden="true"></i>
+                <span><strong>Artist Talk:</strong> February 10, 2026 at 6:00 PM</span>
+              </li>
+              <li>
+                <i class="fa-solid fa-champagne-glasses" aria-hidden="true"></i>
+                <span><strong>Reception:</strong> January 15, 2026 at 5:00–7:00 PM</span>
+              </li>
+            </ul>
+          </div>
+
+          <!-- RIGHT: Artwork image column -->
+          <div class="large-6 medium-12 small-12 columns exhibit-image-col">
+            <div class="exhibit-image-container">
+              <img
+                src="https://placehold.co/800x600/d9d0c7/6b5e52?text=Featured+Artwork"
+                alt="Untitled No. 7, oil on canvas, 2025">
+            </div>
+            <p class="exhibit-image-caption">Untitled No. 7 &nbsp;·&nbsp; Oil on canvas &nbsp;·&nbsp; 2025</p>
+          </div>
+
+        </div><!-- /.row -->
+
+        <!-- ACCORDIONS (both statement and bio populated) -->
+        <div class="row">
+          <div class="large-12 columns">
+            <div class="exhibit-accordion-wrap">
+              <div class="exhibit-accordion">
+
+                <!-- Statement accordion -->
+                <div class="exhibit-accordion-item">
+                  <button
+                    class="exhibit-accordion-trigger"
+                    aria-expanded="false"
+                    aria-controls="panel-statement-1"
+                    id="btn-statement-1">
+                    Statement
+                    <span class="accordion-icon" aria-hidden="true"></span>
+                  </button>
+                  <div
+                    id="panel-statement-1"
+                    class="exhibit-accordion-panel"
+                    role="region"
+                    aria-labelledby="btn-statement-1"
+                    hidden>
+                    <div class="exhibit-accordion-content">
+                      <p>My work investigates the tension between memory and forgetting — how fragments of the past persist in material form even as their meaning dissolves. The paintings in <em>Fragmentos del Tiempo</em> were made over three years in a studio overlooking the coastline of Oaxaca, where the light changes so quickly that any fixed image is immediately a kind of lie.</p>
+                      <p>I work in oil because oil resists. It stays malleable long enough to think inside it. These are not documents of landscape; they are landscapes of a searching mind.</p>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- About the Artist accordion (label = "About [artist-name]") -->
+                <div class="exhibit-accordion-item">
+                  <button
+                    class="exhibit-accordion-trigger"
+                    aria-expanded="false"
+                    aria-controls="panel-bio-1"
+                    id="btn-bio-1">
+                    About Maria Elena Vásquez
+                    <span class="accordion-icon" aria-hidden="true"></span>
+                  </button>
+                  <div
+                    id="panel-bio-1"
+                    class="exhibit-accordion-panel"
+                    role="region"
+                    aria-labelledby="btn-bio-1"
+                    hidden>
+                    <div class="exhibit-accordion-content">
+                      <p>Maria Elena Vásquez (b. 1977, Mexico City) is a painter and installation artist whose work has been exhibited throughout Mexico and the United States. She received her MFA from the School of the Art Institute of Chicago and has held residencies at the MacDowell Colony, the Headlands Center for the Arts, and the Bellagio Center.</p>
+                      <p>Her work is in the permanent collections of the Museum of Contemporary Art Chicago and the Smithsonian American Art Museum. She lives and works in Chicago, Illinois.</p>
+                    </div>
+                  </div>
+                </div>
+
+              </div><!-- /.exhibit-accordion -->
+            </div><!-- /.exhibit-accordion-wrap -->
+          </div>
+        </div>
+      </section><!-- /#exhibit-galleries-one-two -->
+
+
+      <!-- =================================================================
+           EXHIBIT 2 — Artist Talk and Reception empty; Statement empty;
+           only "About" accordion shown. No image caption.
+      ================================================================= -->
+      <div class="proto-label">Exhibit 2 — artist-talk: empty (row hidden) · reception: empty (row hidden) · statement: empty (accordion hidden) · image-caption: empty (hidden) · East Gallery</div>
+
+      <section class="exhibit-section" id="exhibit-east-gallery">
+        <div class="row exhibit-columns-reverse">
+
+          <!-- LEFT: Info column -->
+          <div class="large-6 medium-12 small-12 columns">
+            <span class="exhibit-gallery-label">East Gallery</span>
+            <h2 class="exhibit-artist-name">James Kowalski</h2>
+            <p class="exhibit-title">Structural Residue</p>
+
+            <ul class="exhibit-logistics">
+              <li>
+                <i class="fa-regular fa-calendar" aria-hidden="true"></i>
+                <span>February 2 — April 4, 2026</span>
+              </li>
+              <!-- artist-talk: empty — entire row NOT rendered -->
+              <!-- reception: empty — entire row NOT rendered -->
+            </ul>
+          </div>
+
+          <!-- RIGHT: Image column — no caption -->
+          <div class="large-6 medium-12 small-12 columns exhibit-image-col">
+            <div class="exhibit-image-container">
+              <img
+                src="https://placehold.co/800x600/e0e6df/4a5e48?text=Featured+Artwork"
+                alt="Structural Residue, steel and reclaimed wood, 2026">
+            </div>
+            <!-- image-caption: empty — caption element NOT rendered -->
+          </div>
+
+        </div><!-- /.row -->
+
+        <!-- ACCORDIONS — statement is empty, only bio rendered -->
+        <div class="row">
+          <div class="large-12 columns">
+            <div class="exhibit-accordion-wrap">
+              <div class="exhibit-accordion">
+
+                <!-- Statement: empty — accordion item NOT rendered -->
+
+                <!-- About the Artist (bio populated) -->
+                <div class="exhibit-accordion-item">
+                  <button
+                    class="exhibit-accordion-trigger"
+                    aria-expanded="false"
+                    aria-controls="panel-bio-2"
+                    id="btn-bio-2">
+                    About James Kowalski
+                    <span class="accordion-icon" aria-hidden="true"></span>
+                  </button>
+                  <div
+                    id="panel-bio-2"
+                    class="exhibit-accordion-panel"
+                    role="region"
+                    aria-labelledby="btn-bio-2"
+                    hidden>
+                    <div class="exhibit-accordion-content">
+                      <p>James Kowalski is a sculptor and visual artist based in Elgin, Illinois. His practice centers on the transformation of industrial and reclaimed materials, exploring themes of labor, time, and built environments. He earned his BFA from Northern Illinois University and his MFA from the University of Illinois at Chicago.</p>
+                      <p>Kowalski has exhibited at venues throughout the Chicago area and has completed public art commissions for the cities of Elgin and Waukegan. <em>Structural Residue</em> is his first solo exhibition at McHenry County College.</p>
+                    </div>
+                  </div>
+                </div>
+
+              </div>
+            </div>
+          </div>
+        </div>
+      </section><!-- /#exhibit-east-gallery -->
+
+
+      <!-- =================================================================
+           EXHIBIT 3 — Both statement AND bio empty: entire accordion
+           block is not rendered.
+      ================================================================= -->
+      <div class="proto-label">Exhibit 3 — statement: empty · bio: empty → entire accordion block NOT rendered (South Gallery)</div>
+
+      <section class="exhibit-section" id="exhibit-south-gallery">
+        <div class="row exhibit-columns-reverse">
+
+          <!-- LEFT: Info column -->
+          <div class="large-6 medium-12 small-12 columns">
+            <span class="exhibit-gallery-label">South Gallery</span>
+            <h2 class="exhibit-artist-name">Annual Juried Student Exhibition</h2>
+            <p class="exhibit-title">Perspectives 2026</p>
+
+            <ul class="exhibit-logistics">
+              <li>
+                <i class="fa-regular fa-calendar" aria-hidden="true"></i>
+                <span>March 10 — April 30, 2026</span>
+              </li>
+              <li>
+                <i class="fa-regular fa-clock" aria-hidden="true"></i>
+                <span><strong>Artist Talk / Opening Remarks:</strong> March 10, 2026 at 4:00 PM</span>
+              </li>
+              <li>
+                <i class="fa-solid fa-champagne-glasses" aria-hidden="true"></i>
+                <span><strong>Reception:</strong> March 10, 2026 at 5:00–7:00 PM</span>
+              </li>
+            </ul>
+          </div>
+
+          <!-- RIGHT: Image column -->
+          <div class="large-6 medium-12 small-12 columns exhibit-image-col">
+            <div class="exhibit-image-container">
+              <img
+                src="https://placehold.co/800x600/d0d4e0/3c4060?text=Featured+Artwork"
+                alt="Perspectives 2026 — Annual Juried Student Exhibition">
+            </div>
+            <p class="exhibit-image-caption">Selected works from the 2026 Annual Juried Student Exhibition</p>
+          </div>
+
+        </div><!-- /.row -->
+
+        <!-- Both statement and bio empty — no accordion block rendered at all -->
+      </section><!-- /#exhibit-south-gallery -->
+
+
+      <!-- =================================================================
+           EDGE CASES (non-rendered / visual confirmation)
+      ================================================================= -->
+      <div class="proto-label">Edge Case: page-intro is empty — entire intro section not rendered (no blank space)</div>
+      <div class="proto-placeholder">
+        [page-intro section omitted — no wrapper div or whitespace rendered when field is empty]
+      </div>
+
+      <div class="proto-label" style="margin-top:16px;">Edge Case: Single exhibit only — nav is hidden (resolved: hide when count === 1)</div>
+      <div class="proto-placeholder">
+        [Single-exhibit scenario: &lt;nav class="exhibit-nav"&gt; is suppressed entirely. In Velocity: #if($exhibits.size() &gt; 1) ... #end wraps the nav block.]
+      </div>
+
+      <div class="proto-label" style="margin-top:16px;">Edge Case: main-image uses tall/portrait aspect ratio — object-fit: contain keeps full artwork visible; neutral background fills remaining container space</div>
+      <div style="max-width:400px; margin:0 0 32px 0;">
+        <div class="exhibit-image-container">
+          <img
+            src="https://placehold.co/400x600/f2f2f2/999?text=Portrait+Artwork+(4:6)"
+            alt="Portrait-format artwork example">
+        </div>
+        <p class="exhibit-image-caption">Portrait-oriented artwork — fully visible, no cropping, neutral fill</p>
+      </div>
+
+    </div><!-- /.columns -->
+  </div><!-- /.row -->
+
+  <!-- Foundation JS -->
+  <script src="https://cdn.jsdelivr.net/npm/foundation-sites@6.8.1/dist/js/foundation.min.js" crossorigin="anonymous"></script>
+
+  <script>
+    // ── 1. Hide sticky nav when only one exhibit ──────────────────────────
+    var navLinks = document.querySelectorAll('.exhibit-nav li');
+    if (navLinks.length <= 1) {
+      document.querySelector('.exhibit-nav').style.display = 'none';
+    }
+
+    // ── 2. Mobile nav toggle ─────────────────────────────────────────────
+    var navToggle = document.getElementById('exhibit-nav-toggle-btn');
+    var navList   = document.getElementById('exhibit-nav-list');
+    if (navToggle && navList) {
+      navToggle.addEventListener('click', function () {
+        var isOpen = navList.classList.toggle('is-open');
+        navToggle.setAttribute('aria-expanded', String(isOpen));
+      });
+      // Close dropdown when an anchor link is clicked
+      navList.querySelectorAll('a').forEach(function (link) {
+        link.addEventListener('click', function () {
+          navList.classList.remove('is-open');
+          navToggle.setAttribute('aria-expanded', 'false');
+        });
+      });
+    }
+
+    // ── 3. Accordion toggle ───────────────────────────────────────────────
+    // Mirrors the accessible accordion behavior from
+    // /_cms/formats/_shared/accordions-accessible.vm
+    // One open at a time per exhibit; full ARIA support.
+    document.querySelectorAll('.exhibit-accordion-trigger').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var expanded = this.getAttribute('aria-expanded') === 'true';
+        var panelId  = this.getAttribute('aria-controls');
+        var panel    = document.getElementById(panelId);
+
+        // Close sibling panels in this accordion
+        var parentAccordion = this.closest('.exhibit-accordion');
+        parentAccordion.querySelectorAll('.exhibit-accordion-trigger').forEach(function (sibling) {
+          if (sibling !== btn) {
+            sibling.setAttribute('aria-expanded', 'false');
+            var siblingPanel = document.getElementById(sibling.getAttribute('aria-controls'));
+            if (siblingPanel) { siblingPanel.hidden = true; }
+          }
+        });
+
+        this.setAttribute('aria-expanded', String(!expanded));
+        panel.hidden = expanded;
+      });
+
+      // Keyboard: Space and Enter already fire click on <button> — no extra handling needed
+    });
+
+    // Initialize Foundation (for any Foundation JS components used on the real page)
+    $(document).foundation();
+  </script>
+
+</body>
+</html>

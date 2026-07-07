@@ -1,0 +1,16 @@
+## Metadata Title
+#set ($metaTitle = $_EscapeTool.xml($currentPage.metadata.getDynamicField("metaTitle").value))
+#if ($_PropertyTool.isEmpty($metaTitle))
+    #set ($metaTitle = $_EscapeTool.xml($currentPage.metadata.title))
+#end
+<title>
+    $!{metaTitle}#if ($currentPage.contentType.name != "Home") | McHenry County College#end
+</title>
+## Canonical Link
+#set ($link = "${currentPage.site.url}/${currentPage.path}")
+#if ($link.endsWith("/index"))
+    #set ($link = $link.replace("/index", ""))
+#else
+    #set ($link = "${link}.html")
+#end
+<link rel="canonical" href="${link.toLowerCase()}" />

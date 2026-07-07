@@ -1,0 +1,29 @@
+<div class="topBarBk">
+<div class="row">
+<div class="large-12 columns"><nav class="top-bar" data-topbar="" role="navigation">
+<ul class="title-area"><!-- do not hide below will not display menu toggle--> <!--<li class="name">&#160;</li>--> <!-- Remove the class "menu-icon" to get rid of menu icon. Take out "Menu" to just have icon alone -->
+<li class="toggle-topbar menu-icon"><a href="#"><span>Menu</span></a></li>
+</ul>
+<section class="top-bar-section"><!-- Left Nav Section -->
+<ul class="left">
+<li><a href="/_unpublish/peopleinneedorg/index">Home</a></li>
+<!--  <li><a href="/peopleinneed/agenda">Agenda</a></li>
+
+<li><a href="https://insidemcc.mchenry.edu/pubwebapp/peopleinneed/register.asp">Register</a></li>--> <!--<li><a href="https://insidemcc.mchenry.edu/pubwebapp/peopleinneed/PresenterRegForm.asp">Presenter Register</a></li>
+
+<li><a href="https://insidemcc.mchenry.edu/pubwebapp/peopleinneed/ExhibitorRegForm.asp">Exhibitor Register</a></li>
+
+<li><a href="https://signup.com/go/gbrVYBk">Volunteer</a></li>-->
+<li id="contact"><a href="/peopleinneed/contact">Contact Us</a></li>
+</ul>
+</section>
+</nav></div>
+<div class="row">
+<div class="large-5 columns ">
+<p><img alt="People in Need Forum logo" src="https://www.mchenry.edu/peopleinneed/images/peopleinneed2020.png" width="200"/></p>
+<p class="special">Resources to Help your Neighbor</p>
+</div>
+<div class="large-7 columns"><img alt="People Connecting" height="250" src="https://www.mchenry.edu/peopleinneed/images/helpinghands.png" width="448"/></div>
+</div>
+</div>
+</div>

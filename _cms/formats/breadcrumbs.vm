@@ -1,0 +1,43 @@
+#if($currentPage.dataDefinitionPath.contains("Spotlight") || $currentPage.metadata.getDynamicField("category"))
+    #outputCrumbs("yes" "Spotlights")
+#else 
+    #outputCrumbs("yes" "")
+#end
+#macro (outputCrumbs $includeIndex $subSiteName )
+	<nav aria-label="breadcrumbs" class="breadcrumb">
+      <div class="container">
+          <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="site://McHenry/index">Home</a></li>
+								#if( $currentPage.siteName != "McHenry" )
+									<li class="breadcrumb-item"><a href="site://${currentPage.siteName}/index">${currentPage.siteName}</a></li>
+								#end
+                #if (!$_PropertyTool.isEmpty($subSiteName))
+                    #set ($index = $_.locatePage("index", "${subSiteName}"))
+                    #if (!$_PropertyTool.isEmpty($index))
+                        <li class="breadcrumb-item"><a href="${index.link}">$_EscapeTool.xml($index.label)</a></li>
+                    #end
+                #end
+                #loopCrumbs($currentPage $includeIndex)
+                <li class="breadcrumb-item active" aria-current="page">$_EscapeTool.xml($currentPage.label)</li>
+          </ol>
+        </div>
+    </nav>
+#end
+
+#macro (loopCrumbs $asset $includeIndex)
+    #if ($asset.name)
+        #if ($asset.path != "/" || ($includeIndex && $asset.path == "/"))
+            #loopCrumbs($asset.parentFolder)
+            #set ($crumb = false)
+            #if ($asset.identifier.type == "folder")
+                #set ($crumb = $_.locatePage("${asset.path}/index", $currentPageSiteName))
+                #if ($crumb && $crumb.identifier.id != $currentPage.identifier.id)
+                    <li class="breadcrumb-item"><a href="${crumb.link}">$_EscapeTool.xml($crumb.label)</a></li>
+                #end
+            #end
+        #end
+    #else
+        #break    
+    #end
+#end
+

@@ -1,0 +1,78 @@
+<system-data-structure>
+    <group identifier="banner" label="Banner">
+        <text default="None" field-id="9489f3e4ac1e009675b1d73ad94bc1a4" identifier="style" label="Style" type="radiobutton">
+            <radio-item show-fields="banner/image, banner/alt, banner/heading, banner/caption, banner/link, banner/link-label" value="Image and Caption"/>
+            <radio-item show-fields="banner/image, banner/alt, banner/link, banner/link-label" value="Image and Navigation"/>
+            <radio-item show-fields="banner/slider" value="Slider"/>
+            <radio-item value="None"/>
+        </text>
+        <text default="yes" field-id="8c321202ac1e006c06c8b4730dedde7f" help-text="Check yes if you want the banner to be hidden on small screens" identifier="hideBannerOnMobile" label="Hide Banner on Mobile?" required="true" type="radiobutton">
+            <radio-item label="Yes" value="yes"/>
+            <radio-item label="No" value="no"/>
+        </text>
+        <asset field-id="9489f3e4ac1e009675b1d73aa1ba6e62" help-text="size: 1200 x 340 pixels. Max 400 mb." identifier="image" label="Image File" required="true" type="file"/>
+        <text field-id="9489f3e4ac1e009675b1d73a4e2fba15" identifier="alt" label="Alternative Text" required="true"/>
+        <text field-id="9489f3e4ac1e009675b1d73aff6d0bd1" identifier="heading" label="Caption Heading"/>
+        <text field-id="9489f3e4ac1e009675b1d73abbe67ff9" identifier="caption" label="Caption" size="50"/>
+        <asset field-id="559b2945ac1e00960e8b616d67f7d22f" identifier="link" label="Link" type="page,file,symlink"/>
+        <text field-id="559b2945ac1e00960e8b616d8bd658e5" identifier="link-label" label="Link Label"/>
+        <group collapsed="true" identifier="slider" label="Slider" multiple="true">
+            <asset field-id="74213cfaac1e00960e8b616daa5c141a" help-text="size: 1200 x 427 pixels" identifier="image" label="Image" required="true" type="file"/>
+            <text field-id="74213cfaac1e00960e8b616d7aa300d2" identifier="alt" label="Alternative Text" required="true"/>
+            <text field-id="74213cfaac1e00960e8b616d809eeda8" identifier="heading" label="Caption Heading"/>
+            <text field-id="74213cfaac1e00960e8b616d12e3932f" identifier="caption" label="Caption" size="50"/>
+            <asset field-id="74213cfaac1e00960e8b616d986f98ac" identifier="link" label="Link" multiple="true" type="page,file,symlink"/>
+            <text field-id="74213cfaac1e00960e8b616d7638098e" identifier="link-label" label="Link Label"/>
+            <text default="none" field-id="74213cfaac1e00960e8b616db88e2d57" identifier="videotype" label="Video Type" type="radiobutton">
+                <radio-item label="None" value="none"/>
+                <radio-item label="Local Video" show-fields="banner/slider/video, banner/slider/videoTitle" value="local"/>
+                <radio-item label="Video URL" show-fields="banner/slider/url, banner/slider/videoTitle" value="url"/>
+            </text>
+            <asset field-id="74213cfaac1e00960e8b616d1b006d5f" identifier="video" label="Video" required="true" type="file"/>
+            <text field-id="74213cfaac1e00960e8b616d68ae831a" help-text="For Example: https://www.youtube.com/embed/aqz-KE-bpKQ" identifier="url" label="Video URL" required="true"/>
+            <text field-id="282caab5ac1e00962284b005a23ea4b5" identifier="videoTitle" label="Video Title"/>
+        </group>
+    </group>
+    <text field-id="9489f3e4ac1e009675b1d73a2fd02e74" identifier="intro-w" label="Introduction" wysiwyg="true"/>
+    <group collapsed="true" identifier="row" label="Content Row" multiple="true">
+        <text field-id="9489f3e4ac1e009675b1d73a4f4c6d42" help-text="Content Editor" identifier="type" label="Content Type" type="dropdown">
+            <dropdown-item label="Content Editor" show-fields="row/heading, row/content-w" value="content"/>
+            <dropdown-item show-fields="row/help-block" value="Help Block"/>
+            <dropdown-item show-fields="row/column-w" value="Two Columned Callout"/>
+            <dropdown-item label="Spotlight Cards" show-fields="row/spotlight-cards" value="spotlight-cards"/>
+            <dropdown-item label="Accordions" show-fields="row/accordion" value="accordions"/>
+            <dropdown-item label="Photo Gallery" show-fields="row/caption, row/image" value="photo-gallery"/>
+            <dropdown-item label="News" show-fields="row/heading, row/news" value="news"/>
+            <dropdown-item label="Upcoming Events" show-fields="row/category, row/max, row/block" value="events"/>
+            <dropdown-item label="Media Gallery" show-fields="row/gallery-block" value="media-gallery"/>
+            <dropdown-item show-fields="row/profiles" value="Profiles"/>
+            <dropdown-item label="Sponsor Logos (Tiered Block)" show-fields="row/heading, row/sponsor-block-chooser" value="sponsor-tier"/>
+            <dropdown-item value="None"/>
+        </text>
+        <text field-id="9489f3e4ac1e009675b1d73ae38d0776" identifier="heading" label="Heading"/>
+        <text field-id="9489f3e4ac1e009675b1d73a8342b77b" help-text="If inserting wufoo form, add title=&quot;&quot; value to the div for screen readers" identifier="content-w" label="Content" required="true" wysiwyg="true"/>
+        <asset field-id="9489f3e4ac1e009675b1d73a8e922319" identifier="help-block" label="Help Block" required="true" type="block"/>
+        <asset field-id="f750c822ac1e00960c05286114056144" identifier="gallery-block" label="Media Gallery Block" required="true" type="block"/>
+        <asset field-id="ea9dde8eac1e006c2633b01b8b72dee0" identifier="sponsor-block-chooser" label="Select Sponsor Block" type="block"/>
+        <text field-id="9489f3e5ac1e009675b1d73a00fc0d33" identifier="column-w" label="Column" maximum-number="2" minimum-number="2" multiple="true" wysiwyg="true"/>
+        <shared-field field-id="05866cafac1e00962212845dc481dd5d" identifier="spotlight-cards" maximum-number="3" minimum-number="1" path="site://Spotlights/Spotlight Cards"/>
+        <group collapsed="true" identifier="accordion" label="Accordion" multiple="true">
+            <text field-id="b2b00375ac1e00960e8b616dedfdea8b" identifier="anchor" label="Anchor"/>
+            <text field-id="469e5ab3ac1e00960e8b616da205ca22" identifier="label" label="Label" required="true"/>
+            <text field-id="469e5ab4ac1e00960e8b616d300d1273" identifier="content" label="Content" required="true" wysiwyg="true"/>
+        </group>
+        <text field-id="1e70460dac1e00961dc58f6807e22fb7" help-text="Shows caption under the image in the gallery." identifier="caption" label="Caption?" type="checkbox">
+            <checkbox-item label="Yes" value="yes"/>
+        </text>
+        <group identifier="image" label="Image" multiple="true">
+            <asset field-id="4b2706d9ac1e00960e8b616de394dc86" help-text="Width 900 pixels for portrait and landscape" identifier="image" label="Image" required="true" type="file"/>
+            <text field-id="4b2706d9ac1e00960e8b616d0bc6f7f9" identifier="alt" label="Alternative Text / Caption" required="true"/>
+        </group>
+        <group identifier="profiles" label="Profile Teaser">
+            <text field-id="150804acac1e00962284b005c9801557" identifier="title" label="Title"/>
+            <text field-id="150804acac1e00962284b0053bf22856" help-text="A CSV or multiple Email Id inputs" identifier="id" label="Email Id(s)" multiple="true"/>
+        </group>
+        <asset field-id="4c77a19cac1e00960e8b616d6ea21148" identifier="news" label="News" multiple="true" required="true" restrict-to-folder="/site://News/" type="page"/>
+        <asset field-id="2e590306ac1e006c169481bcf80f1bcf" identifier="block" label="Block" restrict-to-folder="/site://Events/_event-blocks" type="block"/>
+    </group>
+</system-data-structure>

@@ -1,0 +1,19 @@
+##set( $row = $currentPage.getStructuredDataNodes('row').get(0) )
+##showProfileTeaser( $row )
+#set( $profileTeaserCount = 0 )
+#macro( showProfileTeaser , $row )
+  #set( $profileIds = "" )
+  #set( $profileIdNodes = $row.getChild( "profiles" ).getChildren( "id" ) )
+  #foreach( $tmpNode in $profileIdNodes )
+    #if( ! $foreach.first ) #set( $profileIds = $profileIds + "," ) #end
+    #set( $profileIds = $profileIds + $tmpNode.textValue )
+  #end
+  [system-view:internal]
+  #if( $row.getChild( "profiles" ).getChild( "title" ).textValue != "" )
+    <h2>${_EscapeTool.xml( $row.getChild( "profiles" ).getChild( "title" ).textValue )}</h2>
+  #end
+  <div id="profileTeaser${profileTeaserCount}" class="faculty-list faculty-teaser" data-ids="${profileIds}">
+  </div>
+  [/system-view:internal]
+  #set( $profileTeaserCount = $profileTeaserCount + 1 )
+#end

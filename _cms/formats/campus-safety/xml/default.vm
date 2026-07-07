@@ -1,0 +1,42 @@
+#set($incidentBlocks = $_.locateFolder("/", "Campus Safety"))
+#set($incidents = {})
+#iBLoop($incidentBlocks)
+#macro(iBLoop $iBData)
+    #foreach($iB in $iBData.children)
+        #if($iB.assetType == "folder")
+            #iBLoop($iB)
+        #elseif($iB.assetType == "block")
+            #if($iB.dataDefinitionPath == "Incident Report" && !$_PropertyTool.isEmpty($iB.getStructuredDataNode("date").textValue))
+                #set($year = $_DateTool.format("yyyy", $_DateTool.getDate($iB.getStructuredDataNode("date").textValue)))
+                #if(!$years.contains($year))
+                    #set($_void = $years.add($year))
+                #end
+                #set($incidents[$iB.identifier.Id] = {})
+                #set($incidents[$iB.identifier.Id]["number"] = $_EscapeTool.xml($iB.getStructuredDataNode("caseNumber").textValue))
+                #set($incidents[$iB.identifier.Id]["location"] = $_EscapeTool.xml($iB.getStructuredDataNode("location").textValue))
+                #set($incidents[$iB.identifier.Id]["offense"] = $_EscapeTool.xml($iB.getStructuredDataNode("offense").textValue))
+                #set($incidents[$iB.identifier.Id]["disposition"] = $_EscapeTool.xml($iB.getStructuredDataNode("disposition").textValue))
+                #set($incidents[$iB.identifier.Id]["date"] = $iB.getStructuredDataNode("date").textValue)
+            #end
+        #end
+    #end
+#end
+#set($sortedIncidents = $_SortTool.sort($incidents, "date:desc"))
+<rss version="2.0">
+   <channel>
+        <title>$_EscapeTool.xml($currentPage.label)</title>
+        <language>en-us</language>
+        <description><system-page-description/></description>
+        <pubDate>$_DateTool.format('EE, d MMM yyyy HH:mm:ss z', $_DateTool.getDate())</pubDate>
+        <generator>Cascade CMS</generator>
+        #foreach($incident in $sortedIncidents)
+            <item>
+                <case-number>$incident['number']</case-number>
+                <date-time>$_DateTool.format("M/dd/yyyy h:mm:ss a", $_DateTool.getDate($incident['date']))</date-time>
+                <location>$incident['location']</location>
+                <offense>$incident['offense']</offense>
+                <disposition>$incident['disposition']</disposition>
+            </item>
+        #end
+   </channel>
+</rss>

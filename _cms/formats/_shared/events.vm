@@ -1,0 +1,69 @@
+#macro (outputEvents $row)
+    #set( $now      = $_DateTool.getTime() )
+    #set( $max      = $_MathTool.toInteger($row.getChild("max").textValue) )
+    #set( $count    = 0 )
+    #set( $category = $row.getChild("category").textValue )
+    #set( $page     = "" )
+    #set( $link     = "index" )
+    #if( $category == 'all')
+        #set( $events   = $_.locatePages("Events").asList() )
+    #else
+        ## Try using Locator Tool instead of Query API
+        #set( $events   = $_.locatePages("Events").asList() )
+        #set( $page     = $_.locatePage($category, "Events"))
+        #if( !$_PropertyTool.isEmpty($page) )
+            #set( $link = $category.toLowerCase().replaceAll(" ", "-") )
+        #end
+    #end
+    
+    <!-- DEBUG: events is null? $_PropertyTool.isEmpty($events) | events type: $!events.getClass().getName() -->
+    
+    #set( $_null  = $_ListTool.removeNull($events, "structuredDataNode(starts).textValue") )
+    #set( $events = $_SortTool.sort($events, "structuredDataNode(starts).textValue") )
+    
+    <!-- DEBUG: Category="$!category" | Found=$events.size() | Now=$now -->
+    
+    ## Checks to make sure the events are upcoming in order to count them before outputting the heading
+    #set( $upEvents = [] )
+    #foreach( $event in $events )
+        #set( $start = $_MathTool.toNumber($event.getStructuredDataNode('starts').textValue) )
+        #set( $end   = $_MathTool.toNumber($event.getStructuredDataNode('ends').textValue) )
+        #if( $end >= $now )
+            #set( $vendortrash = $upEvents.add($event) )
+        #end
+    #end
+    
+    <!-- DEBUG: Upcoming=$upEvents.size() -->
+    #if( $upEvents.size() > 0 )
+        <div class="medium-12 columns upcoming-mcc-sec">
+            <h2 class="columns">Upcoming Events<a href="site://Events/${link}" class="more"><img src="/_files/img/more.png" alt="More Upcoming Events"/></a></h2>
+            #foreach( $event in $upEvents )
+                #set( $loc   = "" )
+                #set( $start = $_MathTool.toNumber($event.getStructuredDataNode('starts').textValue) )
+                #set( $end   = $_MathTool.toNumber($event.getStructuredDataNode('ends').textValue) )
+                #set( $loc   = $_EscapeTool.xml($event.getStructuredDataNode('location').textValue) )  ## optional
+                #set( $time = "<span>" + $_DateTool.format("h:mm", $start).replaceAll(':00', '') + "</span>" )
+                #if( $_DateTool.format("a", $start) != $_DateTool.format("a", $end) )
+                    #set( $time = $time + " " + $_DateTool.format("a", $start).replaceAll('M','.M.').toLowerCase() )
+                #end
+                #if( $_DateTool.format("h:mm a", $start) != $_DateTool.format("h:mm a", $end) )
+                    #set( $time = $time + " &#8211; <span>" + $_DateTool.format("h:mm", $end).replaceAll(':00', '') + "</span> " + $_DateTool.format("a", $end).replaceAll('M','.M.').toLowerCase() )
+                #end
+                <div class="events columns">
+                    <div class="date-sec">
+                        <span>$_DateTool.format('MMM', $start)</span>
+                        <p>$_DateTool.format('d', $start)</p>
+                    </div>
+                    <div class="cal-info">
+                        <h3><a href="${event.link}">$_EscapeTool.xml($event.label)</a></h3>
+                        <p>${time}#if(!$_PropertyTool.isEmpty($loc)) ${loc}#end</p>
+                    </div>
+                </div>
+                #set( $count = $count + 1 )
+                #if( $count >= $max )
+                    #break
+                #end
+            #end
+        </div>
+    #end
+#end

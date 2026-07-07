@@ -1,0 +1,52 @@
+## Shared macros for the docs-platform Query-API Formats (nav-format.vm,
+## search-index-format.vm, tags-format.vm). Import with:
+##   #import('/_cms/formats/docs-platform/_shared')
+## (adjust the path to wherever this file is actually placed in Cascade —
+## see the Implementation Checklist).
+##
+## Built on the Query API rather than Index Blocks, per current Hannon Hill
+## guidance (Index Blocks are the legacy pattern). $pageAsset here is one
+## result from $_.query()...execute() -- the same asset interface
+## $currentPage exposes on a normal page Format (getStructuredDataNode /
+## getStructuredDataNodes work identically), except dynamic metadata reads
+## through $pageAsset.metadata.getDynamicField(name).value rather than a
+## <dynamic-metadata> XML loop, per the Velocity best-practices doc's
+## `$event.metadata.getDynamicField("display-in-nav").value` example.
+##
+## This Cascade instance's Velocity macros do not use local scope (confirmed
+## by the existing setTitle macro in formats/sitemap.vm), so #set inside a
+## macro leaks into the caller's scope. extractDocFields relies on that: it
+## sets $docPath/$docTitle/$docOrder/$docTags/$docId/$docExcerpt as ambient
+## variables for the caller to read immediately after calling it.
+##
+## Callers should preload before iterating (cheap insurance against N+1
+## round trips, per the same best-practices doc):
+##   $_.query()...preloadStructuredData().preloadDynamicMetadata().execute()
+
+#macro(extractDocFields $pageAsset)
+    #set($docPath = $pageAsset.path)
+    #set($docTitle = $pageAsset.getStructuredDataNode("title").textValue)
+    #set($docOrder = $pageAsset.getStructuredDataNode("order").textValue)
+
+    #set($docTags = [])
+    #foreach($tagNode in $pageAsset.getStructuredDataNodes("tags"))
+        #set($discard = $docTags.add($tagNode.textValue))
+    #end
+
+    #set($docId = $pageAsset.metadata.getDynamicField("docId").value)
+
+    ## $pageAsset is a Query API "API object" (per the docs' own "Queries
+    ## return API objects" note), same wrapper family as $currentPage -- and
+    ## passing that wrapper into $_SerializerTool.serialize() is confirmed
+    ## broken there (silently prints literal source instead of erroring;
+    ## see page-render.vm). There's no single $contentRoot to XPath against
+    ## per query result the way page-render.vm does, so this uses .textValue
+    ## instead -- confirmed against a live instance to return the real text
+    ## of a <p>...</p>-wrapped body (e.g. "<p>edited</p>" -> "edited"), not
+    ## empty/partial text. Not re-verified against deeper/mixed nesting
+    ## (e.g. text split across sibling paragraphs, or inline tags like
+    ## <strong> inside <p>) -- revisit if excerpts look truncated on richer
+    ## real content.
+    #set($docBodyText = $pageAsset.getStructuredDataNode("body").textValue)
+    #set($docExcerpt = $_DisplayTool.truncate($_DisplayTool.stripTags($docBodyText), 200, "...", true))
+#end

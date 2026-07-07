@@ -1,0 +1,65 @@
+<!--
+  Data Definition: golf-invitational-sponsors
+  Block type:      XHTML/Data Definition Block
+  Used by:         Two Column page format, content type "Sponsor Logos (Tiered Block)"
+  Format reads:    $block.getStructuredDataNodes("tier")
+                   Each tier → tier-name, tier-subtitle, logo[] → image (asset), alt, link
+-->
+<system-data-structure>
+
+  <!--
+    Repeating tier group — one entry per sponsorship level (e.g. Presenting, Eagle, Birdie).
+    Order matters: add tiers from highest to lowest prestige.
+    Empty tiers (no logos): simply remove all logos from the group; the format
+    skips the entire tier block if logos.size() == 0.
+  -->
+  <group collapsed="false"
+         identifier="tier"
+         label="Sponsorship Tier"
+         minimum-number="1"
+         multiple="true">
+
+    <text identifier="tier-name"
+          label="Tier Name"
+          required="true"
+          help-text="Display label for this sponsorship level, e.g. Presenting, Eagle, Birdie, Tee. Appears as a heading on the page." />
+
+    <text identifier="tier-subtitle"
+          label="Tier Subtitle"
+          help-text="Optional tagline shown below the tier name, e.g. Foundational Partners or Distinguished Sponsors. Leave blank to omit." />
+
+    <!--
+      Repeating logo group — one entry per sponsor in this tier.
+      Add as many logos as needed. If no logos exist for a tier in a given year,
+      delete all logo entries from that tier group (or delete the entire tier group).
+    -->
+    <group collapsed="false"
+           identifier="logo"
+           label="Sponsor Logo"
+           minimum-number="1"
+           multiple="true">
+
+      <asset identifier="image"
+             label="Logo Image"
+             required="true"
+             type="file"
+             help-text="Upload the sponsor's logo. PNG or SVG with a transparent background is recommended. Logos display at a uniform size regardless of tier." />
+
+      <text identifier="alt"
+            label="Sponsor Name"
+            required="true"
+            help-text="The full legal name of the sponsoring organization. Used by screen readers and as fallback text if the image fails to load." />
+
+      <text identifier="link"
+            label="Sponsor Website URL"
+            help-text="Optional. If provided, the logo becomes a clickable link. Must be a full URL including https://, e.g. https://www.acmecorp.com" />
+
+      <text identifier="bg-color"
+            label="Logo Background Color"
+            help-text="Optional. For logos with white or light-colored artwork on a transparent background, enter a hex color code WITHOUT the # sign, e.g. 1a1a2e for dark navy or 333333 for dark gray. Leave blank to use the default white background." />
+
+    </group>
+
+  </group>
+
+</system-data-structure>

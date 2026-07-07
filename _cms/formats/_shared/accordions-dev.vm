@@ -1,0 +1,52 @@
+#macro(outputAccordions $accordions)
+    ## Generate a unique accordion instance id to avoid collisions if multiple accordions on a page
+    #set($accordionInstanceId = "accordion-" + $dateTool.get('yyyyMMddHHmmssSSS'))
+
+    <ul class="accordion"
+        id="$accordionInstanceId"
+        data-accordion=""
+        data-allow-all-closed="true"
+        role="tablist"
+        aria-label="Accordion sections">
+        #foreach( $accordion in $accordions)
+            #set ( $labelRaw = $accordion.getChild("label").textValue )
+            #set ( $label = $_EscapeTool.xml($labelRaw) )
+            #set ( $content = $accordion.getChild("content").textValue )
+            #set ( $anchor = $_EscapeTool.xml($accordion.getChild("anchor").textValue) )
+
+            ## Safe, space-free base id from anchor or label
+            #set ( $idBase = $anchor )
+            #if($_PropertyTool.isEmpty($idBase))
+                #set ( $idBase = $labelRaw.toLowerCase().replaceAll("[^a-z0-9]+","-").replaceAll("(^-+|-+$)","") )
+            #end
+
+            ## Prefix with accordion instance id to guarantee uniqueness on the page
+            #set ( $idBase = $accordionInstanceId + "-" + $idBase )
+
+            #set ( $titleId = $idBase + "-label" )
+            #set ( $panelId = $idBase + "-panel" )
+
+            <li class="accordion-item"
+                id="$idBase"
+                data-accordion-item="">
+                <a class="accordion-title"
+                   id="$titleId"
+                   href="#"
+                   role="tab"
+                   aria-expanded="false"
+                   aria-selected="false"
+                   aria-controls="$panelId">
+                    $label
+                </a>
+                <div class="accordion-content"
+                     id="$panelId"
+                     role="tabpanel"
+                     aria-labelledby="$titleId"
+                     aria-hidden="true"
+                     data-tab-content="">
+                    $content
+                </div>
+            </li>
+        #end
+    </ul>
+#end

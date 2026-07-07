@@ -1,0 +1,45 @@
+#set($alerts = $_.query().byContentType("Emergency Alert").hasMetadata("active", "yes").indexableOnly(false).sortBy("startDate").sortDirection("desc").maxResults(10).execute())
+#set( $raveAlert = $_.locateBlock( '/_cms/blocks/RAVE ALERT' , 'McHenry' ) )
+#set( $raveItem = $_XPathTool.selectSingleNode( $raveAlert.feedAsXMLElement , "//item" ) )
+#set($icon = "info")
+#if( false && $raveItem.getChild( "title" ).value != "Clear" )
+	#set( $starts = $raveItem.getChild( "pubDate" ).value )
+	#set( $ends = $raveItem.getChild( "pubDate" ).value )
+	#set( $alertActive = "yes" )
+	#set( $title = $raveItem.getChild( "title" ).value )
+	#set( $summary = $raveItem.getChild( "description" ).value )
+	#set( $link = "" )
+	#set( $link = $raveItem.getChild( "link" ).value )
+#elseif($alerts.size() > 0)
+    #set($alert = $alerts.get(0))
+    #set($starts = $alert.metadata.startDate)
+    #set($ends = $alert.metadata.endDate)
+    #set($alertActive = $alert.metadata.getDynamicField("active").value)
+    #set($title = $_EscapeTool.java($alert.metadata.title))
+    #set($summary = $_EscapeTool.java($alert.metadata.summary))
+    #set($icon = $_EscapeTool.xml($alert.getStructuredDataNode("icon").textValue))
+    #if($alert.getStructuredDataNode("link").textValue == "No Link")
+        #set($link = "")
+    #elseif($alert.getStructuredDataNode("link").textValue == "Current Page")
+        #set($link = "[system-asset]${alert.link}[/system-asset]")
+    #elseif($alert.getStructuredDataNode("link").textValue == "Other Page - Internal")
+        #set($link = "[system-asset]${alert.getStructuredDataNode('internal').asset.link}[/system-asset]")
+    #elseif($alert.getStructuredDataNode("link").textValue == "Other Page - External")
+        #set($link = $_EscapeTool.xml($alert.getStructuredDataNode("external").textValue))
+    #end
+#end
+## Creates a JSON file from the emergency alert data
+<![CDATA[#protect-top
+{
+    ## Check if alert is active
+    #if ($alertActive == "yes")
+        "active" : "${alertActive}",
+        "icon"  : "${icon}",
+        "title"  : "${title}",
+        "summary" : "${summary}",
+        "starts" : "${starts}",
+        "ends"   : "${ends}",
+        "link"   : "${link}"
+    #end
+}
+<!--#cascade-skip-->#protect-top]]>

@@ -1,0 +1,392 @@
+#set( $showWhenPublishing = true )
+
+
+#set( $pathwayInfoNode = $_XPathTool.selectSingleNode( $contentRoot , "//PATHWAY" ) )
+
+
+
+#if( ! $showWhenPublishing ) [system-view:internal] #end
+#if( $pathwayInfoNode.getChild( "ACTIVE" ).value == "Yes" )
+	#*
+	<p>
+		Degree Type: #foreach( $DEGREE in $pathwayInfoNode.getChild( "DEGREE" ).getChildren( "value" ) )#if( ! $foreach.first ),#end ${_EscapeTool.xml( $DEGREE.value )}#end
+		<br />
+		Area of Study: #foreach( $AREA in $pathwayInfoNode.getChild( "AREA" ).getChildren( "value" ) )#if( ! $foreach.first ),#end ${_EscapeTool.xml( $AREA.value )}#end
+		<br />
+		Goal: #foreach( $GOAL in $pathwayInfoNode.getChild( "GOAL" ).getChildren( "value" ) )#if( ! $foreach.first ),#end ${_EscapeTool.xml( $GOAL.value )}#end
+	</p>
+	*#
+
+	#set( $courseGroups = $_XPathTool.selectNodes( $contentRoot , "//COURSE-LIST" ) )
+	<div class="row">
+	#foreach( $group in $courseGroups )
+		#set( $_itemTitle = $_EscapeTool.xml( $group.getChild( "TITLE" ).value ) )
+		#set( $_itemHrs = $_EscapeTool.xml( $group.getChild( "HOURS" ).value ) )
+		#set( $_itemHTML = $_SerializerTool.serialize( $group.getChild("HTML") , true ) )
+		#set( $_itemHTML2 = $_SerializerTool.serialize( $group.getChild("HTML2") , true ) )
+		#if( $foreach.index % 2 == 0 && ! $foreach.first )
+			</div>
+			<div class="row">
+		#end
+		<div class="semester-container columns medium-6">
+			#if( $_itemTitle != "" )
+				<h2>
+					${_itemTitle}
+					#if( $_itemHrs != "" )
+						<span class="hrs">${_itemHrs}</span>
+					#else
+						<span class="hrs semester-hours">&#160;</span>
+					#end
+				</h2>
+			#end
+			#if( $_itemHTML )
+				<div class="lead">
+					${_itemHTML}
+				</div>
+			#end
+			#set( $cids = "" )
+			#foreach( $tmp in $group.getChildren( "CID" ) )
+				#if( ! $foreach.first )
+					#set( $cids = $cids + "," )
+				#end
+				#set( $cids = $cids + $tmp.value )
+			#end
+			<ul class="accordion course-list" data-ids="${cids}" data-accordion="true" data-allow-all-closed="true" data-multi-expand="true">
+				COURSE LIST
+				Course Ids: ${cids}
+			</ul>
+			#if( $_itemHTML2 )
+				<small>
+					${_itemHTML2}
+				</small>
+			#end
+		</div>
+	#end
+	</div>
+	<script type="text/javascript" src="[system-asset:id=74f212d0ac1e00960e8b616d7949c40f]/_files/js/cfcourse.js[/system-asset]" defer="defer"></script>
+	<!--#protect
+	<script type="text/template" id="course-item-template">
+		<% if( typeof isLastOr != "undefined" && isLastOr ) { %>
+			<li class="accordion-item lastOr">
+		<% } else if( typeof isFirstOr != "undefined" && isFirstOr ) {%>
+			<li class="accordion-item firstOr">
+		<% } else {%>
+			<li class="accordion-item">
+		<% } %>
+		
+				<% if( typeof isOr != "undefined" && isOr ) { %>
+					<strong class="isOr">OR</strong>
+				<% } else if( typeof isFirstOr != "undefined" && isFirstOr ) { %>
+					<strong class="isOr">One Of</strong>
+				<% } %>
+				
+				
+				<a href="#" class="accordion-title">
+					<% if( typeof subject != "undefined" && subject ) { %>
+						<%- subject %>-<%- number %>: 
+					<% } %>
+					<%- title %>
+					<% if( hrs.toString() != "0" ) { %>
+						<span class="hrs"><%- hrs %>  <%- ( isNaN( hrs ) ? "" : "hrs" ) %></span>
+					<% } %>
+				</a>
+			<div class="accordion-content" data-tab-content>
+				<% if( course_id == -1 ) { %>
+						<a href="http://www.mchenry.edu/catalog " target="_blank">
+							View MCC&apos;s Course Catalog</a>
+						for specific courses related to your individual program
+						</a>
+				<% } else { %>
+					<% if( typeof subject != "undefined" && subject ) { %>
+						<% if( typeof desc != "undefined" && desc ) { %>
+							<%- desc %>
+							<br />
+							<br />
+						<% } %>
+						<a class="button" href="https://selfservice.mchenry.edu/Student/Courses/Search?keyword=<%- subject %><%- number %>" target="_blank">
+							View Course in the Catalog</a>
+					<% } %>
+				<% } %>
+			</div>
+		</li>
+	</script>
+	#protect-->
+
+<!--<p class="pdisc"><strong>Transfer Sample Plans</strong> are for students who plan to continue their education at a four-year college or university to earn a bachelor&#8217;s degree. Students take courses toward an associate degree at MCC, then transfer credits to the college of their choice. It is important that students work closely with an MCC academic advisor and their transfer school to verify degree requirements. <a class="acalog" data-acalog-catalog-type="Catalog" data-acalog-data="pages" data-acalog-link-text="See Transfer Degree details" data-acalog-page-name="Transfer Degrees" href="#">See Transfer Degree details</a></p>-->
+
+
+	<div class="row">
+		#if( $pathwayInfoNode.getChild( "COACH" ).getChild( "ACTIVE" ).value == "Yes" )
+			#if( $pathwayInfoNode.getChild( "RELATED" ).getChild( "ACTIVE" ).value != "No" )
+				<div class="columns medium-6">
+			#else
+				<div class="columns medium-12">
+			#end
+			
+				#set( $onets = "" )
+				#set( $tmp1 = $pathwayInfoNode.getChild( "COACH" ).getChild( "ID" ).value )
+				#set( $tmp2 = $tmp1.split( "," ) )
+				#foreach( $tmp3 in $tmp2 )
+					#if( ! $foreach.first )
+					#set( $onets = $onets + ',' )
+					#end
+					#set( $onets = $onets + '"' + $tmp3 + '"' )
+				#end
+				#set( $onets = '[' + $onets + ']' )
+				<h2 id="careers">Career Outlook</h2>
+				<script src="//s3-us-west-2.amazonaws.com/cc-widget-v2/ccWidget.js" async="true" defer="defer"></script>
+				<div id="cc-widget-careers"> </div>
+				<script type="text/javascript">
+					window.onload = function() {
+						var subdomain = 'mchenry';
+						var level = 'county'; // state or county atm
+						var geoids = ['17111','17097','55127']; // state id or county ids, must be an array
+						//var onets = ["11-9121.00","11-9121.01"];
+						var onets = ${onets};
+						var legacy = false; //specify version, must be Boolean
+						ccWidget.render(subdomain, level, geoids, onets, legacy);
+					}
+				</script>
+			</div>
+		#elseif( $pathwayInfoNode.getChild( "COACH" ).getChild( "ACTIVE" ).value == "Widget" || $pathwayInfoNode.getChild( "COACH" ).getChild( "ACTIVE" ).value == "Custom Content" )
+			#if( $pathwayInfoNode.getChild( "RELATED" ).getChild( "ACTIVE" ).value != "No" )
+				<div class="columns small-12 large-8">
+			#else
+				<div class="columns medium-12">
+			#end
+      #if( $pathwayInfoNode.getChild( "COACH" ).getChild( "ACTIVE" ).value == "Custom Content" )
+				<h2 id="careers">Career Outlook</h2>
+        #set( $tmpContentNode = $_XPathTool.selectSingleNode( $pathwayInfoNode , "COACH/HTML" ) )
+        #set( $tmphtml = $_SerializerTool.serialize( $tmpContentNode , true ) )
+        #set( $pos1 = $tmphtml.indexOf( 'src="' ) )
+        #set( $pos1 = $pos1 + 5 )
+        #set( $half1 = $tmphtml.substring( 0 , $pos1 ) )
+        #set( $half2 = $tmphtml.substring( $pos1 ) )
+        #set( $pos2 = $half2.indexOf( '"' ) )
+        #set( $urlPart = $half2.substring( 0 , $pos2 ) )
+        #set( $half2 = $half2.substring( $pos2 ) )
+        #set( $urlPart = $urlPart.replaceAll( "&amp;" , "&" ) )
+        #set( $newhtml = $half1 + $urlPart + $half2 )
+        #if( $tmphtml.charAt( 0 ) != "<" )
+          #set( $tmphtml = "<p>" + $tmphtml + "</p>" )
+          $tmphtml
+        #else
+          <!--#protect
+          $tmphtml
+          #protect-->
+        #end
+      #elseif( $pathwayInfoNode.getChild( "COACH" ).getChild( "ACTIVE" ).value == "Widget" )
+      	<h2 id="careers">Career Outlook</h2>
+        #set( $winfo = $pathwayInfoNode.getChild( "COACH" ).getChild( "WIDGET" ) )
+        #set( $width = $winfo.getChild( "width" ).value )
+        #set( $height = $winfo.getChild( "height" ).value )
+        #set( $widgetId = $winfo.getChild( "widgetId" ).value )
+        #set( $programs = $winfo.getChild( "programs" ).value )
+        #set( $clientId = $winfo.getChild( "clientId" ).value )
+        #set( $headingText = $winfo.getChild( "headingText" ).value )
+        #set( $labelSet = $winfo.getChild( "labelSet" ).value )
+        #set( $locationName = $winfo.getChild( "locationName" ).value )
+        #set( $orderCareersBy = $winfo.getChild( "orderCareersBy" ).value )
+        #set( $primaryColor = $winfo.getChild( "primaryColor" ).value )
+        #set( $visitButtonColor = $winfo.getChild( "visitButtonColor" ).value )
+        #set( $hasAllLocations = $winfo.getChild( "hasAllLocations" ).value )
+        #set( $hasCareerList = $winfo.getChild( "hasCareerList" ).value )
+        #set( $hasEmployment = $winfo.getChild( "hasEmployment" ).value )
+        #set( $hasImages = $winfo.getChild( "hasImages" ).value )
+        #set( $hasJobOpenings = $winfo.getChild( "hasJobOpenings" ).value )
+        #set( $hasNationalData = $winfo.getChild( "hasNationalData" ).value )
+        #set( $hasOutlook = $winfo.getChild( "hasOutlook" ).value )
+        #set( $hasSkills = $winfo.getChild( "hasSkills" ).value )
+        #set( $hasVisitButton = $winfo.getChild( "hasVisitButton" ).value )
+        #set( $hasWages = $winfo.getChild( "hasWages" ).value )
+        #set( $isHourlyWage = $winfo.getChild( "isHourlyWage" ).value )
+        
+        #set( $title = $_EscapeTool.xml( $headingText ) )
+        #set( $widgetId = $_EscapeTool.url( $widgetId ) )
+        #set( $programs = $_EscapeTool.url( $programs ) )
+        #set( $clientId = $_EscapeTool.url( $clientId ) )
+        #set( $headingText = $_EscapeTool.url( $headingText ) )
+        #set( $labelSet = $_EscapeTool.url( $labelSet ) )
+        #set( $locationName = $_EscapeTool.url( $locationName ) )
+        #set( $orderCareersBy = $_EscapeTool.url( $orderCareersBy ) )
+        #set( $primaryColor = $_EscapeTool.url( $primaryColor ) )
+        #set( $visitButtonColor = $_EscapeTool.url( $visitButtonColor ) )
+        
+        #set( $urlParams = "?programs=${programs}" )
+        #set( $urlParams = "${urlParams}&clientId=${clientId}" )
+        #set( $urlParams = "${urlParams}&headingText=${headingText}" )
+        #set( $urlParams = "${urlParams}&labelSet=${labelSet}" )
+        #set( $urlParams = "${urlParams}&locationName=${locationName}" )
+        #set( $urlParams = "${urlParams}&orderCareersBy=${orderCareersBy}" )
+        #set( $urlParams = "${urlParams}&primaryColor=${primaryColor}" )
+        #set( $urlParams = "${urlParams}&visitButtonColor=${visitButtonColor}" )
+        #set( $urlParams = "${urlParams}&hasAllLocations=${hasAllLocations}" )
+        #set( $urlParams = "${urlParams}&hasCareerList=${hasCareerList}" )
+        #set( $urlParams = "${urlParams}&hasEmployment=${hasEmployment}" )
+        #set( $urlParams = "${urlParams}&hasImages=${hasImages}" )
+        #set( $urlParams = "${urlParams}&hasJobOpenings=${hasJobOpenings}" )
+        #set( $urlParams = "${urlParams}&hasNationalData=${hasNationalData}" )
+        #set( $urlParams = "${urlParams}&hasOutlook=${hasOutlook}" )
+        #set( $urlParams = "${urlParams}&hasSkills=${hasSkills}" )
+        #set( $urlParams = "${urlParams}&hasVisitButton=${hasVisitButton}" )
+        #set( $urlParams = "${urlParams}&hasWages=${hasWages}" )
+        #set( $urlParams = "${urlParams}&isHourlyWage=${isHourlyWage}" )
+        #foreach( $attr in $winfo.getChildren( "ATTR" ) )
+          #set( $a1 = "" )
+          #set( $a2 = "" )
+          #set( $a1 = $attr.getChild( "NAME" ).value )
+          #set( $a2 = $attr.getChild( "VALUE" ).value )
+          #if( $a1 != "" && $a2 != "" )
+            #set( $a1 = $_EscapeTool.url( $a1 ) )
+            #set( $a2 = $_EscapeTool.url( $a2 ) )
+            #set( $urlParams = "${urlParams}&${a1}=${a2}" )
+          #end
+        #end
+        <!--#protect
+        ##<div class="responsive-embed">
+        <iframe frameborder="0" style="width: ${width}; height: ${height};" id="${widgetId}"
+          onload="initalizeScripts('${widgetId}', 'https://widget.emsicc.com')" src="https://widget.emsicc.com${urlParams}"
+          title="${title}"></iframe>
+        ##</div>
+        #protect-->
+      #end
+			</div>
+		#end
+		#if( $pathwayInfoNode.getChild( "RELATED" ).getChild( "ACTIVE" ).value != "No" )
+			#if( $pathwayInfoNode.getChild( "COACH" ).getChild( "ACTIVE" ).value == "Yes" )
+				<div class="columns medium-6">
+      #elseif( $pathwayInfoNode.getChild( "COACH" ).getChild( "ACTIVE" ).value == "Widget" || $pathwayInfoNode.getChild( "COACH" ).getChild( "ACTIVE" ).value == "Custom Content" )
+				<div class="columns small-12 large-4">
+			#else
+				<div class="columns medium-12">
+			#end
+				#set( $relatedTitle = $_EscapeTool.xml( $currentPage.getStructuredDataNode( "PATHWAY/RELATED/TITLE" ).textValue ) )
+				#if( $_PropertyTool.isEmpty( $relatedTitle ) )
+					#set( $relatedTitle = "Related Programs" )
+				#end
+				<h2>${relatedTitle}</h2>
+				#if( ! $_PropertyTool.isEmpty( $currentPage.getStructuredDataNode( "PATHWAY/RELATED/HTML" ).textValue ) )
+					<div class="lead">
+						$currentPage.getStructuredDataNode( "PATHWAY/RELATED/HTML" ).textValue
+					</div>
+				#end
+				#if( $pathwayInfoNode.getChild( "RELATED" ).getChild( "ACTIVE" ).value == "Manual" )
+					#set( $startedUL = false )
+					#set( $paths = "" )
+					#set( $paths = $currentPage.getStructuredDataNode( "PATHWAY/RELATED/PATHS" ).textValue )
+					#if( $paths != "" )
+						#set( $pathsArr = $paths.split( "," ) )
+						#foreach( $path in $pathsArr )
+							#set( $path = $path.trim() )
+							#set( $tmpPage = "" )
+							#set( $pageSite = $currentPage.siteName )
+							#if( $path.contains( "site://McHenry" ) )
+								#set( $path = $path.replace( "site://McHenry" , "" ) )
+								#set( $pageSite = "McHenry" )
+							#elseif( $path.contains( "site://Programs" ) )
+								#set( $path = $path.replace( "site://Programs" , "" ) )
+								#set( $pageSite = "Programs" )
+							#end
+							#set( $tmpPage = $_.locatePage( $path , $pageSite ) )
+							#if( ! $_PropertyTool.isEmpty($tmpPage))
+								#if( $foreach.first )
+									<ul class="sidenav-links eeeeee">
+									#set( $startedUL = true )
+								#end
+								<li>
+									<a href="${tmpPage.link}">${_EscapeTool.xml($tmpPage.label)}</a>
+									#set( $description = "" )
+									#set( $description = $_EscapeTool.xml( $tmpPage.getStructuredDataNode("PATHWAY/HTML").textValue ) )
+									#if( $_PropertyTool.isEmpty( $description ) || $description == "<HTML />" )
+										#set( $description = "" )
+										#set( $description = $_EscapeTool.xml( $tmpPage.metadata.description ) )
+									#end
+									${description}
+								</li>
+							#end
+						#end
+					#end
+					
+					#if( $paths == "" )
+						#foreach( $tmpPageNode in $currentPage.getStructuredDataNodes( "PATHWAY/RELATED/PAGE" ) )
+							#if( ! $_PropertyTool.isEmpty($tmpPageNode.asset))
+								#if( $foreach.first && !$startedUL )
+									<ul class="sidenav-links asdfasdf">
+									#set( $startedUL = true )
+								#end
+								<li>
+									<a href="${tmpPageNode.asset.link}">${_EscapeTool.xml($tmpPageNode.asset.label)}</a>
+									#set( $description = "" )
+									#set( $description = $_EscapeTool.xml( $tmpPageNode.asset.getStructuredDataNode("PATHWAY/HTML").textValue ) )
+									#if( $_PropertyTool.isEmpty( $description ) || $description == "<HTML />" )
+										#set( $description = "" )
+										#set( $description = $_EscapeTool.xml( $tmpPageNode.asset.metadata.description ) )
+									#end
+									${description}
+								</li>
+							#end
+						#end
+					#end
+					#if( $startedUL )
+						</ul>
+					#end
+				#end
+
+				#if( $pathwayInfoNode.getChild( "RELATED" ).getChild( "ACTIVE" ).value == "Automatic" )
+					#set( $items = $_.query().byMetadataSet("site://McHenry/Pathway Page").sortBy( "title" ).sortDirection( "asc" ).siteName( "McHenry" ).execute() )
+					#set( $items2 = $_.query().byMetadataSet("site://McHenry/Pathway Page").sortBy( "title" ).sortDirection( "asc" ).siteName( "Programs" ).execute() )
+					#set( $items3 = $_.query().byMetadataSet("site://Programs/Program Page").sortBy( "title" ).sortDirection( "asc" ).siteName( "Programs" ).execute() )
+					#set( $x = $items.addAll( $items2 ) )
+					#set( $x = $items.addAll( $items3 ) )
+					#set( $degrees = $currentPage.getStructuredDataNode( "PATHWAY/DEGREE" ).textValues )
+					#set( $areas = $currentPage.getStructuredDataNode( "PATHWAY/AREA" ).textValues )
+					#set( $goals = $currentPage.getStructuredDataNode( "PATHWAY/GOAL" ).textValues )
+					
+					#set( $items2 = [] )
+					#foreach( $item in $items )
+						#set( $amatch = false )	
+						#set( $dmatch = false )	
+						#set( $gmatch = false )	
+							#foreach( $tmp in $item.getStructuredDataNode( "PATHWAY/AREA" ).textValues )
+								#if( ! $amatch && $areas.contains( $tmp ) ) #set( $amatch = true ) #end
+							#end
+						##if( $amatch )
+							#foreach( $tmp in $item.getStructuredDataNode( "PATHWAY/DEGREE" ).textValues )
+								#if( ! $dmatch && $degrees.contains( $tmp ) ) #set( $dmatch = true ) #end
+							#end
+						##end
+						#*#if( $amatch )
+							#foreach( $tmp in $item.getStructuredDataNode( "PATHWAY/GOAL" ).textValues )
+								#if( ! $gmatch && $goals.contains( $tmp ) ) #set( $gmatch = true ) #end
+							#end
+						#end*#
+						#if( ( $amatch || $dmatch ) && $item.link != $currentPage.link )
+							#set( $x = $items2.add( $item ) )
+						#end
+					#end
+					#foreach( $item in $items2 )
+						#if( $foreach.first )
+							<ul class="sidenav-links">
+						#end
+						#if( $foreach.index < 4 )
+							<li>
+								<a href="${item.link}">${_EscapeTool.xml($item.label)}</a>
+								#set( $description = "" )
+								#set( $description = $_EscapeTool.xml( $item.getStructuredDataNode("PATHWAY/HTML").textValue ) )
+								#if( $_PropertyTool.isEmpty( $description ) || $description == "<HTML />" )
+									#set( $description = "" )
+									#set( $description = $_EscapeTool.xml( $item.metadata.description ) )
+								#end
+								${description}
+							</li>
+						#end
+						#if( $foreach.last )
+							</ul>
+						#end
+					#end
+				#end
+			</div>
+		#end
+	</div>
+#end
+#if( ! $showWhenPublishing ) [/system-view:internal] #end

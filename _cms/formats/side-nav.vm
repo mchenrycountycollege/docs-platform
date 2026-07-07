@@ -1,0 +1,66 @@
+#set($assetTypes = ["symlink", "reference"])
+
+#if(!$currentPage.dataDefinitionPath.contains('One Column'))
+    <div class="sidenav-bg">
+    ##  #outputBreadcrumbs()
+     #outputNav
+    </div>
+#elseif($currentPage.getStructuredDataNode('banner/style').textValue.contains('Navigation'))
+    <div class="small-12 menu-sec admissions-burgermenu m-b-20">
+        <span>THIS SECTION</span>
+    </div>
+    <!--#protect<div class="flexbox">#protect-->
+    <div class="large-4 medium-5 small-12 columns left-sidebar">
+        <div class="sidenav-bg full-height">
+            #outputBreadcrumbs()
+            #outputNav()
+        </div>
+    </div>
+#end 
+
+#macro(outputCrumbs $asset)
+    #if($asset.name && $asset.path != '/')
+        #set($crumb = false)
+        #outputCrumbs($asset.parentFolder)
+        #if($asset.identifier.type == 'folder')
+            #set($crumb = $_.locatePage("${asset.path}/index"))
+            #if($crumb && $crumb.identifier.id != $currentPage.identifier.id)
+                <span>&#62;</span>
+                <a href="${crumb.link}" class="breadcrumbs__link">$_EscapeTool.xml($crumb.label)</a>
+            #end
+        #end
+    #else
+        #break    
+    #end
+#end
+
+#macro(outputBreadcrumbs)
+    <div class="sidenav-bg__breadcrum"> 
+        <a href="site://McHenry/index">Home</a> 
+        #outputCrumbs($currentPage)
+        <span>&#62;</span> $_EscapeTool.xml($currentPage.label)
+     </div>
+#end 
+
+#macro(outputNav)
+    <ul class="sidenav-links">
+        #if (!$currentPage.metadata.getDynamicField("navExclude").values.contains("yes"))
+            <li>${_EscapeTool.xml($currentPage.label)}</li>
+        #end
+        #foreach($asset in $currentPage.parentFolder.children)
+            #if($asset.assetType == 'folder')
+                #set($index = false)
+                #set($index = $_.locatePage("${asset.path}/index"))
+                #if($index)
+                    #set($asset = $index)
+                #end 
+            #end 
+            #if($assetTypes.contains($asset.assetType) || ($asset.assetType == "page" && !$asset.metadata.getDynamicField("navExclude").values.contains("yes") && $asset.identifier.id != $currentPage.identifier.id))
+                #if ($asset.assetType == "reference")
+                    #set ($asset = $asset.referencedAsset)
+                #end
+                <li><a href="${asset.link}">${asset.label}</a></li>
+           #end 
+        #end 
+    </ul>
+#end 

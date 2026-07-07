@@ -1,0 +1,704 @@
+##
+## Art Gallery — Current Exhibits
+## Path: /_cms/formats/artgallery/current-exhibits.vm
+## Architecture: XHTML/Data Definition Block + Format (macro)
+## Data Definition: artgallery-exhibits
+## Site: McHenry County College
+##
+## Defines #macro(outputExhibits $exhibitsBlock) — called by the
+## two-column format's "Art Gallery Exhibits" content row branch:
+##
+##   #import('/_cms/formats/artgallery/current-exhibits')
+##   #outputExhibits($exhibitsBlock)
+##
+## Reads structured data from the provided $exhibitsBlock asset (an
+## XHTML/Data Definition Block using the artgallery-exhibits DD).
+## page-intro is intentionally absent — admins add intro text via a
+## separate "Content Editor" content row on the two-column page.
+##
+## Performance notes:
+##   - .asset is cached to $imageAsset before accessing .link or .metadata
+##   - All field values are cached before the HTML block
+##   - No Query API calls — all data is read from the passed block parameter
+##
+#macro(outputExhibits $exhibitsBlock)
+
+## ── Component-scoped styles ───────────────────────────────────────────────
+## Self-contained stylesheet — no external CSS dependency required.
+## All accordion base styles are declared here; accordion-accessible.css is
+## NOT a dependency and does NOT need to be loaded.
+## All classes are prefixed with .exhibit- or scoped under .exhibit-accordion-wrap
+## to avoid collisions with other page components.
+<style>
+/*<![CDATA[*/
+  /* Sticky sub-navigation — position is managed by JS below.
+     CSS sticky is intentionally absent: ancestor overflow on the
+     Foundation template silently breaks it. JS uses position:fixed
+     with measured left/width so the nav stays within the main column. */
+  .exhibit-nav {
+    background: #fff;
+    border-bottom: 1px solid #ccc;
+    padding: 0.5rem 0;
+  }
+  .exhibit-nav.is-fixed {
+    position: fixed;
+    top: 0;
+    z-index: 100;
+  }
+  .exhibit-nav ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    gap: 1.75rem;
+    justify-content: center;
+    -webkit-overflow-scrolling: touch;
+  }
+  .exhibit-nav li { white-space: nowrap; }
+  .exhibit-nav a {
+    font-size: 0.875rem;
+    color: inherit;              /* overrides app.css `a { color: #5639a4 }` */
+    text-decoration: none;       /* overrides app.css `main a { text-decoration: underline }` */
+    padding: 0.3rem 0;
+    border-bottom: 2px solid transparent;
+    display: inline-block;
+    transition: border-color 0.15s ease;
+  }
+  .exhibit-nav a:hover,
+  .exhibit-nav a:focus    { color: inherit; border-bottom-color: currentColor; outline: none; }
+  .exhibit-nav a:focus-visible { outline: 2px solid #005fcc; outline-offset: 2px; }
+
+  /* Mobile toggle button — hidden by default; shown via media query */
+  .exhibit-nav-toggle {
+    display: none;
+    width: 100%;
+    background: none;
+    border: none;
+    padding: 0.4rem 0;
+    font-size: 0.875rem;
+    font-weight: 700;
+    cursor: pointer;
+    text-align: left;
+  }
+  .exhibit-nav-toggle:focus-visible { outline: 2px solid #005fcc; outline-offset: 2px; }
+  .exhibit-nav-toggle-icon {
+    display: inline-block;
+    margin-left: 0.4rem;
+    transition: transform 0.2s ease;
+  }
+  .exhibit-nav-toggle[aria-expanded="true"] .exhibit-nav-toggle-icon { transform: rotate(180deg); }
+
+  /* Small-screen nav: toggle visible, list collapsible */
+  @media screen and (max-width: 39.9375em) {
+    .exhibit-nav-toggle { display: block; }
+    .exhibit-nav ul {
+      display: none;
+      flex-direction: column;
+      gap: 0;
+      justify-content: flex-start;
+      padding: 0.5rem 0;
+    }
+    .exhibit-nav ul.is-open { display: flex; }
+    .exhibit-nav li { white-space: normal; }
+    .exhibit-nav a {
+      display: block;
+      padding: 0.45rem 0 0.45rem 0.75rem;
+      border-bottom: none;
+      border-left: 2px solid transparent;
+    }
+    .exhibit-nav a:hover,
+    .exhibit-nav a:focus { border-left-color: currentColor; border-bottom-color: transparent; }
+  }
+
+  /* Exhibit section wrapper */
+  .exhibit-section {
+    padding-top: 3rem;
+    padding-bottom: 3rem;
+    border-bottom: 1px solid #e0e0e0;
+    scroll-margin-top: 60px; /* accounts for sticky nav height */
+  }
+  .exhibit-section:last-of-type { border-bottom: none; }
+
+  /* Gallery name label — all-caps, letter-spaced, inherits body font */
+  .exhibit-gallery-label {
+    display: block;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    font-size: 0.78rem;
+    color: #666;
+    margin-bottom: 0.6rem;
+  }
+
+  .exhibit-artist-name {
+    font-size: 1.75rem;
+    line-height: 1.2;
+    margin-top: 0;                   /* overrides app.css `h2 { margin-top: 1.75rem }` */
+    margin-bottom: 0.2rem;
+  }
+  .exhibit-title {
+    font-size: 1.15rem;
+    font-style: italic;
+    color: #444;
+    margin-top: 0;                   /* overrides app.css `p { margin-top: 1em }` */
+    margin-bottom: 1.25rem;
+  }
+
+  /* Logistics list — icon + text rows */
+  /* Selector uses `ul.exhibit-logistics` (specificity 0,1,1) to beat
+     app.css `.mid-main ul` (also 0,1,1); source-order tie goes to this
+     later stylesheet. Plain `.exhibit-logistics` (0,1,0) would lose. */
+  ul.exhibit-logistics {
+    list-style: none;
+    margin: 0 0 0.5rem 0;
+    padding: 0;
+  }
+  ul.exhibit-logistics li {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.6rem;
+    margin-bottom: 0.6rem;
+    font-size: 0.9rem;
+    line-height: 1.5;
+  }
+  ul.exhibit-logistics li i {
+    margin-top: 2px;
+    color: #666;
+    flex-shrink: 0;
+    width: 1em;
+    text-align: center;
+  }
+
+  /* Artwork image — natural aspect ratio, bounded by max-height.
+     No letterboxing or filler: each image displays at its true proportions
+     but is capped so no single artwork dominates the page vertically. */
+  .exhibit-image-container {
+    max-height: 520px;
+    overflow: hidden;
+    display: flex;
+    justify-content: center;
+  }
+  .exhibit-image-container img {
+    max-width: 100%;
+    max-height: 520px;
+    width: auto;
+    height: auto;
+    display: block;
+  }
+  .exhibit-image-caption {
+    margin-top: 0.5rem;
+    font-size: 0.825rem;
+    font-style: italic;
+    color: #666;
+    line-height: 1.4;
+  }
+
+  /* Accordion — scoped overrides to match design prototype
+     All rules use .exhibit-accordion-wrap as root to avoid affecting
+     other accordion instances on the same two-column page. */
+  .exhibit-accordion-wrap { margin-top: 2rem; }
+
+  .exhibit-accordion-wrap .accordion-accessible {
+    border-top: 1px solid #d0d0d0;
+  }
+  .exhibit-accordion-wrap .accordion-item-accessible {
+    border-bottom: 1px solid #d0d0d0;
+    overflow: visible; /* prevent focus outline from being clipped by global stylesheet */
+  }
+  .exhibit-accordion-wrap .accordion-item-accessible:last-child {
+    border-bottom: none;
+  }
+  .exhibit-accordion-wrap .accordion-header-accessible {
+    margin: 0;
+    overflow: visible; /* prevent focus outline from being clipped by global stylesheet */
+  }
+
+  /* Trigger: transparent background, uppercase small-caps label, icon pinned right */
+  .exhibit-accordion-wrap .accordion-trigger-accessible {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    background: transparent;
+    padding: 1rem 0.75rem;
+    font-size: 0.8rem;
+    font-weight: 700;                /* app.css only loads weights 400 & 700; 600 would round up to 700 anyway */
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: #222;
+    border: none;
+    border-radius: 0;
+    text-align: left;
+  }
+  .exhibit-accordion-wrap .accordion-trigger-accessible:hover {
+    background: transparent;
+    color: #000;
+  }
+  .exhibit-accordion-wrap .accordion-trigger-accessible:focus {
+    outline: 2px solid #005fcc;
+    outline-offset: 2px;
+    background: transparent;
+    z-index: auto;
+  }
+  .exhibit-accordion-wrap .accordion-trigger-accessible[aria-expanded="true"] {
+    background: transparent;
+  }
+
+  /* Replace CSS-border chevron with + / − text character.
+     Suppress ALL pseudo-element content on the trigger button itself and
+     the icon span's ::after — a global accordion stylesheet (e.g. accordion-accessible.css)
+     or a broken foundation-icons font fallback can inject extra glyphs via
+     ::before / ::after on these elements, causing double-icon overlap.
+     Our only intentional pseudo-element is ::before on .accordion-icon-accessible (below). */
+  .exhibit-accordion-wrap .accordion-trigger-accessible::before,
+  .exhibit-accordion-wrap .accordion-trigger-accessible::after,
+  .exhibit-accordion-wrap .accordion-icon-accessible::after {
+    content: none !important;
+    display: none !important;
+  }
+  .exhibit-accordion-wrap .accordion-icon-accessible {
+    /* Reset the CSS border-chevron shape applied by the global accordion stylesheet
+       (width/height/border-right/border-bottom/transform: rotate(45deg)).
+       Without these resets, the box chevron AND our ::before '+' both render. */
+    width: auto;
+    height: auto;
+    border-right: none;
+    border-bottom: none;
+    transform: none;
+    margin-top: 0;
+    transition: none;
+    /* Our own sizing */
+    font-size: 1.4rem;
+    font-weight: 400;                /* app.css only loads weights 400 & 700; 300 would round up to 400 anyway */
+    line-height: 1;
+    flex-shrink: 0;
+  }
+  .exhibit-accordion-wrap .accordion-icon-accessible::before {
+    content: '+';
+  }
+  .exhibit-accordion-wrap .accordion-trigger-accessible[aria-expanded="true"] .accordion-icon-accessible::before {
+    content: '\2212'; /* unicode minus − */
+  }
+  /* Global stylesheet likely has a matching [aria-expanded="true"] rule that re-applies
+     the rotated border-chevron shape (transform: rotate(-135deg)) to point the arrow up.
+     This more-specific reset wins that battle. */
+  .exhibit-accordion-wrap .accordion-trigger-accessible[aria-expanded="true"] .accordion-icon-accessible {
+    transform: none !important;
+    border-right: none !important;
+    border-bottom: none !important;
+    width: auto !important;
+    height: auto !important;
+  }
+
+  /* Panel: clip overflow so oversized images stay within bounds */
+  .exhibit-accordion-wrap .accordion-panel-accessible {
+    overflow: hidden;
+  }
+
+  /* Panel content: transparent bg, horizontal padding matches trigger indentation */
+  .exhibit-accordion-wrap .accordion-content-accessible {
+    padding: 0.25rem 0.75rem 1.5rem 0.75rem;
+    background: transparent;
+  }
+
+  /* Body text constraint */
+  .exhibit-accordion-content {
+    max-width: 70ch;
+    line-height: 1.7;
+  }
+  .exhibit-accordion-content p { margin-bottom: 0.75rem; }
+
+  /* Responsive: on < large, image stacks above info copy */
+  @media screen and (max-width: 63.9375em) {
+    .exhibit-columns-reverse { display: flex; flex-direction: column; }
+    .exhibit-columns-reverse .exhibit-image-col { order: -1; margin-bottom: 1.25rem; }
+  }
+
+  /* Print: expand all accordion panels, hide toggle icons and nav */
+  @media print {
+    .exhibit-nav { display: none; }
+    .exhibit-accordion-wrap .accordion-panel-accessible[hidden] { display: block !important; }
+    .exhibit-accordion-wrap .accordion-icon-accessible { display: none; }
+    .exhibit-accordion-wrap .accordion-trigger-accessible {
+      background: transparent;
+      padding: 0.5rem 0.75rem;
+    }
+  }
+
+  /* Reduced motion: disable transitions for users who have opted out */
+  @media (prefers-reduced-motion: reduce) {
+    .exhibit-nav a,
+    .exhibit-nav-toggle-icon {
+      transition: none;
+    }
+  }
+/*]]>*/
+</style>
+
+## ── Read all exhibit groups from the block parameter ────────────────────
+#set($exhibits     = $exhibitsBlock.getStructuredDataNodes('exhibit'))
+#set($exhibitCount = $exhibits.size())
+
+## ── Sticky anchor navigation ──────────────────────────────────────────────
+## Hide entirely when there is only one exhibit (nothing useful to navigate to).
+#if($exhibitCount > 1)
+<nav class="exhibit-nav" aria-label="Exhibit Navigation">
+  <div class="row">
+    <div class="small-12 columns">
+      <button
+        class="exhibit-nav-toggle"
+        aria-expanded="false"
+        aria-controls="exhibit-nav-list"
+        id="exhibit-nav-toggle-btn">
+        Jump to Exhibit
+        <span class="exhibit-nav-toggle-icon" aria-hidden="true">&#9660;</span>
+      </button>
+      <ul id="exhibit-nav-list">
+        #foreach($navExhibit in $exhibits)
+          #set($navGalleryName = $navExhibit.getChild('gallery-name').textValue)
+          #set($navSlug        = $navGalleryName.toLowerCase().replaceAll('[^a-z0-9]+', '-'))
+          <li><a href="#exhibit-${navSlug}">$_EscapeTool.xml($navGalleryName)</a></li>
+        #end
+      </ul>
+    </div>
+  </div>
+</nav>
+#end
+
+## ── Exhibit sections ──────────────────────────────────────────────────────
+#foreach($exhibit in $exhibits)
+
+  ## Cache all field string values (avoids redundant structured-data lookups)
+  #set($galleryName  = $exhibit.getChild('gallery-name').textValue)
+  #set($artistName   = $exhibit.getChild('artist-name').textValue)
+  #set($exhibitTitle = $exhibit.getChild('exhibit-title').textValue)
+  ## Build display date range from two date-picker fields.
+  ## DD datetime fields store a Unix-millis timestamp string in .textValue;
+  ## pass it to $_DateTool.getDate() to get a Java Date for formatting.
+  ## Same-year: "January 15 — March 28, 2026"
+  ## Cross-year: "December 1, 2025 — January 15, 2026"
+  #set($dateStartVal    = $_DateTool.getDate($exhibit.getChild('date-start').textValue))
+  #set($dateEndVal      = $_DateTool.getDate($exhibit.getChild('date-end').textValue))
+  #set($startYear       = $_DateTool.format('yyyy', $dateStartVal))
+  #set($endYear         = $_DateTool.format('yyyy', $dateEndVal))
+  #if($startYear == $endYear)
+    #set($startFormatted = $_DateTool.format('MMMM d', $dateStartVal))
+  #else
+    #set($startFormatted = $_DateTool.format('MMMM d, yyyy', $dateStartVal))
+  #end
+  #set($endFormatted    = $_DateTool.format('MMMM d, yyyy', $dateEndVal))
+  #set($dates           = "${startFormatted} — ${endFormatted}")
+
+  ## ── Artist Talk (optional group: start datetime + end datetime) ──────
+  ## Display: "February 10, 2026, 6:00 PM – 7:00 PM" or "… at 6:00 PM"
+  #set($artistTalk   = '')
+  #set($atStartRaw   = '')
+  #set($atStartRaw   = $exhibit.getChild('artist-talk').getChild('artist-talk-start').textValue)
+  #if(!$_PropertyTool.isEmpty($atStartRaw))
+    #set($atStartDate  = $_DateTool.getDate($atStartRaw))
+    #set($atDateStr    = $_DateTool.format('MMMM d, yyyy', $atStartDate))
+    #set($atStartTime  = $_DateTool.format('h:mm a', $atStartDate))
+    #set($atEndRaw     = '')
+    #set($atEndRaw     = $exhibit.getChild('artist-talk').getChild('artist-talk-end').textValue)
+    #if(!$_PropertyTool.isEmpty($atEndRaw))
+      #set($atEndDate  = $_DateTool.getDate($atEndRaw))
+      #set($atEndTime  = $_DateTool.format('h:mm a', $atEndDate))
+      #set($artistTalk = "${atDateStr}, ${atStartTime} – ${atEndTime}")
+    #else
+      #set($artistTalk = "${atDateStr} at ${atStartTime}")
+    #end
+  #end
+
+  ## ── Reception (optional group: start datetime + end datetime) ────────
+  ## Display: "January 15, 2026, 5:00 PM – 7:00 PM" or "… at 5:00 PM"
+  #set($reception    = '')
+  #set($rcStartRaw   = '')
+  #set($rcStartRaw   = $exhibit.getChild('reception').getChild('reception-start').textValue)
+  #if(!$_PropertyTool.isEmpty($rcStartRaw))
+    #set($rcStartDate  = $_DateTool.getDate($rcStartRaw))
+    #set($rcDateStr    = $_DateTool.format('MMMM d, yyyy', $rcStartDate))
+    #set($rcStartTime  = $_DateTool.format('h:mm a', $rcStartDate))
+    #set($rcEndRaw     = '')
+    #set($rcEndRaw     = $exhibit.getChild('reception').getChild('reception-end').textValue)
+    #if(!$_PropertyTool.isEmpty($rcEndRaw))
+      #set($rcEndDate  = $_DateTool.getDate($rcEndRaw))
+      #set($rcEndTime  = $_DateTool.format('h:mm a', $rcEndDate))
+      #set($reception  = "${rcDateStr}, ${rcStartTime} – ${rcEndTime}")
+    #else
+      #set($reception  = "${rcDateStr} at ${rcStartTime}")
+    #end
+  #end
+
+  #set($imageCaption = $exhibit.getChild('image-caption').textValue)
+  ## Pre-reset to '' before potentially-null WYSIWYG assignment.
+  ## In Velocity, #set($var = null) is a no-op — without these resets,
+  ## an empty field on the final exhibit would retain the previous
+  ## exhibit's value, causing stale content to appear in the accordion.
+  #set($statement    = '')
+  #set($statement    = $exhibit.getChild('statement').textValue)
+  #set($bio          = '')
+  #set($bio          = $exhibit.getChild('bio').textValue)
+
+  ## Cache the asset object — ONE DB round trip — then read properties from it
+  #set($imageAsset = $exhibit.getChild('main-image').asset)
+  #set($imageSrc   = $imageAsset.link)
+  ## Alt text: prefer the file asset's Metadata > Title; fall back to exhibit title
+  #set($imageAlt   = $imageAsset.metadata.title)
+  #if($_PropertyTool.isEmpty($imageAlt))
+    #set($imageAlt = $exhibitTitle)
+  #end
+
+  ## Anchor ID — derived from gallery-name, slugified (a-z, 0-9, hyphens only)
+  #set($anchorSlug = $galleryName.toLowerCase().replaceAll('[^a-z0-9]+', '-'))
+  #set($anchorId   = "exhibit-${anchorSlug}")
+
+  ## Unique ARIA IDs for accordion panels (scoped per exhibit by $foreach.count)
+  #set($stmtTriggerId = "acc-stmt-${foreach.count}-trigger")
+  #set($stmtPanelId   = "acc-stmt-${foreach.count}-panel")
+  #set($bioTriggerId  = "acc-bio-${foreach.count}-trigger")
+  #set($bioPanelId    = "acc-bio-${foreach.count}-panel")
+
+  <section class="exhibit-section" id="${anchorId}">
+
+    <div class="row exhibit-columns-reverse">
+
+      <!-- Info column: gallery label, heading, logistics -->
+      <div class="large-6 medium-12 small-12 columns">
+        <span class="exhibit-gallery-label">$_EscapeTool.xml($galleryName)</span>
+        <h2 class="exhibit-artist-name">$_EscapeTool.xml($artistName)</h2>
+        <p  class="exhibit-title">$_EscapeTool.xml($exhibitTitle)</p>
+
+        <ul class="exhibit-logistics">
+          <li>
+            <i class="far fa-calendar" aria-hidden="true"></i>
+            <span>$_EscapeTool.xml($dates)</span>
+          </li>
+          #if(!$_PropertyTool.isEmpty($artistTalk))
+          <li>
+            <i class="far fa-clock" aria-hidden="true"></i>
+            <span><strong>Artist Talk:</strong> $_EscapeTool.xml($artistTalk)</span>
+          </li>
+          #end
+          #if(!$_PropertyTool.isEmpty($reception))
+          <li>
+            <i class="fas fa-users" aria-hidden="true"></i>
+            <span><strong>Reception:</strong> $_EscapeTool.xml($reception)</span>
+          </li>
+          #end
+        </ul>
+      </div>
+
+      <!-- Artwork image column — on small screens, order: -1 puts this first -->
+      <div class="large-6 medium-12 small-12 columns exhibit-image-col">
+        <div class="exhibit-image-container">
+          <img src="${imageSrc}" alt="$_EscapeTool.xml($imageAlt)" />
+        </div>
+        #if(!$_PropertyTool.isEmpty($imageCaption))
+        <p class="exhibit-image-caption">$_EscapeTool.xml($imageCaption)</p>
+        #end
+      </div>
+
+    </div><!-- /.row.exhibit-columns-reverse -->
+
+    ## Accordion section — render only if at least one of statement / bio is populated
+    #if(!$_PropertyTool.isEmpty($statement) || !$_PropertyTool.isEmpty($bio))
+    <div class="row">
+      <div class="large-12 columns">
+        <div class="exhibit-accordion-wrap">
+          <!--
+            Uses accordion-accessible CSS class names (accordion-accessible,
+            accordion-trigger-accessible, etc.) for semantic consistency.
+            All styles are declared in the <style> block above — no shared
+            stylesheet dependency. The JS initialiser is defined inline at
+            the bottom of this macro (initAccessibleAccordions).
+            data-accordion-accessible="true" is the JS initialisation hook.
+          -->
+          <div class="accordion-accessible" data-accordion-accessible="true">
+
+            #if(!$_PropertyTool.isEmpty($statement))
+            <div class="accordion-item-accessible">
+              <h3 class="accordion-header-accessible">
+                <button
+                  type="button"
+                  class="accordion-trigger-accessible"
+                  aria-expanded="false"
+                  aria-controls="${stmtPanelId}"
+                  id="${stmtTriggerId}">
+                  <span class="accordion-title-accessible">Statement</span>
+                  <span class="accordion-icon-accessible" aria-hidden="true"></span>
+                </button>
+              </h3>
+              <div
+                id="${stmtPanelId}"
+                role="region"
+                aria-labelledby="${stmtTriggerId}"
+                class="accordion-panel-accessible"
+                hidden="hidden">
+                <div class="accordion-content-accessible exhibit-accordion-content">
+                  ${statement}
+                </div>
+              </div>
+            </div>
+            #end
+
+            #if(!$_PropertyTool.isEmpty($bio))
+            <div class="accordion-item-accessible">
+              <h3 class="accordion-header-accessible">
+                <button
+                  type="button"
+                  class="accordion-trigger-accessible"
+                  aria-expanded="false"
+                  aria-controls="${bioPanelId}"
+                  id="${bioTriggerId}">
+                  <span class="accordion-title-accessible">About $_EscapeTool.xml($artistName)</span>
+                  <span class="accordion-icon-accessible" aria-hidden="true"></span>
+                </button>
+              </h3>
+              <div
+                id="${bioPanelId}"
+                role="region"
+                aria-labelledby="${bioTriggerId}"
+                class="accordion-panel-accessible"
+                hidden="hidden">
+                <div class="accordion-content-accessible exhibit-accordion-content">
+                  ${bio}
+                </div>
+              </div>
+            </div>
+            #end
+
+          </div><!-- /.accordion-accessible -->
+        </div><!-- /.exhibit-accordion-wrap -->
+      </div>
+    </div>
+    #end## /#if statement or bio
+
+  </section><!-- /#${anchorId} -->
+
+#end## /#foreach exhibit
+
+## ── Mobile nav toggle script ──────────────────────────────────────────────
+## The accordion expand/collapse is handled by the site's existing
+## data-accordion-accessible JS. Only the mobile nav dropdown needs new script.
+<script>
+//<![CDATA[
+(function () {
+  'use strict';
+
+  /* ── Accordion-accessible initialiser ─────────────────────────────────
+     Wires all [data-accordion-accessible="true"] containers on the page.
+     Reads initial aria-expanded state from markup so pre-opened panels
+     are supported. Uses hidden attribute for show/hide (no CSS needed). */
+  function initAccessibleAccordions() {
+    var containers = document.querySelectorAll('[data-accordion-accessible="true"]');
+    containers.forEach(function (container) {
+      var triggers = container.querySelectorAll('.accordion-trigger-accessible');
+      triggers.forEach(function (trigger) {
+        var panelId = trigger.getAttribute('aria-controls');
+        var panel   = panelId ? document.getElementById(panelId) : null;
+        if (!panel) { return; }
+
+        trigger.addEventListener('click', function () {
+          var isOpen = trigger.getAttribute('aria-expanded') === 'true';
+          /* Collapse all siblings in this container first */
+          triggers.forEach(function (t) {
+            var p = document.getElementById(t.getAttribute('aria-controls'));
+            t.setAttribute('aria-expanded', 'false');
+            if (p) { p.hidden = true; }
+          });
+          /* Then open this one if it was closed */
+          if (!isOpen) {
+            trigger.setAttribute('aria-expanded', 'true');
+            panel.hidden = false;
+          }
+        });
+      });
+    });
+  }
+
+  /* ── Mobile exhibit-nav toggle ─────────────────────────────────────── */
+  var navToggle = document.getElementById('exhibit-nav-toggle-btn');
+  var navList   = document.getElementById('exhibit-nav-list');
+  if (navToggle && navList) {
+    navToggle.addEventListener('click', function () {
+      var isOpen = navList.classList.toggle('is-open');
+      navToggle.setAttribute('aria-expanded', String(isOpen));
+    });
+    navList.querySelectorAll('a').forEach(function (link) {
+      link.addEventListener('click', function () {
+        navList.classList.remove('is-open');
+        navToggle.setAttribute('aria-expanded', 'false');
+      });
+    });
+  }
+
+  /* ── JS sticky nav ────────────────────────────────────────────────────
+     Uses position:fixed so ancestor overflow can't interfere.
+     A sentinel <div> holds the nav's space in the flow when fixed.
+     Left and width are re-measured on resize so it stays column-aligned. */
+  function initStickyNav() {
+    var nav = document.querySelector('.exhibit-nav');
+    if (!nav) { return; }
+
+    /* Placeholder holds nav height in the flow when nav goes fixed */
+    var sentinel = document.createElement('div');
+    sentinel.setAttribute('aria-hidden', 'true');
+    nav.parentNode.insertBefore(sentinel, nav);
+
+    function getNavTop() {
+      return sentinel.getBoundingClientRect().top + window.pageYOffset;
+    }
+
+    function applyFixed() {
+      var parentRect = nav.parentNode.getBoundingClientRect();
+      nav.classList.add('is-fixed');
+      nav.style.left  = parentRect.left + 'px';
+      nav.style.width = parentRect.width + 'px';
+      sentinel.style.height = nav.offsetHeight + 'px';
+    }
+
+    function clearFixed() {
+      nav.classList.remove('is-fixed');
+      nav.style.left  = '';
+      nav.style.width = '';
+      sentinel.style.height = '0';
+    }
+
+    function onScroll() {
+      if (window.pageYOffset >= getNavTop()) {
+        applyFixed();
+      } else {
+        clearFixed();
+      }
+    }
+
+    /* Re-measure on resize in case column width changes (responsive) */
+    function onResize() {
+      if (nav.classList.contains('is-fixed')) {
+        var parentRect = nav.parentNode.getBoundingClientRect();
+        nav.style.left  = parentRect.left + 'px';
+        nav.style.width = parentRect.width + 'px';
+      }
+    }
+
+    window.addEventListener('scroll', onScroll, { passive: true });
+    window.addEventListener('resize', onResize, { passive: true });
+    onScroll(); /* run once on load in case page is already scrolled */
+  }
+
+  /* Run after DOM is ready */
+  function initAll() {
+    initAccessibleAccordions();
+    initStickyNav();
+  }
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initAll);
+  } else {
+    initAll();
+  }
+
+}());
+//]]>
+</script>
+#end## /#macro(outputExhibits)

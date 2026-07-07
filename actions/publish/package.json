@@ -1,0 +1,20 @@
+{
+  "name": "@docs-platform/actions-publish",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "node esbuild.config.mjs",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "@actions/core": "^1.11.1",
+    "@docs-platform/cascade-client": "workspace:*",
+    "@docs-platform/cascade-publish": "workspace:*"
+  },
+  "devDependencies": {
+    "esbuild": "^0.28.1",
+    "typescript": "^5.7.3",
+    "@types/node": "^22.10.7"
+  }
+}

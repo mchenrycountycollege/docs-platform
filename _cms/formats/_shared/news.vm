@@ -1,0 +1,42 @@
+#macro(outputNews $row)
+    #set ($news = $row.getChildren("news"))
+    #set ($heading = "")
+    #set ($heading = $_EscapeTool.xml($row.getChild("heading").textValue))
+    #if (!$_PropertyTool.isEmpty($heading))
+        <h2>${heading}</h2>
+    #end
+    #foreach ($article in $news)
+        #set ( $article = $article.asset)
+        #set ( $banner = $article.getStructuredDataNode("banner"))
+        #set ( $addImage = $banner.getChild("display").textValues.contains("Yes"))
+        #set ( $image = $banner.getChild("image").asset.link)
+        #set ( $alt = $_EscapeTool.xml($banner.getChild("alt").textValue))
+        #set ( $title = $_EscapeTool.xml($article.metadata.title))
+        #set ( $link = $article.link)
+        #set ( $summary = $_EscapeTool.xml($article.metadata.summary))
+        <section class="admmision-profiles news-listing">
+            #if ( $addImage )
+                <figure class="float-left">
+                    <img src="${image}" alt="$!{alt}" width="125px" />
+                </figure>
+            #end
+            <div class="admmision-profiles__content"#if(!$addImage) style="margin-left: 20px;"#end>
+                #if( !$_PropertyTool.isEmpty($title) )
+                    <header>
+                        <h2>
+                            #if( !$_PropertyTool.isEmpty($link) )
+                                <a href="${link}">
+                            #end
+                            ${title}
+                            #if( !$_PropertyTool.isEmpty($link) )
+                                </a>
+                            #end
+                        </h2>
+                    </header>
+                #end
+                $!{summary}
+            </div>
+        </section>
+    #end
+    <div style="clear:both"></div>
+#end

@@ -1,0 +1,340 @@
+#set($refresh = true)
+#####
+#set($showSidebarVal = $currentPage.getStructuredDataNode("showSidebar").textValue)
+#if($showSidebarVal == "Yes" || $showSidebarVal == "YesNoNav")
+    <aside class="large-4 medium-5 small-12 columns left-sidebar">
+        ## Side Navigation
+        #set($assetTypes = ["symlink", "reference"])
+        
+        #if(!$currentPage.dataDefinitionPath.contains('One Column') && $showSidebarVal != "YesNoNav")
+            <div class="sidenav-bg">
+                <h2 class="sidenav-title">In This Section</h2>
+                ##  #outputBreadcrumbs()
+                #outputNav
+            </div>
+        #elseif($currentPage.getStructuredDataNode('banner/style').textValue.contains('Navigation'))
+            <div class="small-12 menu-sec admissions-burgermenu m-b-20">
+                <span>THIS SECTION</span>
+            </div>
+            <!--#protect<div class="flexbox">#protect-->
+            <div class="large-4 medium-5 small-12 columns left-sidebar">
+                <div class="sidenav-bg full-height">
+                    #outputBreadcrumbs()
+                    #outputNav()
+                </div>
+            </div>
+        #end 
+    
+        ## Sidebar Content
+        #set( $rows = $currentPage.getStructuredDataNodes("sidebar") )
+        #outputSidebar($rows)
+    </aside>
+#end
+
+#####################################
+#macro (outputSidebar $rows)
+    ## <div class="row">
+        #foreach( $row in $rows )
+            #set( $type = $row.getChild("type").textValue )
+            #if( $type == "events" )
+                #set($eventsBlock = "")
+                #set($eventsBlock = $row.getChild("block"))
+                #if(!$_PropertyTool.isEmpty($eventsBlock.asset))
+                    #import("site://Events/_cms/formats/block")
+	                #outputHHEventsBlock($eventsBlock)
+	            #else 
+	                #import("/_cms/formats/_shared/events")
+    	            #outputEvents($row)
+	            #end
+            #elseif( $type == "calendar" )
+                #set( $category = $row.getChild("category").textValue )
+                #set( $page = "" )
+                #if( $category == "all" )
+                    #set( $page = $_.locatePage("index", "Calendar") )
+                #else
+                    #set( $page = $_.locatePage("${category}", "Calendar") )
+                #end
+                #if( !$_PropertyTool.isEmpty($page) )
+                    <div class="medium-12 columns">
+                        <div class="academic-calender">
+                            <span class="float-left"><img src="/_files/img/icon_calendar.png" alt="Calendar" /></span>
+                            <div><a href="${page.link}">$_EscapeTool.xml($page.label)</a></div>
+                        </div>
+                    </div>
+                #end
+            #elseif( $type == "notice" )
+                #set( $wysiwyg = "" )
+                #set( $start   = "" )
+                #set( $end     = "" )
+                #set( $active  = false )
+                #set( $title   = $_EscapeTool.xml($row.getChild("title").textValue) ) ## required
+                #set( $wysiwyg = $row.getChild("wysiwyg").textValue )
+                #set( $start   = $_DateTool.getDate($row.getChild("start").textValue) )
+                #set( $end     = $_DateTool.getDate($row.getChild("end").textValue) )
+                #set( $now     = $_DateTool.getTime() )
+                #if( !$_PropertyTool.isEmpty($start) && $_DateTool.difference($start, $now).minutes >= 0 ) ## display if after start time
+                    #set( $active = true )
+                #end
+                #if( !$_PropertyTool.isEmpty($end) && $_DateTool.difference($now, $end).minutes > 0 ) ## display if before end time
+                    #set( $active = true )
+                #end
+                #if( $_PropertyTool.isEmpty($start) && $_PropertyTool.isEmpty($end) ) ## always display if no start or end time
+                    #set( $active = true )
+                #end
+                #if( $active )
+                    <div class="medium-12 columns upcoming-mcc-sec notice-section">
+                        <h2><span><img src="/_files/img/icon_notice.png" alt="Notice" /></span> ${title}</h2>
+                        <div class="events columns">
+                            <div class="cal-info">
+                                $!{wysiwyg}
+                            </div>
+                        </div>
+                    </div>
+                #end
+             #elseif( $type == "conactEnrollment" )
+                #set( $contactBlock = $row.getChild("contact-share-block") ) ## get the block chooser
+                #set( $wysiwyg = "" )
+                #if( !$_PropertyTool.isNull($contactBlock.asset) ) ## if the block chooser is not empty
+                 #set( $title   = $_EscapeTool.xml($contactBlock.asset.getStructuredDataNode("title").textValue) )
+                  #set( $wysiwyg = $contactBlock.asset.getStructuredDataNode("contact-info").textValue )
+                #else
+                    #set( $title   = $_EscapeTool.xml($row.getChild("title").textValue) ) ## required
+                    #set( $wysiwyg = $row.getChild("wysiwyg").textValue )
+                #end
+                <div class="medium-12 columns upcoming-mcc-sec recruting-section">
+                    <h2>${title} 
+                        <a aria-label="More information about enrollment coaching"
+                        class="fi-info medium"
+                        href="https://www.mchenry.edu/info/"
+                        style="color: white; text-decoration: none;"
+                        onmouseover="this.style.textDecoration='underline';"
+                        onmouseout="this.style.textDecoration='none';">
+                        </a>
+                    </h2>
+                    <div class="events columns">
+                        <div class="cal-info">
+                            $!{wysiwyg}
+                        </div>
+                    </div>
+                </div>
+             #elseif( $type == "contact" )
+                #set($contactBlock = $row.getChild("contact-share-block") ) ## get the block chooser
+                #set($title = "")
+                #set($wysiwyg = "")
+                #set($hoursContent = "")
+                #set($locationLabel = "")
+                #set($locationUrl = "")
+                #set($phoneContent = "")
+                #set($emailContent = "")
+                #set($contactContent = "")
+                #set($facebookLabel = "")
+                #set($facebookUrl = "")
+                #set($twitterLabel = "")
+                #set($twitterUrl = "")
+                #set($instagramLabel = "")
+                #set($instagramUrl = "")
+                #set($linkedinLabel = "")
+                #set($linkedinUrl = "")
+                #set($ctaLabel = "")
+                #set($ctaLink = "")
+                #if(!$_PropertyTool.isNull($contactBlock.asset)) ## if the block chooser is not empty
+                    #set($title = $_EscapeTool.xml($contactBlock.asset.getStructuredDataNode("title").textValue))
+                    #set($wysiwyg = $contactBlock.asset.getStructuredDataNode("contact-info").textValue)
+                    #set($hoursContent = $contactBlock.asset.getStructuredDataNode("hours/content").textValue)
+                    #set($locationLabel = $contactBlock.asset.getStructuredDataNode("location/label").textValue)
+                    #set($locationUrl = $contactBlock.asset.getStructuredDataNode("location/url").textValue)
+                    #set($phoneContent = $contactBlock.asset.getStructuredDataNode("phone/content").textValue)
+                    #set($emailContent = $contactBlock.asset.getStructuredDataNode("email/content").textValue)
+                    #set($contactContent = $contactBlock.asset.getStructuredDataNode("content/content").textValue)
+                    #set($facebookLabel = $contactBlock.asset.getStructuredDataNode("facebook/label").textValue)
+                    #set($facebookUrl = $contactBlock.asset.getStructuredDataNode("facebook/url").textValue)
+                    #set($twitterLabel = $contactBlock.asset.getStructuredDataNode("twitter/label").textValue)
+                    #set($twitterUrl = $contactBlock.asset.getStructuredDataNode("twitter/url").textValue)
+                    #set($instagramLabel = $contactBlock.asset.getStructuredDataNode("instagram/label").textValue)
+                    #set($instagramUrl = $contactBlock.asset.getStructuredDataNode("instagram/url").textValue)
+                    #set($linkedinLabel = $contactBlock.asset.getStructuredDataNode("linkedin/label").textValue)
+                    #set($linkedinUrl = $contactBlock.asset.getStructuredDataNode("linkedin/url").textValue)
+                    #set($ctaLabel = $contactBlock.asset.getStructuredDataNode("cta/label").textValue)
+                    #if(!$_PropertyTool.isNull($contactBlock.asset.getStructuredDataNode("cta/link").asset))
+                        #set($ctaLink = $contactBlock.asset.getStructuredDataNode("cta/link").asset.link)
+                    #end
+                #else
+                    #set($title = $_EscapeTool.xml($row.getChild("title").textValue)) ## required
+                    #set($wysiwyg = $row.getChild("wysiwyg").textValue)
+                    #set($hoursContent = $row.getChild("hours").getChild("content").textValue)
+                    #set($locationLabel = $row.getChild("location").getChild("label").textValue)
+                    #set($locationUrl = $row.getChild("location").getChild("url").textValue)
+                    #set($phoneContent = $row.getChild("phone").getChild("content").textValue)
+                    #set($emailContent = $row.getChild("email").getChild("content").textValue)
+                    #set($contactContent = $row.getChild("contact-content").getChild("content").textValue)
+                    #set($facebookLabel = $row.getChild("facebook").getChild("label").textValue)
+                    #set($facebookUrl = $row.getChild("facebook").getChild("url").textValue)
+                    #set($twitterLabel = $row.getChild("twitter").getChild("label").textValue)
+                    #set($twitterUrl = $row.getChild("twitter").getChild("url").textValue)
+                    #set($instagramLabel = $row.getChild("instagram").getChild("label").textValue)
+                    #set($instagramUrl = $row.getChild("instagram").getChild("url").textValue)
+                    #set($linkedinLabel = $row.getChild("linkedin").getChild("label").textValue)
+                    #set($linkedinUrl = $row.getChild("linkedin").getChild("url").textValue)
+                    #set($ctaLabel = $row.getChild("cta").getChild("label").textValue)
+                    #if(!$_PropertyTool.isNull($row.getChild("cta").getChild("link").asset))
+                        #set($ctaLink = $row.getChild("cta").getChild("link").asset.link)
+                    #end
+                #end
+                <div class="sidebar-contact-section">
+                    #if($title != "")
+                        <h2>${title}</h2>
+                    #end
+                    <div class="contact-content">
+                        #if($hoursContent != "")
+                            <div class="contact-hours">
+                                ${hoursContent}
+                            </div>
+                        #end
+                        <div class="contact-info">
+                            #if($locationUrl != "" && $locationLabel != "")
+                                <div class="contact-item">
+                                    <i class="fa-solid fa-location-dot" aria-hidden="true"></i>
+                                    <a rel="noopener" target="_blank" href="${locationUrl}" aria-label="Find us on campus map, room ${locationLabel}">${locationLabel}</a>
+                                </div>
+                            #end
+                            #if($phoneContent != "")
+                                <div class="contact-item">
+                                    <i class="fa-solid fa-phone" aria-hidden="true"></i>
+                                    <a href="tel:${phoneContent}" aria-label="Call us at ${phoneContent}">${phoneContent}</a>
+                                </div>
+                            #end
+                            #if($emailContent != "")
+                                <div class="contact-item">
+                                    <i class="fa-solid fa-envelope" aria-hidden="true"></i>
+                                    <a href="mailto:${emailContent}" aria-label="Email us at ${emailContent}">${emailContent}</a>
+                                </div>
+                            #end
+                        </div>
+                        #if($facebookUrl != "" || $twitterUrl != "" || $instagramUrl != "" || $linkedinUrl != "")
+                        <div class="contact-social" role="region" aria-label="Social media links">
+                            #if($facebookUrl != "" && $facebookLabrl != "")
+                                <div class="contact-item">
+                                    <i class="fa-brands fa-facebook" aria-hidden="true"></i>
+                                    <a href="${facebookUrl}" aria-label="Visit our Facebook page">${facebookLabel}</a>
+                                </div>
+                            #end
+                            #if($twitterUrl != "" && $twitterLabel != "")
+                                <div class="contact-item">
+                                    <i class="fa-brands fa-twitter" aria-hidden="true"></i>
+                                    <a href="${twitterUrl}" aria-label="Visit our Twitter page">${twitterLabel}</a>
+                                </div>
+                            #end
+                            #if($instagramUrl != "" && $instagramLabel != "")
+                                <div class="contact-item">
+                                    <i class="fa-brands fa-instagram" aria-hidden="true"></i>
+                                    <a href="${instagramUrl}" aria-label="Visit our Instagram page">${instagramLabel}</a>
+                                </div>
+                            #end
+                            #if($linkedinUrl != "" && $linkedinLabel != "")
+                                <div class="contact-item">
+                                    <i class="fa-brands fa-linkedin" aria-hidden="true"></i>
+                                    <a href="${linkedinUrl}" aria-label="Visit our LinkedIn page">${linkedinLabel}</a>
+                                </div>
+                            #end
+                        </div>
+                        #end
+                        #if($ctaLink != "" && $ctaLabel != "")
+                            <a href="${ctaLink}" class="button button--yellow arrow contact-cta">
+                                <span>${ctaLabel}</span>
+                            </a>
+                        #end
+                    </div>
+                </div>
+             #elseif( $type == "wysiwyg" )
+                 #set( $wysiwyg = $row.getChild("wysiwyg").textValue )
+                 <div class="medium-12 columns">
+                   $!{wysiwyg}
+                    </div>
+                    #elseif( $type == "transfer" )
+                #set ($blockChooser = $row.getChild("transfer"))
+                <div class="clearfix"></div>
+                <div class="medium-12 columns">
+                #if (!$_PropertyTool.isNull($blockChooser.asset) && $blockChooser.asset.blockType == "xml")
+                    $blockChooser.asset.XML
+                #end
+                </div>
+            #elseif( $type == "noncredit" )
+                #set ($blockChooser = $row.getChild("noncredit"))
+                <div class="clearfix"></div>
+                <div class="medium-12 columns">
+                #if (!$_PropertyTool.isNull($blockChooser.asset) && $blockChooser.asset.blockType == "structureddata")
+                    $blockChooser.asset.xHTML
+                #end
+                </div>
+            #elseif( $type == "catalyst" )
+                #set ($blockChooser = $row.getChild("catalyst"))
+                <div class="clearfix"></div>
+                <div class="medium-12 columns">
+                #if (!$_PropertyTool.isNull($blockChooser.asset) && $blockChooser.asset.blockType == "structureddata")
+                    $blockChooser.asset.xHTML
+                #end
+                </div>
+            #elseif( $type == "nccancellation" )
+                #set ($blockChooser = $row.getChild("nccancellation"))
+                <div class="clearfix"></div>
+                <div class="medium-12 columns">
+                #if (!$_PropertyTool.isNull($blockChooser.asset) && $blockChooser.asset.blockType == "structureddata")
+                    $blockChooser.asset.xHTML
+                #end
+                </div>
+            #end
+        #end
+    ## </div>
+#end
+#####################################
+#macro(outputCrumbs $asset)
+    #if($asset.name && $asset.path != '/')
+        #set($crumb = false)
+        #outputCrumbs($asset.parentFolder)
+        #if($asset.identifier.type == 'folder')
+            #set($crumb = $_.locatePage("${asset.path}/index"))
+            #if($crumb && $crumb.identifier.id != $currentPage.identifier.id)
+                <span>&#62;</span>
+                <a href="${crumb.link}" class="breadcrumbs__link">$_EscapeTool.xml($crumb.label)</a>
+            #end
+        #end
+    #else
+        #break    
+    #end
+#end
+#####################################
+#macro(outputBreadcrumbs)
+    <div class="sidenav-bg__breadcrum"> 
+        <a href="site://McHenry/index">Home</a> 
+        #outputCrumbs($currentPage)
+        <span>&#62;</span> $_EscapeTool.xml($currentPage.label)
+     </div>
+#end 
+#####################################
+#macro(outputNav)
+    <ul class="sidenav-links">
+        ## #if (!$currentPage.metadata.getDynamicField("navExclude").values.contains("yes"))
+        ##     <li>${_EscapeTool.xml($currentPage.label)}</li>
+        ## #end
+        #foreach($asset in $currentPage.parentFolder.children)
+            #if($asset.assetType == 'folder')
+                #set($index = false)
+                #set($index = $_.locatePage("${asset.path}/index"))
+                #if($index)
+                    #set($asset = $index)
+                #end 
+            #end 
+            #if($assetTypes.contains($asset.assetType) || ($asset.assetType == "page" && !$asset.metadata.getDynamicField("navExclude").values.contains("yes") && $asset.identifier.id != $currentPage.identifier.id))
+                #if ($asset.assetType == "reference")
+                    #set ($asset = $asset.referencedAsset)
+                #end
+                ## Check if link is to a PDF file and add class to suppress icon
+                #if($asset.link.toLowerCase().endsWith(".pdf"))
+                    <li><a href="${asset.link}" class="no-pdf-icon">${asset.label}</a></li>
+                #else
+                    <li><a href="${asset.link}">${asset.label}</a></li>
+                #end
+           #end 
+        #end 
+    </ul>
+#end 

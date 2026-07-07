@@ -1,0 +1,70 @@
+<style>
+/*program finder box*/
+.programfinderbk { clear: both; background: #4b3190; height: 75px;padding-left:50px;}
+.programfinderbk p { color: #fff; font-size: 1.55rem;font-weight: 600;margin: 20px 25px;padding-left: 25px;}
+.programfinderbk select {margin-top: 20px;}
+
+ button.button.large {font-weight: 700;background-color: #fdbb30;margin-top: 17px;padding: 10px;}
+.finderbk {background: #4b3190;height: 375px; }
+
+.finderbk h2 {color: #fff; font-weight: 600;background: transparent;margin-left: 25px; margin-top:50px;font-size: 3rem;text-transform: uppercase;}
+.finderbk p { color: #fff; font-size: 1.5rem;}
+.pfinder {border:  3px solid #fdbb30;background:transparent;margin-right: 25px;}
+.pfinder p {font-size: 1.75rem;font-weight: 600;margin-top: 10px;margin-bottom: 10px;}
+.style1 {font-size: 3.0rem; color: #fdbb30;margin-left: 20px;margin-top: 20px;}
+.callout.cc p {margin-left: 25px;font-size: 1.35rem;font-weight: 600;line-height: 1.25;}
+.callout.cc p span {font-size: 2.0rem; font-style: italic;}
+.callout.cc {background: transparent;padding:10px; width: 60%; border: 0px solid #4b3190;width: 100%;}
+.callout.cc a {color: #fdbb30;}
+</style>
+<h1 id="startcontent" class="home-h1">McHenry County College</h1> ## In materials but does not render
+
+<div class="finderbk">
+<div class="row">
+<div class="large-6 columns">
+<h2>Discover<br /> MY options &gt;</h2>
+<div class="callout cc">
+<p><span>Not sure where to start?</span> <br /> <a href="/careercoach/">Career Coach</a> suggests careers based on your interests!</p>
+</div>
+</div>
+<div class="large-6 columns">
+<div class="callout pfinder">
+<p>I'm interested in: </p>
+<div class="custom-select"><select>
+<option value="0">Select option:</option>
+<option value="1">Agriculture, Food, and Natural Resources</option>
+<option value="2">Arts, A/V, Technology, and Communications</option>
+<option value="3">Automotive, Distribution, and Logistics</option>
+<option value="4">Government and Public Administration</option>
+</select></div>
+<p>in</p>
+<div class="custom-select"><select>
+<option value="0">Selet offering:</option>
+<option value="1">option 1</option>
+<option value="2">option 2</option>
+<option value="3">option 3</option>
+<option value="4">option 4</option>
+<option value="5">option 5</option>
+<option value="6">option 6</option>
+<option value="7">option 7</option>
+</select></div>
+<button class="button large" onclick="redirectToMyPage();">GO</button> <!--#protect<script>
+function redirectToMyPage(){
+            location.href = document.getElementById('select').value;
+        }
+</script>#protect--></div>
+</div>
+</div>
+</div>
+<div class="row info-block-main" role="main">
+    #foreach($callout in $currentPage.getStructuredDataNodes('callout'))
+        #set($image   = $callout.getChild('image').asset.link)  ## required
+        #set($caption = $callout.getChild('caption').textValue) ## required
+        #set($link    = $callout.getChild('link').asset.link)   ## required
+        <div class="medium-6 large-3 columns block-${foreach.count}">
+            <div>
+                <a href="${link}"><span>$_EscapeTool.xml($caption)</span></a>
+            </div>
+        </div>
+    #end 
+</div>

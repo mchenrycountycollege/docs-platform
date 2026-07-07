@@ -1,0 +1,240 @@
+/* Program Categories Component Styles */
+.program-categories-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 1rem;
+}
+
+.program-category {
+    padding: 2rem 1.5rem;
+    margin-bottom: 3rem;
+    border-radius: 8px;
+    border-left: 6px solid;
+}
+
+/* Theme Colors */
+.program-category.purple {
+    background-color: #f8f7fb;
+    border-left-color: #5639a4;
+}
+
+.program-category.orange {
+    background-color: #fff9f0;
+    border-left-color: #fdba31;
+}
+
+.program-category.green {
+    background-color: #f6faf4;
+    border-left-color: #52832F;
+}
+
+.category-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 1.5rem;
+}
+
+.category-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 1rem;
+    flex-shrink: 0;
+}
+
+.purple-icon {
+    background-color: #5639a4;
+}
+
+.orange-icon {
+    background-color: #fdba31;
+}
+
+.green-icon {
+    background-color: #52832F;
+}
+
+.icon-placeholder {
+    color: #fff;
+    font-size: 1.5rem;
+}
+
+.category-header h2 {
+    margin: 0;
+    font-size: 1.953rem;
+    font-weight: 700;
+}
+
+.program-category.purple .category-header h2 {
+    color: #5639a4;
+}
+
+.program-category.orange .category-header h2 {
+    color: #fdba31;
+}
+
+.program-category.green .category-header h2 {
+    color: #52832F;
+}
+
+.category-description {
+    margin-bottom: 2rem;
+}
+
+.category-description p {
+    color: #444;
+    font-size: 1rem;
+    line-height: 1.6;
+    margin: 0;
+}
+
+.option-cards {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.option-card {
+    background-color: #fff;
+    border: 1px solid #e0e0e0;
+    border-radius: 6px;
+    padding: 1.5rem;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+/* Hover effects by theme */
+.program-category.purple .option-card:hover {
+    border-color: #5639a4;
+    box-shadow: 0 4px 12px rgba(86, 57, 164, 0.1);
+    transform: translateY(-2px);
+}
+
+.program-category.orange .option-card:hover {
+    border-color: #fdba31;
+    box-shadow: 0 4px 12px rgba(253, 186, 49, 0.1);
+    transform: translateY(-2px);
+}
+
+.program-category.green .option-card:hover {
+    border-color: #52832F;
+    box-shadow: 0 4px 12px rgba(82, 131, 47, 0.1);
+    transform: translateY(-2px);
+}
+
+.card-content h3 {
+    margin: 0 0 0.75rem 0;
+    font-size: 1.25rem;
+}
+
+.option-link {
+    display: flex;
+    align-items: center;
+    text-decoration: none;
+    font-weight: 600;
+    transition: color 0.3s ease;
+}
+
+/* Link colors by theme */
+.program-category.purple .option-link {
+    color: #5639a4;
+}
+
+.program-category.orange .option-link {
+    color: #e6a429; /* Slightly darker orange for better contrast */
+}
+
+.program-category.green .option-link {
+    color: #52832F;
+}
+
+.option-link:hover,
+.option-link:focus {
+    color: #507F2E;
+    text-decoration: none;
+}
+
+.arrow-icon {
+    font-size: 1.5rem;
+    margin-right: 0.75rem;
+    transition: transform 0.3s ease;
+    font-weight: bold;
+}
+
+/* Arrow colors by theme */
+.program-category.purple .arrow-icon {
+    color: #5639a4;
+}
+
+.program-category.orange .arrow-icon {
+    color: #e6a429;
+}
+
+.program-category.green .arrow-icon {
+    color: #52832F;
+}
+
+.option-link:hover .arrow-icon,
+.option-link:focus .arrow-icon {
+    transform: translateX(4px);
+    color: #507F2E;
+}
+
+.card-content p {
+    color: #666;
+    font-size: 0.95rem;
+    line-height: 1.5;
+    margin: 0;
+}
+
+/* Responsive Design */
+@media screen and (min-width: 768px) {
+    .program-categories-container {
+        padding: 2rem;
+    }
+    
+    .program-category {
+        padding: 2.5rem;
+        margin-bottom: 4rem;
+    }
+    
+    .option-cards {
+        gap: 1.25rem;
+    }
+    
+    .option-card {
+        padding: 2rem;
+    }
+}
+
+@media screen and (min-width: 1024px) {
+    .option-cards {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+        gap: 1.5rem;
+    }
+}
+
+/* Accessibility improvements */
+.option-link:focus {
+    outline: 2px solid #507F2E;
+    outline-offset: 2px;
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+    .option-card {
+        border-color: #444;
+    }
+    
+    .option-card:hover {
+        border-color: #000;
+    }
+    
+    .program-category {
+        border-left-width: 8px;
+    }
+}

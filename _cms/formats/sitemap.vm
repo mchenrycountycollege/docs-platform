@@ -1,0 +1,52 @@
+<div class="small-12 columns ">
+    <header><h1 id="startcontent">$_EscapeTool.xml($currentPage.label)</h1></header>
+</div>
+
+#set($pages = $_XPathTool.selectNodes($contentRoot, "//system-page[not(@reference)][not(@current)][not(contains(path,'_cms'))][title]"))
+$_SortTool.addSortCriterion("title", "", "text", "ascending", "upper-first")
+$_SortTool.sort($pages)
+
+<div class="directory" data-equalizer="p02w1w-equalizer" data-equalizer-mq="large-up" data-resize="bqevx8-eq" data-events="resize">
+    <div class="medium-9  panel" data-equalizer-watch="" style="height: 3874px;">
+    #set($letter = '')
+    #foreach($page in $pages)
+        #setTitle($page)
+        #set($curr = $title.toLowerCase().substring(0, 1))
+        #if($curr != $letter)
+            #set($letter = $curr)
+            #if(!$foreach.first)
+                </ul>
+                <div class="separator"></div>
+            #end
+            <h2><span style="background: #ffffff;">${letter.toUpperCase()}</span></h2>
+            <ul>
+        #end 
+        #setTitle($page)
+        #set ($link = "${currentPage.site.url}${page.getChild('path').value}")
+        #if ($link.contains("/index"))
+            #set ($link = $link.replace("/index", ""))
+        #else
+            #set ($link = "${link}.html")
+        #end
+        #set ($inLink = $page.getChild('link').value)
+        [system-view:internal]<li><a href="${inLink}">$_EscapeTool.xml($title)</a></li>[/system-view:internal]
+        [system-view:external]<li><a href="${link.toLowerCase()}">$_EscapeTool.xml($title)</a></li>[/system-view:external]
+        
+        #if(!$foreach.hasNext())
+            </ul>
+        #end
+    #end
+  </div>
+</div>
+
+## GET PAGE TITLE
+#macro(setTitle $item)
+    ###if($item.getChild("display-name"))
+    ##   #set($title = $item.getChild("display-name").value)
+    ###elseif($item.getChild("title"))
+    #if($item.getChild("title"))
+        #set($title = $item.getChild("title").value)
+    #else
+        #set($title = $item.getChild("name").value)
+    #end
+#end

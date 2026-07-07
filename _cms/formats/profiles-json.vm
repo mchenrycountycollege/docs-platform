@@ -1,0 +1,155 @@
+#macro( toJSON $str ) #set( $str = $_EscapeTool.javascript( $str.replaceAll( '\"' , '\\\"' ).replaceAll("\r\n", "").replaceAll("\n", "").replaceAll("\r", "").replaceAll("\t", "").replaceAll("--", "-") ).replaceAll("\\'","'") )${str}#end
+
+
+	
+#set( $extensions = [] )
+#set( $extensionsBlock = $_.locateBlock( "/_data/Profile Data Extensions" ,  "McHenry" ) )
+#set( $extensionNodes = $extensionsBlock.getStructuredDataNodes( "ITEM" ) )
+#foreach( $ext in $extensionNodes )
+	#set( $x = $extensions.add( $_EscapeTool.xml( $ext.getChild( "ID" ).textValue ) ) )
+#end
+
+
+#macro( setAnnotationData , $id )
+	#set( $extImg = "" )
+	#set( $extCv = "" )
+	#set( $extUrl = "" )
+	#set( $extDeptUrl = "" )
+	#set( $extInfoSectionNodes = [] )
+	#set( $extInfoSectionJSONArray = "" )
+	#if( $extensions.contains( $id ) )
+		#foreach( $ext in $extensionNodes )
+			#if( $ext.getChild( "ID" ).textValue == $id )
+				#set( $extImg = $ext.getChild( "IMG-INT" ).asset.link )
+				#set( $extCv = $ext.getChild( "CV-INT" ).asset.link )
+				#set( $extUrl = $ext.getChild( "URL" ).textValue )
+				#set( $extDeptUrl = $ext.getChild( "URL-DEPT" ).textValue )
+        #set( $extInfoSectionNodes = $ext.getChildren( "SECTION" ) )
+				#if( $extImg != "" )
+					#set( $extImg = "[system-asset]" + $extImg + "[/system-asset]" )
+				#end
+				#if( $extCv != "" )
+					#set( $extCv = "[system-asset]" + $extCv + "[/system-asset]" )
+				#end
+			#end
+		#end
+	#end
+#end
+
+#set( $results = $_XPathTool.selectNodes( $contentRoot , "//item" ) )
+$_SortTool.addSortCriterion( "lname" , "en" , "text", "ascending", "upper-first")
+$_SortTool.sort( $results )
+
+<!--#protect-top
+[
+#foreach($resultItem33 in [1..1])
+#foreach($resultItem in $results) 
+	
+	#if( true )
+		#if( false )
+			##do nothing
+		#else
+			#set( $un = "" )
+			#set( $fname = "" )
+			#set( $lname = "" )
+			#set( $title = "" )
+			#set( $dept = "" )
+			#set( $divison = "" )
+			#set( $room = "" )
+			#set( $phone = "" )
+			#set( $image = "" )
+			#set( $email = "" )
+      
+      
+      
+			#set( $un = $resultItem.getChild( "un" ).value )
+			#set( $fname = "#toJSON( $resultItem.getChild( 'fname' ).value )" )
+			#set( $lname = "#toJSON( $resultItem.getChild( 'lname' ).value )" )
+			#set( $title = "#toJSON( $resultItem.getChild( 'title' ).value )" )
+			#set( $dept = "#toJSON( $resultItem.getChild( 'dept' ).value )" )
+			#set( $divison = "#toJSON( $resultItem.getChild( 'divison' ).value )" )
+			#set( $room = "#toJSON( $resultItem.getChild( 'room' ).value )" )
+			#set( $phone = "#toJSON( $resultItem.getChild( 'phone' ).value )" )
+## 			#set( $image = "#toJSON( $resultItem.getChild( 'image' ).value )" )
+			#set( $image = "[system-asset:id=350e1f22ac1e00967285b148dd26e055]/faculty/images/default.jpg[/system-asset]" )
+			#set( $email = "#toJSON( $resultItem.getChild( 'email' ).value )" )
+      
+      #setAnnotationData( $un )
+      #if( $extImg != "" )
+        #set( $image = $extImg )
+      #end
+      
+
+			#if( ! $foreach.first ) , #end
+      {
+        "fname" : "$fname"
+        ,"lname" : "$lname"
+        ,"un" : "$un"
+        ,"title" : "$title"
+        ,"dept" : "$dept"
+        ,"divison" : "$divison"
+        ,"room" : "$room"
+        ,"phone" : "$phone"
+        ,"image" : "$image"
+        ,"email" : "$email"
+        ,"cv" : "$extCv"
+        ,"url" : "$extUrl"
+        ,"deptUrl" : "$extDeptUrl"
+        ,"sections" : [
+        #foreach( $tmp in $resultItem.getChild( "sections" ).getChildren( "section" ) )
+          #set( $term = "" )
+          #set( $name = "" )
+          #set( $title = "" )
+          #set( $url = "" )
+          #set( $term = "#toJSON( $tmp.getChild( 'term' ).value )" )
+          #set( $name = "#toJSON( $tmp.getChild( 'name' ).value )" )
+          #set( $title = "#toJSON( $tmp.getChild( 'title' ).value )" )
+          #set( $url = "#toJSON( $tmp.getChild( 'url' ).value )" )
+          #if( ! $foreach.first ) , #end
+          {
+            "term" : "$term"
+            ,"name" : "$name"
+            ,"title" : "$title"
+            ,"url" : "$url"
+          }         
+        #end
+        ]
+        ,"degrees" : [
+        #foreach( $tmp in $resultItem.getChild( "degrees" ).getChildren( "degree" ) )
+          #set( $institution = "" )
+          #set( $degree = "" )
+          #set( $institution = "#toJSON( $tmp.getChild( 'institution' ).value )" )
+          #set( $degree = "#toJSON( $tmp.getChild( 'degree' ).value )" )
+          #if( ! $foreach.first ) , #end
+          {
+            "institution" : "$institution"
+            ,"degree" : "$degree"
+          }         
+        #end
+        ]
+        ,"info" : [
+        #foreach( $tmp in $extInfoSectionNodes )
+          #set( $title = "" )
+          #set( $html = "" )
+          #if( ! $_PropertyTool.isEmpty( $tmp.getChild( 'TITLE' ).textValue ) && $tmp.getChild( 'TITLE' ).textValue != "" )
+            #set( $title = "#toJSON( $tmp.getChild( 'TITLE' ).textValue )" )
+          #end
+          #if( ! $_PropertyTool.isEmpty( $tmp.getChild( 'HTML' ).textValue ) && $tmp.getChild( 'HTML' ).textValue != "" )
+            #set( $html = "#toJSON( $tmp.getChild( 'HTML' ).textValue )" )
+          #end
+          #if( ! $foreach.first ) , #end
+          {
+            "title" : "$title"
+            ,"html" : "$html"
+          }         
+        #end
+        ]
+      }
+		#end
+	#end
+#end
+#end
+#set( $allTagsStr = $allTagsStr.substring( 0 , $allTagsStr.length() ) )
+
+]
+#protect-top-->

@@ -1,0 +1,5 @@
+<h1 id="startcontent">$_EscapeTool.xml($currentPage.label)</h1>
+#set($intro = $currentPage.getStructuredDataNode('intro-w').textValue)
+#if(!$_PropertyTool.isEmpty($intro))
+    $intro
+#end 

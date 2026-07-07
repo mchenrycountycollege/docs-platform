@@ -1,0 +1,145 @@
+<!--
+  Data Definition: artgallery-exhibits
+  Site: McHenry County College
+  Used by: XHTML/Data Definition Block "current-exhibits" in /_cms/blocks/artgallery/
+
+  This is a BLOCK-ONLY Data Definition. It contains only the repeating
+  exhibit group. The page-intro field has been intentionally removed —
+  admins add introductory text via a "Content Editor" content row on
+  the two-column page that embeds this block.
+
+  Paste the contents of this <system-data-structure> element into the
+  Manage Site > Data Definitions editor (XML tab) when creating the
+  new Data Definition named "artgallery-exhibits".
+-->
+<system-data-structure>
+
+  <!--
+    Repeating exhibit group — one instance per gallery exhibit.
+    Min 1, Max 10. Each instance collapses independently in the CMS editor.
+  -->
+  <group
+    identifier="exhibit"
+    label="Exhibit"
+    multiple="true"
+    minimum-number="1"
+    maximum-number="10"
+    collapsed="false">
+
+    <!--
+      gallery-name: Identifies the gallery space.
+      Also drives the sticky anchor-nav link text and the section's HTML id.
+      Example: "Galleries One & Two", "East Gallery", "South Gallery"
+    -->
+    <text
+      identifier="gallery-name"
+      label="Gallery Name"
+      required="true"
+      help-text="The gallery space name (e.g., 'Galleries One &amp; Two', 'East Gallery'). This text becomes the anchor navigation link label." />
+
+    <text
+      identifier="artist-name"
+      label="Artist Name"
+      required="true"
+      help-text="Full name of the featured artist or exhibition title for group shows." />
+
+    <text
+      identifier="exhibit-title"
+      label="Exhibit Title"
+      required="true"
+      help-text="The official name of the exhibition." />
+
+    <text
+      identifier="date-start"
+      label="Start Date"
+      type="datetime"
+      required="true"
+      help-text="First day of the exhibition." />
+
+    <text
+      identifier="date-end"
+      label="End Date"
+      type="datetime"
+      required="true"
+      help-text="Last day of the exhibition." />
+
+    <!--
+      Optional event groups — entire list item is hidden when
+      the start datetime is left empty.
+    -->
+    <group
+      identifier="artist-talk"
+      label="Artist Talk (optional)"
+      collapsed="true">
+      <text
+        identifier="artist-talk-start"
+        label="Date &amp; Start Time"
+        type="datetime"
+        required="false"
+        help-text="Select the date and start time of the artist talk. Leave blank to hide the Artist Talk row entirely." />
+      <text
+        identifier="artist-talk-end"
+        label="End Time"
+        type="datetime"
+        required="false"
+        help-text="Select the end time. Use the same date as above; only the time portion is displayed. Leave blank if there is no end time." />
+    </group>
+
+    <group
+      identifier="reception"
+      label="Reception (optional)"
+      collapsed="true">
+      <text
+        identifier="reception-start"
+        label="Date &amp; Start Time"
+        type="datetime"
+        required="false"
+        help-text="Select the date and start time of the reception. Leave blank to hide the Reception row entirely." />
+      <text
+        identifier="reception-end"
+        label="End Time"
+        type="datetime"
+        required="false"
+        help-text="Select the end time. Use the same date as above; only the time portion is displayed. Leave blank if there is no end time." />
+    </group>
+
+    <!--
+      Featured artwork image.
+      Alt text is pulled from the file asset's Metadata > Title field.
+      Instruct editors to fill in the Title metadata field when uploading artwork images.
+    -->
+    <asset
+      identifier="main-image"
+      label="Featured Artwork Image"
+      required="true"
+      type="file"
+      help-text="Upload artwork images at least 800px on the longest side, no wider than 1200px. The image will display at its natural proportions — do not pad or add borders. For accessibility, fill in the Title field in the image file's Metadata with a description of the artwork (e.g., 'Tumbaga, 8x4x4 ft, Mixed media, 2021')." />
+
+    <text
+      identifier="image-caption"
+      label="Image Caption (optional)"
+      required="false"
+      help-text="Caption displayed below the artwork image (e.g., 'Untitled No. 7 · Oil on canvas · 2025'). Leave blank to omit." />
+
+    <!--
+      Expandable accordion sections.
+      Either or both can be left blank — empty sections are hidden entirely.
+      If both are blank, the accordion container is not rendered at all.
+    -->
+    <text
+      identifier="statement"
+      label="Artist Statement (optional)"
+      required="false"
+      wysiwyg="true"
+      help-text="Displayed in an expandable 'Statement' accordion below the exhibit. Leave blank to hide the Statement section entirely." />
+
+    <text
+      identifier="bio"
+      label="About the Artist (optional)"
+      required="false"
+      wysiwyg="true"
+      help-text="Displayed in an expandable 'About [Artist Name]' accordion below the exhibit. Leave blank to hide this section entirely." />
+
+  </group>
+
+</system-data-structure>

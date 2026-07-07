@@ -1,0 +1,43 @@
+#macro(outputAccordions $accordions)
+    <ul class="accordion" data-accordion="" data-allow-all-closed="true">
+        #foreach( $accordion in $accordions)
+            #set ( $label = $_EscapeTool.xml($accordion.getChild("label").textValue))
+            #set ( $content = $accordion.getChild("content").textValue)
+            #set ( $anchor = "")
+            #set ( $anchor = $_EscapeTool.xml($accordion.getChild("anchor").textValue))
+            <li class="accordion-item " data-accordion-item="" #if(!$_PropertyTool.isEmpty($anchor))id="${anchor}"#end>
+        		<a class="accordion-title" href="#">$label</a>
+        		<div class="accordion-content" data-tab-content="">
+        			$content
+        		</div>
+        	</li>
+        #end
+    </ul>
+#end
+
+## NEW MACRO - For High School Course Accordions Block
+## This macro is specifically for rendering course link lists from structured data
+## Used by the collegeinhs-courses block (separate from the WYSIWYG accordions above)
+
+#macro(outputCourseAccordions $accordions)
+    <ul class="accordion" data-accordion="" data-allow-all-closed="true">
+        #foreach($accordion in $accordions)
+            #set($title = $_EscapeTool.xml($accordion.getChild('title').textValue))
+            #set($courses = $accordion.getChildren('course'))
+            
+            <li class="accordion-item " data-accordion-item="">
+                <a class="accordion-title" href="#">$title</a>
+                <div class="accordion-content" data-tab-content="">
+                    <ul>
+                        #foreach($course in $courses)
+                            #set($courseName = $_EscapeTool.xml($course.getChild('name').textValue))
+                            #set($courseUrl = $_EscapeTool.xml($course.getChild('url').textValue))
+                            
+                            <li><a href="$courseUrl">$courseName</a></li>
+                        #end
+                    </ul>
+                </div>
+            </li>
+        #end
+    </ul>
+#end

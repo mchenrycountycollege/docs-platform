@@ -1,0 +1,2 @@
+#import( "site://Spotlights/_cms/formats/_shared/featured-spotlights" )
+#featuredSpotlights($currentPage.getStructuredDataNode("featured-spotlights/featured-spotlights-block").asset)

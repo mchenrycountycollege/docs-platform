@@ -1,0 +1,30 @@
+## Search-index Format -- assigned directly to the default region of one
+## container page at docs/_system/search-index.json (no Content Type / DD --
+## Format overridden at the page level).
+##
+## Uses the Query API's byContentType, per current Hannon Hill guidance
+## preferring Query API over Index Blocks. Every Documentation Page uses
+## this Content Type, and the Content Type is only ever assigned within
+## docs/, so this is inherently scoped there without needing byFolderPath.
+##
+## Output: _system/search-index.json -- the standard SSG search pattern
+## (title/path/tags/excerpt for every page), consumed client-side by
+## cmdk+Fuse.js.
+
+#import('/_cms/formats/docs-platform/_shared')
+
+#set($pageAssets = $_.query().byContentType("Documentation Page").preloadStructuredData().preloadDynamicMetadata().maxResults(-1).execute())
+
+#set($entries = [])
+#foreach($pageAsset in $pageAssets)
+    #extractDocFields($pageAsset)
+    #set($entryMap = {
+        "title": $docTitle,
+        "path": $docPath,
+        "tags": $docTags,
+        "excerpt": $docExcerpt
+    })
+    #set($discard = $entries.add($entryMap))
+#end
+
+$_SerializerTool.toJson({"pages": $entries})

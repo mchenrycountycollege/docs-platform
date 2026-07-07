@@ -1,0 +1,161 @@
+<!--
+  Block Seed Data: current-exhibits
+  Site: McHenry County College
+  Block path (in Cascade): /_cms/blocks/artgallery/current-exhibits
+  Data Definition: artgallery-exhibits
+
+  This represents the structured data shape that Cascade produces for the
+  "artgallery-exhibits" Data Definition when the block is populated via
+  the CMS form.
+
+  THREE EXHIBITS are provided — covering all field-presence permutations
+  from the approved prototype so the developer can verify every conditional
+  branch immediately after creating the block:
+
+    Exhibit 1 (Galleries One & Two) — ALL fields populated
+    Exhibit 2 (East Gallery)        — artist-talk empty, reception empty,
+                                       statement empty, image-caption empty
+    Exhibit 3 (South Gallery)       — statement empty, bio empty
+                                       (entire accordion block suppressed)
+
+  IMPORTANT NOTES FOR MANUAL DATA ENTRY:
+  - Replace the placeholder /artgallery/images/... file paths with real
+    Cascade file asset paths after uploading artwork images.
+  - For each image, confirm the file asset's Metadata > Title field contains
+    a descriptive alt text for the artwork before selecting it in the block.
+  - WYSIWYG field content (statement, bio) is entered via the rich text
+    editor in the Cascade block form — not pasted as raw HTML.
+
+  HOW TO USE THIS FILE:
+  Use this as a field-by-field reference guide when manually entering
+  content into the block form in Cascade. Refer to each <exhibit> element
+  and type/paste the text values into the corresponding form fields.
+-->
+
+<system-data-structure>
+
+  <!-- =====================================================================
+       EXHIBIT 1: All fields populated — Galleries One & Two
+  ====================================================================== -->
+  <exhibit>
+
+    <gallery-name>Galleries One &amp; Two</gallery-name>
+
+    <artist-name>Maria Elena Vásquez</artist-name>
+
+    <exhibit-title>Fragmentos del Tiempo</exhibit-title>
+
+    <dates>January 15 — March 28, 2026</dates>
+
+    <!--
+      Optional event rows — both present for Exhibit 1
+    -->
+    <artist-talk>February 10, 2026 at 6:00 PM</artist-talk>
+
+    <reception>January 15, 2026 at 5:00–7:00 PM</reception>
+
+    <!--
+      File asset: replace path with the actual uploaded artwork image path.
+      Ensure the image file's Metadata > Title = descriptive alt text.
+    -->
+    <main-image
+      type="file"
+      path="/artgallery/images/2026/vasquez-untitled-7.jpg"
+      siteName="McHenry County College" />
+
+    <image-caption>Untitled No. 7 · Oil on canvas · 2025</image-caption>
+
+    <!--
+      Both accordion fields populated for Exhibit 1.
+      Enter the content below via the WYSIWYG editor in Cascade.
+    -->
+    <statement><![CDATA[<p>My work investigates the tension between memory and forgetting — how fragments of the past persist in material form even as their meaning dissolves. The paintings in <em>Fragmentos del Tiempo</em> were made over three years in a studio overlooking the coastline of Oaxaca, where the light changes so quickly that any fixed image is immediately a kind of lie.</p>
+<p>I work in oil because oil resists. It stays malleable long enough to think inside it. These are not documents of landscape; they are landscapes of a searching mind.</p>]]></statement>
+
+    <bio><![CDATA[<p>Maria Elena Vásquez (b. 1977, Mexico City) is a painter and installation artist whose work has been exhibited throughout Mexico and the United States. She received her MFA from the School of the Art Institute of Chicago and has held residencies at the MacDowell Colony, the Headlands Center for the Arts, and the Bellagio Center.</p>
+<p>Her work is in the permanent collections of the Museum of Contemporary Art Chicago and the Smithsonian American Art Museum. She lives and works in Chicago, Illinois.</p>]]></bio>
+
+  </exhibit>
+
+
+  <!-- =====================================================================
+       EXHIBIT 2: artist-talk empty · reception empty · statement empty ·
+                  image-caption empty — East Gallery
+       Tests: hidden event rows, single accordion (bio only), no caption.
+  ====================================================================== -->
+  <exhibit>
+
+    <gallery-name>East Gallery</gallery-name>
+
+    <artist-name>James Kowalski</artist-name>
+
+    <exhibit-title>Structural Residue</exhibit-title>
+
+    <dates>February 2 — April 4, 2026</dates>
+
+    <!--
+      artist-talk and reception intentionally left empty.
+      The format should suppress both <li> rows entirely.
+    -->
+    <artist-talk></artist-talk>
+
+    <reception></reception>
+
+    <main-image
+      type="file"
+      path="/artgallery/images/2026/kowalski-structural-residue.jpg"
+      siteName="McHenry County College" />
+
+    <!--
+      image-caption intentionally empty — caption element must not render.
+    -->
+    <image-caption></image-caption>
+
+    <!--
+      statement intentionally empty — Statement accordion item must not render.
+      bio is populated — only the "About James Kowalski" accordion should appear.
+    -->
+    <statement></statement>
+
+    <bio><![CDATA[<p>James Kowalski is a sculptor and visual artist based in Elgin, Illinois. His practice centers on the transformation of industrial and reclaimed materials, exploring themes of labor, time, and built environments. He earned his BFA from Northern Illinois University and his MFA from the University of Illinois at Chicago.</p>
+<p>Kowalski has exhibited at venues throughout the Chicago area and has completed public art commissions for the cities of Elgin and Waukegan. <em>Structural Residue</em> is his first solo exhibition at McHenry County College.</p>]]></bio>
+
+  </exhibit>
+
+
+  <!-- =====================================================================
+       EXHIBIT 3: statement empty · bio empty — South Gallery
+       Tests: entire accordion wrapper suppressed when both fields empty.
+  ====================================================================== -->
+  <exhibit>
+
+    <gallery-name>South Gallery</gallery-name>
+
+    <artist-name>Annual Juried Student Exhibition</artist-name>
+
+    <exhibit-title>Perspectives 2026</exhibit-title>
+
+    <dates>March 10 — April 30, 2026</dates>
+
+    <artist-talk>March 10, 2026 at 4:00 PM</artist-talk>
+
+    <reception>March 10, 2026 at 5:00–7:00 PM</reception>
+
+    <main-image
+      type="file"
+      path="/artgallery/images/2026/student-exhibition-perspectives-2026.jpg"
+      siteName="McHenry County College" />
+
+    <image-caption>Selected works from the 2026 Annual Juried Student Exhibition</image-caption>
+
+    <!--
+      Both accordion fields empty — the entire accordion wrapper div
+      must not render for this exhibit section.
+    -->
+    <statement></statement>
+
+    <bio></bio>
+
+  </exhibit>
+
+</system-data-structure>

@@ -1,0 +1,407 @@
+#set( $debug = false )
+
+#macro( debug $str )
+#if( $debug )<b>${str}</b>#end
+#end
+#macro( debugP $obj , $disable )
+#if( $debug && !$disable )
+$_PropertyTool.outputProperties( $obj )
+#end
+#end
+
+<div class="cfpf-program-finder">
+	<!-- <p>
+	<input type="text" id="quicksearch" placeholder="Search" />
+	</p> -->
+	<form class="form pf-search-form">
+		<div class="inner">
+			<h2 class="cfpf-header">Filters</h2>
+			<div class="pf-search">
+				<input type="text" id="pf-search" name="search" placeholder="Example: Therapy"/>
+			</div>
+			<div class="select-items">
+					<div class="select-item">
+							<select class="area-of-study filters-select" value-group="area_of_study">
+									<option selected="selected" value="">Any Area of Study</option>
+                  <option value=".AgricultureFoodandNaturalResources">Agriculture, Food, and Natural Resources</option>
+                  <option value=".ArtsAVTechnologyandCommunications">Arts, A/V Technology, and Communications</option>
+                  <option value=".AutomotiveDistributionandLogistics">Automotive, Distribution, and Logistics</option>
+                  <option value=".GovernmentandPublicAdministration">Government and Public Administration</option>
+                  <option value=".HealthScienceandHealthCare">Health Science and Health Care</option>
+                  <option value=".HospitalityandTourism">Hospitality and Tourism</option>
+                  <option value=".HumanServicesEducationandTraining">Human Services, Education, and Training</option>
+                  <option value=".InformationTechnology">Information Technology</option>
+                  <option value=".LawPublicSafetyCorrectionsandSecurity">Law, Public Safety, Corrections, and Security</option>
+                  <option value=".ManufacturingArchitectureandConstruction">Manufacturing, Architecture and Construction</option>
+                  <option value=".MarketingFinanceBusinessManagementandAdministration">Marketing, Finance, Business Management and Administration</option>
+                  <option value=".ScienceTechnologyEngineeringMathematics">Science, Technology, Engineering, Mathematics</option>
+									<option value=".AdvancedManufacturingandEngineeringTechnology">Advanced Manufacturing and Engineering Technology</option>
+									<option value=".Agriculture">Agriculture</option>
+									<option value=".Healthcare">Healthcare</option>
+									<option value=".BusinessandProfessionalServices">Business and Professional Services</option>
+									<option value=".TransportationDistributionandLogistics">Transportation, Distribution, and Logistics</option>
+									<option value=".HumanandPublicServices">Human and Public Services</option>
+									<option value=".InformationTechnologyandDigitalMedia">Information Technology and Digital Media</option>
+									<option value=".MathematicsPhysicalandLifeSciences">Mathematics, Physical, and Life Sciences</option>
+									<option value=".ArtsandHumanities">Arts and Humanities</option>
+							</select>
+					</div>
+					<div class="select-item">
+							<select class="degree-type filters-select" value-group="degree_type">
+									<option selected="selected" value="">Any Degree Type</option>
+									<option value=".AA">Associate in Arts (AA)</option>
+									<option value=".AAS">Associate in Applied Sciences (AAS)</option>
+									<option value=".AES">Associate in Engineering Science (AES)</option>
+									<option value=".AFA">Associate in Fine Arts (AFA)</option>
+									<option value=".AS">Associate in Science (AS)</option>
+									<option value=".Certificate">Certificate</option>
+							</select>
+					</div>
+					<div class="select-item">
+							<select class="goal-type filters-select" value-group="goal_type">
+									<option selected="selected" value="">Any Goal</option>
+									<option value=".Transfer">Transfer</option>
+									<option value=".StartMyDreamJob">Start My Dream Job</option>
+									<option value=".AdvanceMyCareer">Advance My Career</option>
+							</select>
+					</div>
+			</div>
+		</div>
+	</form>
+	<div id="filters" class="button-group">
+			<button class="button" data-filter=":not(.cta)">Show All</button>
+			<button class="button" id="checkbox" data-filter=".favorited">Favorites</button>
+			<button class="button cta" data-filter=".cta">Clear</button>
+	</div>
+	<div class="cfpf-tile-container">
+			<div class="cfpf-inner">
+					<div class="cfpf-grid">
+					
+            <div class="cfpf-item cta ctaAgricultureFoodandNaturalResources">
+              <a href="#.AgricultureFoodandNaturalResources" class="cfpf-child-item" data-filter=".AgricultureFoodandNaturalResources">
+              <span class="cfpf-item-inner">
+                  <span class="cfpf-top">
+                    <span class="cfpf-title">
+                      Agriculture, Food, and Natural Resources
+                    </span>
+                </span>
+              </span>
+              </a>
+            </div>
+            <div class="cfpf-item cta ctaArtsAVTechnologyandCommunications">
+              <a href="#.ArtsAVTechnologyandCommunications" class="cfpf-child-item" data-filter=".ArtsAVTechnologyandCommunications">
+              <span class="cfpf-item-inner">
+                  <span class="cfpf-top">
+                    <span class="cfpf-title">
+                      Arts, A/V Technology, and Communications
+                    </span>
+                </span>
+              </span>
+              </a>
+            </div>
+            <div class="cfpf-item cta ctaAutomotiveDistributionandLogistics">
+              <a href="#.AutomotiveDistributionandLogistics" class="cfpf-child-item" data-filter=".AutomotiveDistributionandLogistics">
+              <span class="cfpf-item-inner">
+                  <span class="cfpf-top">
+                    <span class="cfpf-title">
+                      Automotive, Distribution, and Logistics
+                    </span>
+                </span>
+              </span>
+              </a>
+            </div>
+            <div class="cfpf-item cta ctaGovernmentandPublicAdministration">
+              <a href="#.GovernmentandPublicAdministration" class="cfpf-child-item" data-filter=".GovernmentandPublicAdministration">
+              <span class="cfpf-item-inner">
+                  <span class="cfpf-top">
+                    <span class="cfpf-title">
+                      Government and Public Administration
+                    </span>
+                </span>
+              </span>
+              </a>
+            </div>
+            <div class="cfpf-item cta ctaHealthScienceandHealthCare">
+              <a href="#.HealthScienceandHealthCare" class="cfpf-child-item" data-filter=".HealthScienceandHealthCare">
+              <span class="cfpf-item-inner">
+                  <span class="cfpf-top">
+                    <span class="cfpf-title">
+                      Health Science and Health Care
+                    </span>
+                </span>
+              </span>
+              </a>
+            </div>
+            <div class="cfpf-item cta ctaHospitalityandTourism">
+              <a href="#.HospitalityandTourism" class="cfpf-child-item" data-filter=".HospitalityandTourism">
+              <span class="cfpf-item-inner">
+                  <span class="cfpf-top">
+                    <span class="cfpf-title">
+                      Hospitality and Tourism
+                    </span>
+                </span>
+              </span>
+              </a>
+            </div>
+            <div class="cfpf-item cta ctaHumanServicesEducationandTraining">
+              <a href="#.HumanServicesEducationandTraining" class="cfpf-child-item" data-filter=".HumanServicesEducationandTraining">
+              <span class="cfpf-item-inner">
+                  <span class="cfpf-top">
+                    <span class="cfpf-title">
+                      Human Services, Education, and Training
+                    </span>
+                </span>
+              </span>
+              </a>
+            </div>
+            <div class="cfpf-item cta ctaInformationTechnology">
+              <a href="#.InformationTechnology" class="cfpf-child-item" data-filter=".InformationTechnology">
+              <span class="cfpf-item-inner">
+                  <span class="cfpf-top">
+                    <span class="cfpf-title">
+                      Information Technology
+                    </span>
+                </span>
+              </span>
+              </a>
+            </div>
+            <div class="cfpf-item cta ctaLawPublicSafetyCorrectionsandSecurity">
+              <a href="#.LawPublicSafetyCorrectionsandSecurity" class="cfpf-child-item" data-filter=".LawPublicSafetyCorrectionsandSecurity">
+              <span class="cfpf-item-inner">
+                  <span class="cfpf-top">
+                    <span class="cfpf-title">
+                      Law, Public Safety, Corrections, and Security
+                    </span>
+                </span>
+              </span>
+              </a>
+            </div>
+            <div class="cfpf-item cta ctaManufacturingArchitectureandConstruction">
+              <a href="#.ManufacturingArchitectureandConstruction" class="cfpf-child-item" data-filter=".ManufacturingArchitectureandConstruction">
+              <span class="cfpf-item-inner">
+                  <span class="cfpf-top">
+                    <span class="cfpf-title">
+                      Manufacturing, Architecture and Construction
+                    </span>
+                </span>
+              </span>
+              </a>
+            </div>
+            <div class="cfpf-item cta ctaMarketingFinanceBusinessManagementandAdministration">
+              <a href="#.MarketingFinanceBusinessManagementandAdministration" class="cfpf-child-item" data-filter=".MarketingFinanceBusinessManagementandAdministration">
+              <span class="cfpf-item-inner">
+                  <span class="cfpf-top">
+                    <span class="cfpf-title">
+                      Marketing, Finance, Business Management and Administration
+                    </span>
+                </span>
+              </span>
+              </a>
+            </div>
+            <div class="cfpf-item cta ctaScienceTechnologyEngineeringMathematics">
+              <a href="#.ScienceTechnologyEngineeringMathematics" class="cfpf-child-item" data-filter=".ScienceTechnologyEngineeringMathematics">
+              <span class="cfpf-item-inner">
+                  <span class="cfpf-top">
+                    <span class="cfpf-title">
+                      Science, Technology, Engineering, Mathematics
+                    </span>
+                </span>
+              </span>
+              </a>
+            </div>
+						<div class="cfpf-item cta ctaAdvancedManufacturingandEngineeringTechnology">
+							<a href="#.AdvancedManufacturingandEngineeringTechnology" class="cfpf-child-item" data-filter=".AdvancedManufacturingandEngineeringTechnology">
+							<span class="cfpf-item-inner">
+									<span class="cfpf-top">
+										<span class="cfpf-title">
+											Advanced Manufacturing and Engineering Technology
+										</span>
+								</span>
+							</span>
+							</a>
+						</div>
+						<div class="cfpf-item cta ctaAgriculture">
+							<a href="#.Agriculture" class="cfpf-child-item" data-filter=".Agriculture">
+							<span class="cfpf-item-inner">
+									<span class="cfpf-top">
+										<span class="cfpf-title">
+											Agriculture
+										</span>
+								</span>
+							</span>
+							</a>
+						</div>
+						<div class="cfpf-item cta ctaHealthcare">
+							<a href="#.Healthcare" class="cfpf-child-item" data-filter=".Healthcare">
+							<span class="cfpf-item-inner">
+									<span class="cfpf-top">
+										<span class="cfpf-title">
+											Healthcare
+										</span>
+								</span>
+							</span>
+							</a>
+						</div>
+						<div class="cfpf-item cta ctaBusinessandProfessionalServices">
+							<a href="#.BusinessandProfessionalServices" class="cfpf-child-item" data-filter=".BusinessandProfessionalServices">
+							<span class="cfpf-item-inner">
+									<span class="cfpf-top">
+										<span class="cfpf-title">
+											Business and Professional Services
+										</span>
+								</span>
+							</span>
+							</a>
+						</div>
+						<div class="cfpf-item cta ctaTransportationDistributionandLogistics">
+							<a href="#.TransportationDistributionandLogistics" class="cfpf-child-item" data-filter=".TransportationDistributionandLogistics">
+							<span class="cfpf-item-inner">
+									<span class="cfpf-top">
+										<span class="cfpf-title">
+											Transportation, Distribution, and Logistics
+										</span>
+								</span>
+							</span>
+							</a>
+						</div>
+						<div class="cfpf-item cta ctaHumanandPublicServices">
+							<a href="#.HumanandPublicServices" class="cfpf-child-item" data-filter=".HumanandPublicServices">
+							<span class="cfpf-item-inner">
+									<span class="cfpf-top">
+										<span class="cfpf-title">
+											Human and Public Services
+										</span>
+								</span>
+							</span>
+							</a>
+						</div>
+						<div class="cfpf-item cta ctaInformationTechnologyandDigitalMedia">
+							<a href="#.InformationTechnologyandDigitalMedia" class="cfpf-child-item" data-filter=".InformationTechnologyandDigitalMedia">
+							<span class="cfpf-item-inner">
+									<span class="cfpf-top">
+										<span class="cfpf-title">
+											Information Technology and Digital Media
+										</span>
+								</span>
+							</span>
+							</a>
+						</div>
+						<div class="cfpf-item cta ctaMathematicsPhysicalandLifeSciences">
+							<a href="#.MathematicsPhysicalandLifeSciences" class="cfpf-child-item" data-filter=".MathematicsPhysicalandLifeSciences">
+							<span class="cfpf-item-inner">
+									<span class="cfpf-top">
+										<span class="cfpf-title">
+											Mathematics, Physical, and Life Sciences
+										</span>
+								</span>
+							</span>
+							</a>
+						</div>
+						<div class="cfpf-item cta ctaArtsandHumanities">
+							<a href="#.ArtsandHumanities" class="cfpf-child-item" data-filter=".ArtsandHumanities">
+							<span class="cfpf-item-inner">
+									<span class="cfpf-top">
+										<span class="cfpf-title">
+											Arts and Humanities
+										</span>
+								</span>
+							</span>
+							</a>
+						</div>
+
+
+
+
+
+
+
+			#set($_PAGES = $_XPathTool.selectNodes($contentRoot, '//system-page'))
+
+			#set( $id = 0 )
+				#foreach( $page in $_PAGES )
+					#set( $id = $id + 1 )
+					#set( $data = $_XPathTool.selectSingleNode( $page , 'system-data-structure' ) )
+					#set( $row = $_XPathTool.selectSingleNode( $data , 'PATHWAY' ) )
+					#set( $title = "" )
+					#set( $link = "" )
+					#set( $area = "" )
+					#set( $degree = "" )
+					#set( $goal = "" )
+					#set( $description = "" )
+					
+					#set( $link = $page.getChild( "link" ).value )
+					#if( ! $link.contains( "base-asset" ) && ! $link.contains( "_template" ) && $row.getChild( "ACTIVE" ).value != "No" )
+						#set( $title = $_EscapeTool.xml( $row.getChild("TITLE").value ) )
+						#if( $title == "" )
+							#set( $title = $_EscapeTool.xml( $page.getChild("title").value ) )
+						#end
+						#set( $description = "" )
+						#set( $description = $_SerializerTool.serialize( $row.getChild("HTML") , true ) )
+						#if( $_PropertyTool.isEmpty( $description ) || $description == "<HTML />" )
+							#set( $description = "" )
+							#set( $description = $_EscapeTool.xml( $page.getChild("description").value ) )
+						#end
+						#set( $tagClasses = "" )
+						
+						
+						#foreach( $valNode in $row.getChild( "DEGREE" ).getChildren( "value" ) )
+							#set( $tagClasses = $tagClasses + " " + $valNode.value.replaceAll( "[^a-zA-Z]" , "" ) )
+							#if( ! $foreach.first ) #set( $degree = $degree + " &amp; " ) #end
+							#set( $degree = $degree + $_EscapeTool.xml( $valNode.value ) )
+						#end
+						#foreach( $valNode in $row.getChild( "AREA" ).getChildren( "value" ) )
+							#set( $tagClasses = $tagClasses + " " + $valNode.value.replaceAll( "[^a-zA-Z]" , "" ) )
+							#if( ! $foreach.first ) #set( $area = $area + " &amp; " ) #end
+							#set( $area = $area + $_EscapeTool.xml( $valNode.value ) )
+						#end
+						#foreach( $valNode in $row.getChild( "GOAL" ).getChildren( "value" ) )
+							#set( $tagClasses = $tagClasses + " " + $valNode.value.replaceAll( "[^a-zA-Z]" , "" ) )
+							#if( ! $foreach.first ) #set( $goal = $goal + " &amp; " ) #end
+							#set( $goal = $goal + $_EscapeTool.xml( $valNode.value ) )
+						#end
+						<!-- start item -->
+						<div class="cfpf-item ${tagClasses}">
+							<div class="checkbox do-fav" data-id="${id}"></div>
+							<!-- start main tile -->
+							<a href="[system-asset]${link}[/system-asset]" class="cfpf-child-item" target="_top">
+								<span class="cfpf-item-inner">
+									<span class="cfpf-top">
+										<span class="cfpf-title">
+											${title}
+										</span>
+										#if( ! $_PropertyTool.isEmpty( $degree ) && ! $_PropertyTool.isNull( $degree ) )
+											<span class="cfpf-type">
+												${degree}
+											</span><br />
+										#end
+										#if( ! $_PropertyTool.isEmpty( $goal ) && ! $_PropertyTool.isNull( $goal ) )
+											<span class="cfpf-location">
+												${goal}
+											</span><br />
+										#end
+										##if( ( ! $_PropertyTool.isEmpty( $degree ) && ! $_PropertyTool.isNull( $degree ) ) || (! $_PropertyTool.isEmpty( $goal ) && ! $_PropertyTool.isNull( $goal ) ) )
+											##<br />
+										###end
+										#if( ! $_PropertyTool.isEmpty( $area ) && ! $_PropertyTool.isNull( $area ) )
+											<span class="cfpf-subtitle">
+												${area}
+											</span>
+										#end
+									</span>
+									<span class="cfpf-bottom">
+										<span class="cfpf-detail">
+											${description}
+										</span>
+									</span>
+								</span>
+							</a>
+							<!-- end main tile -->
+						</div>
+						<!-- end item -->
+					#end
+				#end
+	
+			</div>
+		</div>
+	</div>
+</div>

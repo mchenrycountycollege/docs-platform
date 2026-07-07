@@ -1,0 +1,6 @@
+<system-data-structure>
+    <text identifier="title" label="Title" required="true" help-text="Displayed as the page's H1 and used in nav/search listings."/>
+    <text identifier="order" label="Sort order" default="000500" required="true" help-text="Zero-padded numeric string used for sibling sort order (e.g. 000300 sorts before 000500). Written by the git-publish/editor proxy; only edit by hand if you know the padding width (6 digits) used elsewhere in the docs platform."/>
+    <text identifier="tags" label="Tags" multiple="true" help-text="One tag per field. Used to build the tag index and the Cmd+K search facets."/>
+    <text identifier="body" label="Body" wysiwyg="true" required="true" configuration="docs-platform-body" help-text="Canonical HTML body. Both write paths (git markdown-&gt;HTML and the BlockNote web editor) normalize to the same allowed-HTML subset before writing here — see implementation-plan.md 'Body format: BlockNote HTML round-trip risks'."/>
+</system-data-structure>

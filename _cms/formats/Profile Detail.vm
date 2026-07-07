@@ -1,0 +1,109 @@
+##set( $row = $currentPage.getStructuredDataNodes('row').get(0) )
+#showProfileDetail()
+#macro( showProfileDetail )
+  <link media="all" rel="stylesheet" href="/_files/css/cfprofiles.css"/>
+  <script src="/_files/js/cfprofiles.js" defer="true"></script>
+  
+  <div class="detail-dne" style="display: none;">The person your are looking for does not have a current profile.</div>
+  <ul class="faculty-list detail-container"></ul>
+
+<!--#protect
+	<script type="text/template" id="profile-detail-template">
+		<li>
+      <div class="row">
+        <div class="column">
+          <h1 id="startcontent"><%= fname %> <%= lname %></h1>
+          <h2><%= title %></h2>
+        </div>
+          <% if( image != "" ) { %>
+            <div class="column medium-3">
+                <span class="fl-title"></span>
+                <img class="fl-imagee" src="<%= image %>">
+            </div>
+          <% } %>
+          <div class="column medium-<%= ( url || cv  ? "3" : "4" ) %>">
+              <span class="fl-title">Contact</span>
+              <% if( phone != "" ) { %>
+                <span class="fl-detail-title">Phone</span>
+                <span class="fl-detail"><a href="tel:<%= phone.replace( /(^\d)/g , "" ) %>"><%= phone %></a>
+              <% } %>
+              <% if( email != "" && phone != "" ) { %>
+                <br />
+              <% } %>
+              <% if( email != "" ) { %>
+                <span class="fl-detail-title">Email</span>
+                <span class="fl-detail"><a href="mailto:<%= email %>"><%= email %></a></span>
+              <% } %>
+          </div>
+          <div class="column medium-<%= ( url || cv  ? "3" : "4" ) %>">
+              <span class="fl-title">Location</span>
+              <% if( dept != "" ) { %>
+                <span class="fl-detail-title">Department</span>
+                <% if( deptUrl == "" ) { %>
+                  <span class="fl-detail"><%= dept %></span>
+                <% } else { %>
+                  <span class="fl-detail"><a href="<%= deptUrl %>"><%= dept %></a></span>
+                <% } %>
+              <% } %>
+              <% if( false && divison != "" ) { %>
+                <span class="fl-detail-title">Division</span>
+                <span class="fl-detail"><%= divison %></span>
+              <% } %>
+              <% if( room != "" ) { %>
+                <span class="fl-detail-title">Room</span>
+                <span class="fl-detail"><%= room %></span>
+              <% } %>
+          </div>
+            <% if( url || cv ) { %>
+          <div class="column medium-3">
+              <span class="fl-title">Links</span>
+              <% if( url != "" ) { %>
+                <span class="fl-detail-title">Website</span>
+                <span class="fl-detail"><a href="<%= url %>" target="_blank"><%= url %></a></span>
+              <% } %>
+              <% if( cv != "" ) { %>
+                <span class="fl-detail-title">Curriculum Vitae</span>
+                <span class="fl-detail"><a href="<%= cv %>" target="_blank"><%= cv %></a></span>
+              <% } %>
+          </div>
+            <% } %>
+      </div>
+  </li>
+  <div class="column">
+                            <div class="row">
+                                <% if( degrees && degrees.length ) { %>
+                                <div class="column medium-3">
+                                    <span class="fl-title">Degrees</span>
+                                      <%= degrees ? degrees.map( function( deg ) {
+                                      return deg.institution && deg.degree ? '<span class="fl-detail-title">' + deg.institution + '</span><span class="fl-detail">' + deg.degree + '</span>' : '';
+                                    }).join( " " ) : "" %>
+                                </div>
+                                <% } %>
+                                <% if( sections && sections.length ) { %>
+                                <div class="column medium-9">
+                                    <span class="fl-title">Sections</span>
+                                    <ul class="sections-list">
+                                        <%= sections ? sections.map( function( sec ) {
+                                          return '<li><span class="fl-detail-title">' + sec.name + '</span><span class="fl-detail"><a href="' + sec.url + '" target="_blank">' + sec.title + '&mdash;' + sec.term.replace( /(\d*)(\w*)/ , "$2 $1" ).replace( "SP" , "Spring" ).replace( "FA" , "Fall" ) + '</a></span></li>';
+                                        }).join( " " ) : "" %>
+                                    </ul>
+                                </div>
+                                <% } %>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                      <div class="column section-detail">
+                          <%= info ? info.map( function( inf ) {
+                            return inf.title || inf.html ? '<h2>' + inf.title + '</h2><div class="info_section">' + inf.html + '</div>' : "";
+                          }).join( " " ) : "" %>
+                      </div>
+                    </div>
+                </li>
+                  
+          </div>
+       </div>
+    </div>
+  </script>
+  #protect-->
+#end

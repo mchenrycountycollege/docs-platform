@@ -1,0 +1,146 @@
+#set($banner = $currentPage.getStructuredDataNode('banner'))
+<style>
+    .main-slider .splide__slide video,
+    .main-slider .splide__slide iframe {
+        max-width: 100vw;
+        margin: 0 auto;
+        display: block;
+        border: none;
+    }
+    .click-caption-bar {
+        cursor: pointer;
+        transition: background-color 0.3s ease;
+    }
+
+    .click-caption-bar:hover {
+        background-color: rgba(0, 0, 0, 0.1);
+    }
+
+    /* Underline only the clickable caption text */
+    .caption-link-text {
+        text-decoration: underline;
+    }
+        /*.main-slider .splide__slide {*/
+    /*    width: 100vw;*/
+    /*    height: 100vh;*/
+    /*}*/
+</style>
+
+#if($banner.getChild('display').textValue == 'Show')
+#set($slides = $banner.getChildren('slide'))
+## Get current date as string in yyyy-MM-dd format for comparison
+#set($currentDateString = $_DateTool.format("yyyy-MM-dd", $_DateTool.getDate()))
+
+<div class="main-slider">
+    <div class="splide" aria-label="Banner Images">
+        <div class="splide__track">
+            <ul class="splide__list">
+                #foreach($slide in $slides)
+                ## Check if slide has an expiration date
+                #set($expirationDateField = $slide.getChild('expirationDate'))
+                #set($shouldDisplay = true)
+                
+                ## If expiration date exists and is not empty, check if it's still valid
+                #if($expirationDateField && !$_PropertyTool.isEmpty($expirationDateField.textValue))
+                    #set($expirationDateString = $expirationDateField.textValue)
+                    ## Convert MM-dd-yyyy to yyyy-MM-dd for proper comparison
+                    #set($parts = $expirationDateString.split("-"))
+                    #set($formattedExpiration = "${parts[2]}-${parts[0]}-${parts[1]}")
+                    ## Compare date strings - if current date is after expiration, don't display
+                    ## String comparison works because yyyy-MM-dd format is lexicographically sortable
+                    #if($currentDateString.compareTo($formattedExpiration) > 0)
+                        #set($shouldDisplay = false)
+                    #end
+                #end
+                
+                ## Only render the slide if it should be displayed
+                #if($shouldDisplay)
+                #set($image = $slide.getChild('image').asset.link) ## required
+                #set($caption = $slide.getChild('caption')) ## optional
+                #set($link = $slide.getChild('link')) ## optional
+                #set($linkUrl = $link.asset.getBaseUrl() + $link.asset.getPath())
+                #set($videoType = $slide.getChild('videotype').textValue)
+                #set($title = $_EscapeTool.xml($slide.getChild("videoTitle").textValue))
+                #set($autoplay = $slide.getChild("options").textValues.contains("autoplay"))
+                #set($controls = $slide.getChild("options").textValues.contains("controls"))
+                
+                ## <li class="splide__slide" #if($videoType !="none" )
+                ##     style="background-color: #4b3190; background-size: contain;" #else
+                ##     style="background:url('[system-asset]${image}[/system-asset]') no-repeat center center fixed" #end>
+
+                <li class="splide__slide" #if($videoType != "none")
+                   style="background-color: #4b3190; background-size: contain;" 
+                #else
+                   style="background: url('[system-asset]${image}[/system-asset]') center center / cover no-repeat;
+                         background-attachment: scroll;
+                         -webkit-background-size: cover;
+                         background-size: cover;"
+                #end>
+                    #if($videoType == "url")
+                    #set($url = $_EscapeTool.xml($slide.getChild('url').textValue))
+                    #if ($autoplay || !$controls)
+                    #set($url = $url + "?")
+                    #if ($autoplay)
+                    #set($url = $url + "autoplay=1&amp;mute=1")
+                    #end
+                    #if ($autoplay && !$controls)
+                    #set ($url = $url + "&amp;")
+                    #end
+                    #if (!$controls)
+                    #set($url = $url + "controls=0")
+                    #end
+                    #end
+                    <iframe width="100%" height="100%" src="${url}" #if(!$_PropertyTool.isEmpty($title))
+                        title="${title}" #end></iframe>
+                    #elseif($videoType == "local")
+                    #set($video = $slide.getChild('video').asset.link)
+                    <video width="100%" height="100%" controlsList="nodownload"
+                        poster="[system-asset]${image}[/system-asset]" #if($autoplay) autoplay="" muted=""
+                        #end#if($controls) controls="" #end#if(!$_PropertyTool.isEmpty($title)) title="${title}" #end>
+                        <source src="${video}" type="video/mp4" />
+                        Your browser does not support the video tag.
+                    </video>
+                    #end
+                    
+                    #set($baseUrl = "https://www.mchenry.edu/")
+                    
+                    #if(!$_PropertyTool.isEmpty($caption.textValue))
+                        #if($link.asset)
+                            #set($relativeUrl = $link.asset.link)
+                            #set($relativePath = $relativeUrl.replaceFirst("^site://[^/]+/", ""))
+                            #if($relativePath.endsWith(".html"))
+                                #set($absoluteUrl = $baseUrl + $relativePath)
+                            #else
+                                #set($absoluteUrl = $baseUrl + $relativePath + ".html")
+                            #end
+                
+                                <figcaption class="orbit-caption click-caption-bar" data-link="$absoluteUrl">
+                                    <span class="caption-link-text">$_EscapeTool.xml($caption.textValue)</span>
+                                </figcaption>
+                        #else
+                            <figcaption class="orbit-caption">
+                                $_EscapeTool.xml($caption.textValue)
+                            </figcaption>
+                        #end
+                    #end
+                </li>
+                #end ## End of shouldDisplay check
+                #end ## End of foreach
+            </ul>
+        </div>
+        <button id="pauseButton" class="splide__pause-button"><i class="fas fa-pause"></i></button>
+    </div>
+</div>
+
+#end
+
+<script>
+    document.querySelectorAll('.orbit-caption').forEach(function(caption) {
+        caption.addEventListener('click', function () {
+            const link = this.getAttribute('data-link');
+            if (link) {
+                window.location.href = link;
+            }
+        });
+    });
+</script>

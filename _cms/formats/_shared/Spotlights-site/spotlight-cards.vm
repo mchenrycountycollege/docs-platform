@@ -1,0 +1,34 @@
+## Used in McHenry site - Column 1, 2, 2+ nav formats and Program Site - Program format
+#macro (spotlightCards $row)
+    #set($textType = $row.getChild("text-field-opts").textValue)
+    #set($cards = $row.getChildren("spotlight-cards"))
+    #set($count = $cards.size())
+    #set($cardClass = "small-12")
+    #if($count == 4)
+        #set($cardClass = "small-12 medium-6 large-3")
+    #elseif ($count == 3)
+        #set($cardClass = "small-12 medium-6 large-4")
+    #elseif ($count == 2)
+        #set($cardClass = "small-12 medium-6 large-6")
+    #end
+    <div class="row info-block-main">
+        #foreach($card in $cards)
+            #set($textType = $card.getChild("text-field-opts").textValue)
+            #set($category = $_EscapeTool.xml($card.getChild("spotlight").asset.metadata.getDynamicField("category").value))
+            #set($image = $card.getChild("img").asset.link)  
+            #set($alt = $_EscapeTool.xml($card.getChild("alt").textValue))  
+            #set($link = $card.getChild("spotlight").asset.link)   
+            #if($textType == "title")
+                #set($text = $_EscapeTool.xml($card.getChild("spotlight").asset.metadata.title))
+            #else
+                #set($text = $_EscapeTool.xml($card.getChild("spotlight").asset.getStructuredDataNode($textType).textValue))
+            #end 
+            <div class="${cardClass} columns spotlight-block" >
+                <div style="background: url([system-asset]${image}[/system-asset]); background-size: cover; background-position: center; background-repeat: no-repeat;" >
+                    <span role="img" aria-label="${alt}"> </span>
+                    <a href="${link}"><span>${text} <!--- ${category}--></span></a>                        
+                </div>
+            </div>
+        #end 
+    </div>
+#end

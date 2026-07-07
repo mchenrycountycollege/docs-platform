@@ -1,0 +1,7 @@
+#if( $currentPage.path != "faculty/directory/detail" && $currentPage.path != "faculty/detail" )
+<h1 id="startcontent">$_EscapeTool.xml($currentPage.metadata.title)</h1>
+#end
+#set($intro = $currentPage.getStructuredDataNode('intro-w').textValue)
+#if(!$_PropertyTool.isEmpty($intro))
+    $intro
+#end 

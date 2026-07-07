@@ -1,0 +1,25 @@
+{
+  "name": "@docs-platform/cascade-publish",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run",
+    "dry-run": "tsx src/dry-run.ts",
+    "cli": "tsx src/cli.ts"
+  },
+  "dependencies": {
+    "@docs-platform/cascade-client": "workspace:*",
+    "@docs-platform/doc-core": "workspace:*"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.3",
+    "tsx": "^4.19.2",
+    "vitest": "^3.0.5",
+    "@types/node": "^22.10.7"
+  }
+}

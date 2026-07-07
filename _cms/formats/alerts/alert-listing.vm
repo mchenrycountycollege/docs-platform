@@ -1,0 +1,40 @@
+#set($alerts = $_.query().byContentType("Emergency Alert").indexableOnly(false).sortBy("startDate").sortDirection("desc").maxResults(100).execute())
+#foreach ($alert in $alerts)
+    #set($starts = $alert.metadata.startDate)
+    #set($ends = $alert.metadata.endDate)
+    #set($alertActive = $alert.metadata.getDynamicField("active").value)
+    #set($title = $_EscapeTool.xml($alert.metadata.title))
+    #set($summary = $_EscapeTool.xml($alert.metadata.summary))
+    #set($icon = "info")
+    #set($icon = $_EscapeTool.xml($alert.getStructuredDataNode("icon").textValue))
+    #if($alert.getStructuredDataNode("link").textValue == "No Link")
+        #set($link = "")
+    #elseif($alert.getStructuredDataNode("link").textValue == "Current Page")
+        #set($link = $alert.link)
+    #elseif($alert.getStructuredDataNode("link").textValue == "Other Page - Internal")
+        #set($link = $alert.getStructuredDataNode('internal').asset.link)
+    #elseif($alert.getStructuredDataNode("link").textValue == "Other Page - External")
+        #set($link = $_EscapeTool.xml($alert.getStructuredDataNode("external").textValue))
+    #end
+    #if( !$_PropertyTool.isEmpty($title) )
+        <section class="admmision-profiles">
+            <div class="float-left icon"><i class="fi-${icon}"></i></div>
+            <div class="admmision-profiles__content" style="margin-left: 20px;">
+                <header>
+                    <h2>
+                        #if( !$_PropertyTool.isEmpty($link) )
+                            <a href="${link}">
+                        #end
+                        ${title}
+                        #if( !$_PropertyTool.isEmpty($link) )
+                            </a>
+                        #end
+                    </h2>
+                </header>
+                <strong>Date:</strong> $starts - $ends
+                <br/>
+                $!{summary}
+            </div>
+        </section>
+    #end
+#end

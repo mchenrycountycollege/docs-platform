@@ -1,0 +1,73 @@
+#import("_cms/formats/_refresh/_shared")
+#####################################################################################
+#set($programs = $_.query().byContentType("site://Programs/Program Page").bySiteName("Programs").hasStructuredData("PATHWAY/ACTIVE","Yes").maxResults(500).preloadDynamicMetadata().preloadStructuredData().execute())
+#set($pathways = $_.query().byContentType("site://McHenry/Pathway").bySiteName("Programs").hasStructuredData("PATHWAY/ACTIVE","Yes").maxResults(500).preloadDynamicMetadata().preloadStructuredData().execute())
+#set($programs2 = $_.query().byContentType("site://Programs/Program Page").bySiteName("McHenry").hasStructuredData("PATHWAY/ACTIVE","Yes").maxResults(500).preloadDynamicMetadata().preloadStructuredData().execute())
+#set($pathways2 = $_.query().byContentType("site://McHenry/Pathway").bySiteName("McHenry").hasStructuredData("PATHWAY/ACTIVE","Yes").maxResults(500).preloadDynamicMetadata().preloadStructuredData().execute())
+#set($_void = $programs.addAll($pathways))
+#set($_void = $programs.addAll($programs2))
+#set($_void = $programs.addAll($pathways2))
+#####################################################################################
+##$programs.size()
+<!--#protect-top
+{"programs": [
+    #foreach($p in $programs)
+        #set($name = "")
+        #set($department = [])
+        #set($level = [])
+        #set($description = "")
+        #set($format = [])
+        #set($degrees = [])
+        #set($areas = [])
+        #set($url = "")
+        #set($img = "")
+        #set($keyword = [])
+        #set($button = "")
+        #set($buttonLink = "")
+        #set($durationMonths = 0)
+        #set($credits = 0)
+        #foreach($d in $p.getStructuredDataNode("PATHWAY/DEGREE").textValues)
+            #if(!$degrees.contains($d.trim()))
+                #set($_void = $degrees.add($d.trim()))
+            #end
+        #end
+        #foreach($a in $p.getStructuredDataNode("PATHWAY/AREA").textValues)
+            #if(!$areas.contains($a.trim()))
+                #set($_void = $areas.add($a.trim()))
+            #end
+        #end
+        #set($pK = "")
+        #set($pK = $currentPage.metadata.keywords)
+        #if($pK != "")
+            #set($pKSplit = $pK.split(","))
+            #foreach($k in $pKSplit)
+                #set($_void = $keyword.add($k.trim()))
+            #end
+        #end
+        #set($name = $_EscapeTool.xml($p.getStructuredDataNode("PATHWAY/TITLE").textValue.trim()))
+        #set($department = $areas)
+        #set($level = $degrees)
+        #set($description = $_EscapeTool.xml($p.metadata.description.trim()))
+        #set($format = [])
+        #set($url = "[system-asset]${p.link}[/system-asset]")
+        #set($img = "[system-asset]${p.getStructuredDataNode('banner/image').asset.link}[/system-asset]")
+        #set($button = "Learn More")
+        #set($durationMonths = $_EscapeTool.xml($p.getStructuredDataNode("details/Weeks").textValue.trim()))
+        #set($credits = $_EscapeTool.xml($p.getStructuredDataNode("details/Credits").textValue.trim()))
+        {
+          "name": "${name}",
+          "department": ["$_DisplayTool.list($areas, '","')"],
+          "level": ["$_DisplayTool.list($degrees, '","')"],
+          "description": "${description}",
+          "format": [],
+          "url": "${url.trim()}",
+          "img": "${img.trim()}",
+          "keyword": ["$_DisplayTool.list($keyword, '","')"],
+          "button": "Learn More",
+          "buttonLink": "${url}",
+          "durationMonths": ${durationMonths},
+          "credits": ${credits}
+        }#if($foreach.hasNext),#end
+    #end
+]}
+#protect-top-->

@@ -1,0 +1,380 @@
+.breadcrumb {
+	 margin-bottom: 15px;
+}
+ .breadcrumb ol {
+	 border-radius: 0;
+	 padding: 0;
+	 list-style: none;
+}
+ .breadcrumb a {
+	 color:#5639a4;
+}
+ .breadcrumb a:hover, .hh-module .breadcrumb a:focus {
+	 color:#492f91;
+	 font-weight: 400;
+}
+ .breadcrumb > .active {
+	 color:#444;
+	 font-weight: 600;
+}
+ .breadcrumb>li {
+	 display: inline-block;
+}
+ .breadcrumb>li+li:before {
+	 padding: 0 5px;
+	 color: #ccc;
+	 content: '|';
+}
+ .workforce-wrapper .breadcrumb ol{
+	 margin-left: 20px;
+}
+ #emergency-alert {
+	 background-color: #dc8a48;
+}
+ #emergency-alert .row {
+	 padding-top: 15px;
+	 padding-bottom: 15px;
+}
+ #emergency-alert .small-1 {
+	 text-align: right;
+}
+ #emergency-alert i {
+	 font-size: 2.5rem;
+	 line-height:1.4;
+}
+ #emergency-alert .title {
+	 font-size: 20px;
+	 font-weight: bold;
+}
+ #emergency-alert a, #emergency-alert a:visited {
+	 color: #444;
+}
+ #emergency-alert a:hover .title, #emergency-alert a:focus .title{
+	 text-decoration:underline;
+}
+ .incident-table tbody {
+	 border: none;
+	 background: none;
+}
+ .incident-table tbody th {
+	 text-align: left;
+}
+ .incident-table tr:nth-child(even) {
+	 background: none 
+}
+ .ge p:last-child{
+	 margin-bottom: 0;
+}
+/*Spotlight Cards*/
+ .spotlight-block div {
+	 height: 300px;
+}
+/*Featured Spotlights*/
+ .spotlight .spotlight-content {
+	 display: none;
+}
+ .spotlight .spotlight-content.active {
+	 display: block;
+}
+ .spotlight .spotlight-area .active {
+	 border: 1px solid #fff;
+}
+ .spotlight {
+	 min-height: 300px;
+}
+/*Addressing Page/Column Specific CSS conflicts (One Column and Two Columns Pages)*/
+ .spotlight .spotlight-area p {
+	 font-size: 21px;
+	 font-size: 1.31em;
+	 line-height: 10px;
+	 line-height: normal;
+	 color: #fff;
+	 margin: 0;
+}
+ .spotlight .spotlight-area h2 {
+	 font-size: 50px;
+	 font-size: 3.12em;
+	 line-height: normal;
+	 color: #fff;
+	 font-weight: 700;
+	 margin: 0;
+	 padding: 0;
+	 text-transform: uppercase;
+	 font-family: 'Source Sans Pro', sans-serif;
+	 background-color: initial;
+}
+ .spotlight .video-sec h2 {
+	 font-size: 31px;
+	 font-size: 1.93em;
+	 color: #fff;
+	 font-weight: 700;
+	 font-family: 'Source Sans Pro', sans-serif;
+	 text-transform: uppercase;
+	 margin: 0;
+	 padding: 0;
+	 background-color: initial;
+}
+ .spotlight .video-sec h3 {
+	/* font-size: 21px;
+	 */
+	 font-size: 1.31em;
+	 color: #fff;
+	 font-weight: 700;
+	 font-family: 'Source Sans Pro', sans-serif;
+	 text-transform: uppercase;
+	 margin: 0;
+}
+ .spotlight .video-sec p {
+	 font-size: 19px;
+	 font-size: 1.18em;
+	 color: #fff;
+	 font-family: 'Source Sans Pro', sans-serif;
+	 margin: 0;
+	 margin-top: 10px;
+	 padding-right: 20%;
+}
+/*career coach*/
+ .iETYas {
+	height: 350px;
+}
+ @media(max-width: 767px){
+	 .workforce-wrapper .spotlight .spotlight-area p{
+		 padding-right: 0px;
+	}
+	 .spotlight .video-sec p {
+		 text-align: center;
+		 padding-right: 0;
+	}
+}
+ @media screen and (min-width: 64em){
+	 .admissions-wrapper .spotlight-area h2 {
+		 font-size: 2.4em;
+		 padding-left: .6em;
+	}
+	 .admissions-wrapper .spotlight-area ul li a {
+		 width: 90px;
+	}
+	 .admissions-wrapper .spotlight-area p {
+		 padding-left: 2em;
+	}
+}
+ @media (max-width:1024px) {
+	 .admissions-wrapper .spotlight .profile-pic{
+		 left: 25px;
+	}
+	 .admissions-wrapper .spotlight ul li {
+		 margin: 0px;
+	}
+	 .workforce-wrapper .spotlight .profile-pic{
+		 left: 25px;
+	}
+}
+/* Fix for headings of news listing on one-column page */
+ .admmision-profiles__content h2 {
+	 font-size: 18px;
+	 font-size: 1.12em;
+	 background: none;
+	 padding: 0;
+	 text-transform: unset;
+}
+ .admmision-profiles.news-listing img {
+	 padding-top: 20px;
+	 padding-left: 20px;
+}
+/* Fix for accordions on two-column page */
+ ul.accordion li.accordion-item {
+	 margin: 0;
+}
+/* Slider caption styling */
+ .custom-slider .orbit-caption h2 {
+	 font-weight: 700;
+	 text-transform: uppercase;
+	 font-size: 50px;
+	 color: #fff;
+	 margin: 0;
+}
+ @media (max-width: 767px) {
+	 .custom-slider .orbit-caption h2 {
+		 font-size: 30px;
+	}
+}
+ .custom-slider .orbit-caption p {
+	 font-size: 1.4rem;
+	 font-weight: 600;
+}
+ .custom-slider .orbit-caption a, .workforce__banner a {
+	 color: white;
+	 font-size: 1.5rem;
+	 font-weight: 600;
+	 text-decoration: underline;
+}
+ .workforce__banner .overlay-text {
+	 text-align: left;
+}
+.mid-main.onecol.workforce__banner .overlay-text {
+    padding: 0 35px;
+}
+.mid-main.onecol.workforce__banner img {
+    margin-bottom: 0;
+}
+ .custom-slider .orbit-caption {
+	 display: felx;
+	 width: auto;
+	 font-weight: normal;
+	 background: none;
+	 padding: 0 50px;
+	 align-items: center;
+	 top: 100px;
+	 margin-bottom: 100px;
+}
+ .mid-main .custom-slider .orbit-caption {
+	top:90%;
+}
+ .custom-slider ul {
+	 padding-left: 0;
+	 margin: 0;
+}
+ .custom-slider .orbit-caption .caption {
+	 padding: 20px;
+	 background: rgba(0, 0, 0, 0.5);
+	 line-height: 0;
+}
+ .custom-slider video {
+	 background-color: black;
+}
+ .custom-slider ul li {
+	 margin: 0;
+}
+@media (max-width: 800px) {
+    .main-slider.custom-slider.large-8.medium-7.small-12.columns, .row.inner-mid-main.workforce-wrapper .small-12.columns.onecol.large-8.medium-7 {
+        width: 100%;    
+    }
+}
+/* Alert Listing style */
+ .admmision-profiles h2 {
+	 color: black;
+}
+ .admmision-profiles i:before {
+	 font-size: 50px;
+}
+ .admmision-profiles .icon {
+	 margin-top: 15px;
+	 margin-left: 17px;
+}
+/* Photo Gallery */
+ .gallery .row .columns img, .gallery .modal .columns img {
+	 object-fit: cover;
+	 height: 100px;
+}
+ @media (min-width:40em) {
+	 .gallery .row .columns img, .gallery .modal .columns img {
+		 height: 150px;
+	}
+}
+ @media (min-width:64em) {
+	 .gallery .row .columns img, .gallery .modal .columns img {
+		 height: 175px;
+	}
+}
+ .gallery .row .columns, .gallery .modal .columns {
+	 float: left;
+}
+ .semester-container .hrs {
+	 float: right;
+	 margin-right: 20px;
+}
+ .onecol-content p.lead {
+	 font-size: 125%;
+	 line-height: 1.6;
+}
+ ul.course-list {
+     display:none;
+	 padding-left: 0;
+}
+ #cc-widget-careers .cc-card {
+	 margin: 0 auto;
+}
+ .isOr {
+	 font-size: 0.85rem;
+}
+ .course-list .accordion-title {
+	 padding: 0.5rem;
+	/*border: none !important;
+	*/
+}
+ ul.accordion li.accordion-item.firstOr {
+	 margin-top: 20px;
+}
+ ul.accordion li.accordion-item.lastOr {
+	 margin-bottom: 20px;
+}
+ ul.accordion.course-list {
+     display: none; /* if hiding sample schedules*/
+	 margin-top: 20px;
+	 margin-bottom: 0px;
+}
+ span.accordion-title::before {
+	 content: '';
+}
+ #serverErrorMsg, #successMsg {
+	 display: none;
+}
+ .ge table.bidsTable tbody th, .ge table.bidsTable tbody td {
+	 padding: 2px;
+}
+ table.bidsTable tbody th, table.bidsTable tbody td {
+	 padding: 2px;
+}
+ .faculty-list dl {
+	 display: block;
+}
+ .faculty-list dh {
+	 clear: both;
+	 float: left;
+	 padding-right: 5px;
+}
+ .faculty-list dd {
+	 font-weight: bold;
+}
+ .faculty-list img {
+	 width: 150px;
+}
+ .faculty-list .admmision-profiles__content {
+	 width: calc(100% - 171px);
+}
+ @media print {
+	 .accordion-content {
+		 padding: 1rem;
+		 display: block;
+	}
+}
+ .responsive-embed {
+	 margin-bottom: 0;
+}
+ .responsive-embed {
+	 position: relative;
+	 height: 0;
+	 margin-bottom: 1rem;
+	 padding-bottom: 75%;
+	 overflow: hidden;
+}
+/* Fix for mobile side nav menu */
+@media (min-width: 801px) {
+    .admissions-burgermenu {
+        display: none;
+    }
+}
+/* Fix for equal height columns */
+.flexbox {
+    display: flex;
+}
+.flexbox .left-sidebar .sidenav-bg {
+    height: 100%;
+}
+
+/* Fix for Eyebrow nav displaying in mobile */
+@media (max-width: 1021px) {
+    .top-nav-wrap {
+        display: none;
+    }
+}

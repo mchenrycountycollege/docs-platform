@@ -1,0 +1,559 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Golf Invitational Sponsors — Prototype</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/foundation-sites@6.8.1/dist/css/foundation.min.css" crossorigin="anonymous" />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:400,600,700" />
+  <style>
+    /*
+     * Golf Invitational Sponsor Logos Component
+     * ------------------------------------------
+     * Scoped under .golf-sponsor-tiers to avoid conflicts with existing
+     * site CSS (app.css, custom-styles.css).
+     *
+     * Velocity mapping notes (for Cascade Developer):
+     *   - Each .golf-sponsor-tier = one #if($tier.sponsors is not empty) block
+     *   - .golf-sponsor-tier__name = hardcoded tier label in the Format
+     *   - .golf-sponsor-tier__subtitle = $tier.getChildText("tier-subtitle") (optional DD field)
+     *   - .golf-sponsor-logo-grid = #foreach($sponsor in $tier.sponsors)
+     *   - .golf-sponsor-logo a / img = conditional wrap: #if($sponsor.url) <a href="..."> #end
+     */
+
+    /* ── Base reset compatible with existing Source Sans Pro / Foundation stack ── */
+    .golf-sponsor-tiers {
+      font-family: 'Source Sans Pro', sans-serif;
+      color: #444;
+      padding: 2rem 0;
+    }
+
+    /* ── Section heading (optional, sits above all tiers) ── */
+    .golf-sponsor-tiers__heading {
+      font-family: 'Source Sans Pro', sans-serif;
+      font-size: 1.953rem; /* matches site h3 */
+      font-weight: 700;
+      color: #444;
+      margin-top: 0;
+      margin-bottom: 0.5rem;
+    }
+
+    .golf-sponsor-tiers__intro {
+      font-size: 1em;
+      color: #666;
+      margin-bottom: 2rem;
+      margin-top: 0.5rem;
+    }
+
+    /* ── Individual tier row ── */
+    .golf-sponsor-tier {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: flex-start;
+      margin-bottom: 2.5rem;
+      padding-bottom: 2.5rem;
+      border-bottom: 1px solid #e6e6e6;
+    }
+
+    .golf-sponsor-tier:last-child {
+      border-bottom: none;
+      margin-bottom: 0;
+      padding-bottom: 0;
+    }
+
+    /* ── Left label column ── */
+    .golf-sponsor-tier__label {
+      width: 100%;
+      padding-left: 1rem;
+      border-left: 4px solid #4c2c92; /* site primary purple */
+      margin-bottom: 1.25rem;
+    }
+
+    /* ── Tier name — rendered as all-caps visually, NOT via text-transform
+          so screen readers read it naturally. Use uppercase text in the
+          Velocity template (hardcoded) or via CSS text-transform.
+          text-transform is safe here since the label is decorative display. ── */
+    .golf-sponsor-tier__name {
+      font-size: 1.563rem; /* matches site h4 */
+      font-weight: 700;
+      color: #444;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin: 0 0 0.2rem 0;
+      line-height: 1.2;
+    }
+
+    /* ── Optional subtitle / tagline per tier ── */
+    .golf-sponsor-tier__subtitle {
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: #666;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      margin: 0;
+      line-height: 1.4;
+    }
+
+    /* ── Right logos column ── */
+    .golf-sponsor-tier__logos {
+      width: 100%;
+    }
+
+    /* ── Logo grid — flex wrap so logos fill naturally without JS ── */
+    .golf-sponsor-logo-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+      list-style: none;
+      margin: 0;
+      padding: 0;
+    }
+
+    /* ── Individual logo card ── */
+    .golf-sponsor-logo {
+      flex: 0 0 auto;
+      width: calc(50% - 0.375rem); /* 2-up on mobile */
+    }
+
+    /* ── Logo card inner — the white bordered box ── */
+    .golf-sponsor-logo__card {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #ffffff;
+      border: 1px solid #d6d6d6;
+      height: 140px;
+      padding: 1rem;
+      box-sizing: border-box;
+      transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    /* ── Linked logo hover state ── */
+    .golf-sponsor-logo__link:hover .golf-sponsor-logo__card,
+    .golf-sponsor-logo__link:focus .golf-sponsor-logo__card {
+      border-color: #4c2c92;
+      box-shadow: 0 0 0 2px rgba(76, 44, 146, 0.18);
+      outline: none;
+    }
+
+    .golf-sponsor-logo__link {
+      display: block;
+      text-decoration: none; /* overrides main a { text-decoration: underline } in app.css */
+    }
+
+    /* Remove underline decoration that app.css adds to main a tags */
+    .golf-sponsor-logo__link:hover,
+    .golf-sponsor-logo__link:focus {
+      text-decoration: none;
+    }
+
+    /* ── Logo image — uniform size, never distorted ── */
+    .golf-sponsor-logo__img {
+      max-width: 100%;
+      max-height: 110px;
+      width: auto;
+      height: auto;
+      object-fit: contain;
+      display: block;
+    }
+
+    /* ── Placeholder card (for prototype only — not in Cascade output) ── */
+    .golf-sponsor-logo__placeholder {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.7rem;
+      font-weight: 600;
+      color: #aaa;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+    }
+
+    /* ────────────────────────────────────────────────────────────────
+       RESPONSIVE BREAKPOINTS
+       Desktop (≥ 768px): label col = ~220px fixed, logos fill remainder
+       Mobile (< 768px):  label stacks above logos, logos go 2-up
+    ─────────────────────────────────────────────────────────────────── */
+    @media screen and (min-width: 48em) {
+      .golf-sponsor-tier {
+        flex-wrap: nowrap;
+        gap: 2rem;
+      }
+
+      .golf-sponsor-tier__label {
+        flex: 0 0 200px;
+        max-width: 200px;
+        margin-bottom: 0;
+      }
+
+      .golf-sponsor-tier__logos {
+        flex: 1 1 0;
+        min-width: 0;
+      }
+
+      .golf-sponsor-logo {
+        width: calc(33.333% - 0.5rem); /* 3-up on desktop */
+      }
+    }
+
+    @media screen and (min-width: 64em) {
+      .golf-sponsor-tier__label {
+        flex: 0 0 220px;
+        max-width: 220px;
+      }
+    }
+
+    /* ───────────────────────────────────────────
+       PROTOTYPE SCAFFOLDING — remove in Cascade
+    ──────────────────────────────────────────── */
+    .proto-label {
+      background: #f5f5f0;
+      border-left: 3px solid #fdba31;
+      padding: 6px 14px;
+      margin: 2rem 0 0.75rem;
+      font-family: monospace;
+      font-size: 13px;
+      color: #555;
+    }
+
+    .proto-page {
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 2rem 1rem;
+    }
+
+    .proto-page h1 {
+      font-family: 'Source Sans Pro', sans-serif;
+      font-size: 1.25rem;
+      color: #888;
+      font-weight: 400;
+      margin-bottom: 2rem;
+      border-bottom: 1px solid #e0e0e0;
+      padding-bottom: 1rem;
+    }
+  </style>
+</head>
+<body>
+
+<div class="proto-page">
+  <h1>Prototype — Golf Invitational Sponsor Logos Component</h1>
+
+  <!-- ─────────────────────────────────────────────────────────────
+       VARIANT A: Full state — multiple tiers, mixed logo counts,
+       one tier absent (PAR), optional links shown
+  ──────────────────────────────────────────────────────────────── -->
+  <div class="proto-label">Variant A — Desktop: left-label layout, mixed tier sizes, PAR tier absent</div>
+
+  <section class="golf-sponsor-tiers" aria-label="Golf Invitational Sponsors">
+
+    <h2 class="golf-sponsor-tiers__heading">Our Sponsors</h2>
+    <p class="golf-sponsor-tiers__intro">Thank you to our generous supporters of the Annual Golf Invitational.</p>
+
+    <!--
+      VELOCITY NOTE: Each tier block is wrapped in a conditional like:
+        #set($presentingSponsors = $contentRoot.getChildren("presenting-sponsor"))
+        #if($presentingSponsors && $presentingSponsors.size() > 0)
+          ... render this tier block ...
+        #end
+    -->
+
+    <!-- PRESENTING tier — 2 logos, both linked -->
+    <div class="golf-sponsor-tier">
+      <div class="golf-sponsor-tier__label">
+        <h3 class="golf-sponsor-tier__name">Presenting</h3>
+        <!-- VELOCITY: #set($subtitle = $contentRoot.getChildText("presenting-subtitle")) -->
+        <!-- VELOCITY: #if($subtitle && $subtitle.trim() != "") -->
+        <p class="golf-sponsor-tier__subtitle">Foundational Partners</p>
+        <!-- VELOCITY: #end -->
+      </div>
+      <div class="golf-sponsor-tier__logos">
+        <ul class="golf-sponsor-logo-grid" aria-label="Presenting sponsors">
+
+          <!-- Logo with link — VELOCITY: #if($sponsor.url) wrap with <a> #end -->
+          <li class="golf-sponsor-logo">
+            <a class="golf-sponsor-logo__link" href="https://example.com" target="_blank" rel="noopener noreferrer" aria-label="Acme Corporation (opens in new tab)">
+              <div class="golf-sponsor-logo__card">
+                <img class="golf-sponsor-logo__img" src="https://placehold.co/180x60/eeeeee/999999?text=ACME+CORP" alt="Acme Corporation" />
+              </div>
+            </a>
+          </li>
+
+          <!-- Logo with link -->
+          <li class="golf-sponsor-logo">
+            <a class="golf-sponsor-logo__link" href="https://example.com" target="_blank" rel="noopener noreferrer" aria-label="Summit Financial (opens in new tab)">
+              <div class="golf-sponsor-logo__card">
+                <img class="golf-sponsor-logo__img" src="https://placehold.co/180x60/eeeeee/999999?text=SUMMIT+FINANCIAL" alt="Summit Financial" />
+              </div>
+            </a>
+          </li>
+
+        </ul>
+      </div>
+    </div>
+
+    <!-- EAGLE tier — 3 logos, one unlinked -->
+    <div class="golf-sponsor-tier">
+      <div class="golf-sponsor-tier__label">
+        <h3 class="golf-sponsor-tier__name">Eagle</h3>
+        <p class="golf-sponsor-tier__subtitle">Distinguished Sponsors</p>
+      </div>
+      <div class="golf-sponsor-tier__logos">
+        <ul class="golf-sponsor-logo-grid" aria-label="Eagle sponsors">
+
+          <li class="golf-sponsor-logo">
+            <a class="golf-sponsor-logo__link" href="https://example.com" target="_blank" rel="noopener noreferrer" aria-label="Riverside Bank (opens in new tab)">
+              <div class="golf-sponsor-logo__card">
+                <img class="golf-sponsor-logo__img" src="https://placehold.co/180x60/eeeeee/999999?text=RIVERSIDE+BANK" alt="Riverside Bank" />
+              </div>
+            </a>
+          </li>
+
+          <li class="golf-sponsor-logo">
+            <a class="golf-sponsor-logo__link" href="https://example.com" target="_blank" rel="noopener noreferrer" aria-label="Hartwell Construction (opens in new tab)">
+              <div class="golf-sponsor-logo__card">
+                <img class="golf-sponsor-logo__img" src="https://placehold.co/180x60/eeeeee/999999?text=HARTWELL" alt="Hartwell Construction" />
+              </div>
+            </a>
+          </li>
+
+          <!-- Unlinked logo — VELOCITY: no URL provided, renders as plain card -->
+          <li class="golf-sponsor-logo">
+            <div class="golf-sponsor-logo__card">
+              <img class="golf-sponsor-logo__img" src="https://placehold.co/180x60/eeeeee/999999?text=GREENWAY+GROUP" alt="Greenway Group" />
+            </div>
+          </li>
+
+        </ul>
+      </div>
+    </div>
+
+    <!-- BIRDIE tier — 4 logos -->
+    <div class="golf-sponsor-tier">
+      <div class="golf-sponsor-tier__label">
+        <h3 class="golf-sponsor-tier__name">Birdie</h3>
+        <p class="golf-sponsor-tier__subtitle">Supporting Partners</p>
+      </div>
+      <div class="golf-sponsor-tier__logos">
+        <ul class="golf-sponsor-logo-grid" aria-label="Birdie sponsors">
+          <li class="golf-sponsor-logo">
+            <div class="golf-sponsor-logo__card">
+              <span class="golf-sponsor-logo__placeholder">Logo</span>
+            </div>
+          </li>
+          <li class="golf-sponsor-logo">
+            <div class="golf-sponsor-logo__card">
+              <span class="golf-sponsor-logo__placeholder">Logo</span>
+            </div>
+          </li>
+          <li class="golf-sponsor-logo">
+            <div class="golf-sponsor-logo__card">
+              <span class="golf-sponsor-logo__placeholder">Logo</span>
+            </div>
+          </li>
+          <li class="golf-sponsor-logo">
+            <div class="golf-sponsor-logo__card">
+              <span class="golf-sponsor-logo__placeholder">Logo</span>
+            </div>
+          </li>
+        </ul>
+      </div>
+    </div>
+
+    <!--
+      PAR tier — ABSENT this year.
+      VELOCITY: #set($parSponsors = ...) — list is empty, so this entire
+      block is skipped by the #if check. Nothing renders. No gap.
+      The prototype simply omits this block to demonstrate the behavior.
+    -->
+
+    <!-- TEE tier — 6 logos, wraps to second row -->
+    <div class="golf-sponsor-tier">
+      <div class="golf-sponsor-tier__label">
+        <h3 class="golf-sponsor-tier__name">Tee</h3>
+        <p class="golf-sponsor-tier__subtitle">Community Contributors</p>
+      </div>
+      <div class="golf-sponsor-tier__logos">
+        <ul class="golf-sponsor-logo-grid" aria-label="Tee sponsors">
+          <li class="golf-sponsor-logo">
+            <div class="golf-sponsor-logo__card"><span class="golf-sponsor-logo__placeholder">Logo</span></div>
+          </li>
+          <li class="golf-sponsor-logo">
+            <div class="golf-sponsor-logo__card"><span class="golf-sponsor-logo__placeholder">Logo</span></div>
+          </li>
+          <li class="golf-sponsor-logo">
+            <div class="golf-sponsor-logo__card"><span class="golf-sponsor-logo__placeholder">Logo</span></div>
+          </li>
+          <li class="golf-sponsor-logo">
+            <div class="golf-sponsor-logo__card"><span class="golf-sponsor-logo__placeholder">Logo</span></div>
+          </li>
+          <li class="golf-sponsor-logo">
+            <div class="golf-sponsor-logo__card"><span class="golf-sponsor-logo__placeholder">Logo</span></div>
+          </li>
+          <li class="golf-sponsor-logo">
+            <div class="golf-sponsor-logo__card"><span class="golf-sponsor-logo__placeholder">Logo</span></div>
+          </li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- HOLE-IN-ONE tier — 1 logo only -->
+    <div class="golf-sponsor-tier">
+      <div class="golf-sponsor-tier__label">
+        <h3 class="golf-sponsor-tier__name">Hole&#8209;in&#8209;One</h3>
+        <!-- No subtitle provided — subtitle element omitted entirely in Velocity when empty -->
+      </div>
+      <div class="golf-sponsor-tier__logos">
+        <ul class="golf-sponsor-logo-grid" aria-label="Hole-in-One sponsors">
+          <li class="golf-sponsor-logo">
+            <a class="golf-sponsor-logo__link" href="https://example.com" target="_blank" rel="noopener noreferrer" aria-label="Valley Insurance Group (opens in new tab)">
+              <div class="golf-sponsor-logo__card">
+                <img class="golf-sponsor-logo__img" src="https://placehold.co/180x60/eeeeee/999999?text=VALLEY+INS." alt="Valley Insurance Group" />
+              </div>
+            </a>
+          </li>
+        </ul>
+      </div>
+    </div>
+
+  </section>
+
+
+  <!-- ─────────────────────────────────────────────────────────────
+       VARIANT B: No section heading / intro text
+       (show the component dropped directly into a page content area
+        without its own H2 heading — editor left those fields blank)
+  ──────────────────────────────────────────────────────────────── -->
+  <div class="proto-label">Variant B — No section heading or intro paragraph (editor left those fields blank)</div>
+
+  <section class="golf-sponsor-tiers" aria-label="Golf Invitational Sponsors">
+    <!-- heading and intro omitted — Velocity #if check suppresses them -->
+
+    <div class="golf-sponsor-tier">
+      <div class="golf-sponsor-tier__label">
+        <h3 class="golf-sponsor-tier__name">Presenting</h3>
+        <p class="golf-sponsor-tier__subtitle">Foundational Partners</p>
+      </div>
+      <div class="golf-sponsor-tier__logos">
+        <ul class="golf-sponsor-logo-grid" aria-label="Presenting sponsors">
+          <li class="golf-sponsor-logo">
+            <a class="golf-sponsor-logo__link" href="https://example.com" target="_blank" rel="noopener noreferrer" aria-label="Acme Corporation (opens in new tab)">
+              <div class="golf-sponsor-logo__card">
+                <img class="golf-sponsor-logo__img" src="https://placehold.co/180x60/eeeeee/999999?text=ACME+CORP" alt="Acme Corporation" />
+              </div>
+            </a>
+          </li>
+          <li class="golf-sponsor-logo">
+            <a class="golf-sponsor-logo__link" href="https://example.com" target="_blank" rel="noopener noreferrer" aria-label="Summit Financial (opens in new tab)">
+              <div class="golf-sponsor-logo__card">
+                <img class="golf-sponsor-logo__img" src="https://placehold.co/180x60/eeeeee/999999?text=SUMMIT+FINANCIAL" alt="Summit Financial" />
+              </div>
+            </a>
+          </li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="golf-sponsor-tier">
+      <div class="golf-sponsor-tier__label">
+        <h3 class="golf-sponsor-tier__name">Eagle</h3>
+        <p class="golf-sponsor-tier__subtitle">Distinguished Sponsors</p>
+      </div>
+      <div class="golf-sponsor-tier__logos">
+        <ul class="golf-sponsor-logo-grid" aria-label="Eagle sponsors">
+          <li class="golf-sponsor-logo">
+            <div class="golf-sponsor-logo__card"><span class="golf-sponsor-logo__placeholder">Logo</span></div>
+          </li>
+          <li class="golf-sponsor-logo">
+            <div class="golf-sponsor-logo__card"><span class="golf-sponsor-logo__placeholder">Logo</span></div>
+          </li>
+          <li class="golf-sponsor-logo">
+            <div class="golf-sponsor-logo__card"><span class="golf-sponsor-logo__placeholder">Logo</span></div>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+
+  <!-- ─────────────────────────────────────────────────────────────
+       CLOUDINARY FETCH URL — CORRECT FORMAT (SMOKE TEST REFERENCE)
+
+       The Velocity format builds src values like this:
+         https://res.cloudinary.com/dgujxrqyd/image/fetch/c_limit,w_800,h_300,q_auto,f_auto/https://www.mchenry.edu/_files/img/sponsors/filename.jpg
+
+       Key points:
+         1. imgAsset.path returns the path WITHOUT a leading slash (e.g. _files/img/...).
+            The Velocity template normalizes it: #if(!$imgPath.startsWith("/")) #set($imgPath = "/$imgPath") #end
+         2. The slash between mchenry.edu and _files is REQUIRED. A missing slash produces
+            "mchenry.edu_files/..." which is not a valid URL — Cloudinary rejects it (no image loads).
+         3. c_limit caps resolution but does NOT bake a canvas. CSS object-fit: contain on
+            .golf-sponsor-logo__img handles all visual normalization inside the 140px card.
+         4. Cloudinary fetch mode requires www.mchenry.edu to be whitelisted:
+            Cloudinary Dashboard > Settings > Security > Allowed Fetch Domains
+            Add both: www.mchenry.edu and mchenry.edu (without www)
+
+       To smoke-test Cloudinary fetch independently, paste a URL like the example below
+       directly into a browser tab — it should serve the image with no auth prompt.
+  ──────────────────────────────────────────────────────────────── -->
+  <div class="proto-label">Smoke Test — Cloudinary fetch URL pattern (real src format, placehold.co stand-ins used below)</div>
+
+  <section class="golf-sponsor-tiers" aria-label="Golf Invitational Sponsors">
+    <div class="golf-sponsor-tier">
+      <div class="golf-sponsor-tier__label">
+        <h3 class="golf-sponsor-tier__name">Smoke Test</h3>
+        <p class="golf-sponsor-tier__subtitle">Cloudinary fetch pattern</p>
+      </div>
+      <div class="golf-sponsor-tier__logos">
+        <ul class="golf-sponsor-logo-grid" aria-label="Smoke test sponsors">
+          <!-- Landscape source (432×120 equivalent) — should fill card width -->
+          <li class="golf-sponsor-logo">
+            <div class="golf-sponsor-logo__card">
+              <img class="golf-sponsor-logo__img" src="https://placehold.co/432x120/e8e0f5/4c2c92?text=LANDSCAPE+432×120" alt="Landscape logo smoke test" />
+            </div>
+          </li>
+          <!-- Square source (300×300 equivalent) — should fit contained in card height -->
+          <li class="golf-sponsor-logo">
+            <div class="golf-sponsor-logo__card">
+              <img class="golf-sponsor-logo__img" src="https://placehold.co/300x300/e8e0f5/4c2c92?text=SQUARE+300×300" alt="Square logo smoke test" />
+            </div>
+          </li>
+          <!-- Tall source (200×400 equivalent) — should fit within max-height: 110px -->
+          <li class="golf-sponsor-logo">
+            <div class="golf-sponsor-logo__card">
+              <img class="golf-sponsor-logo__img" src="https://placehold.co/200x400/e8e0f5/4c2c92?text=TALL+200×400" alt="Tall logo smoke test" />
+            </div>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─────────────────────────────────────────────────────────────
+       EDGE CASE: Single sponsor in a tier with no subtitle
+  ──────────────────────────────────────────────────────────────── -->
+  <div class="proto-label">Edge Case — Single sponsor in tier, no subtitle, no link</div>
+
+  <section class="golf-sponsor-tiers" aria-label="Golf Invitational Sponsors">
+    <div class="golf-sponsor-tier">
+      <div class="golf-sponsor-tier__label">
+        <h3 class="golf-sponsor-tier__name">Cart</h3>
+        <!-- no subtitle -->
+      </div>
+      <div class="golf-sponsor-tier__logos">
+        <ul class="golf-sponsor-logo-grid" aria-label="Cart sponsor">
+          <li class="golf-sponsor-logo">
+            <div class="golf-sponsor-logo__card">
+              <img class="golf-sponsor-logo__img" src="https://placehold.co/180x60/eeeeee/999999?text=LONE+SPONSOR+CO." alt="Lone Sponsor Co." />
+            </div>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+</div><!-- /proto-page -->
+
+</body>
+</html>

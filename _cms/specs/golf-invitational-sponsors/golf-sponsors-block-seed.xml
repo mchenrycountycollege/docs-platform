@@ -1,0 +1,135 @@
+<!--
+  Block Seed XML: golf-sponsors-block
+  ====================================
+  Use this as sample/reference content when creating the XHTML/Data Definition Block
+  in the Cascade CMS UI. Paste this into "Content (XML)" when creating the block,
+  or use it as a reference to manually populate the block form fields.
+
+  IMPORTANT: image <path> values below are placeholders.
+  Replace each with the actual CMS asset path after uploading sponsor logos to
+  /_files/golf-invitational/sponsors/ (or your site's file folder for this event).
+
+  To use in Cascade:
+    1. Create an XHTML/Data Definition Block named "golf-invitational-sponsors"
+    2. Assign the Data Definition "golf-invitational-sponsors" created from data-definition.xml
+    3. Populate fields using this XML as a reference, OR paste raw XML into the source view
+
+  Block DD group structure:
+    tier (multiple)
+      tier-name         — required, text
+      tier-subtitle     — optional, text
+      logo (multiple)
+        image           — required, file asset
+        alt             — required, text (sponsor's full name)
+        link            — optional, text (full URL)
+-->
+<system-data-structure>
+
+  <!-- ═══════════════════════════════════════════
+       TIER 1: Presenting — highest prestige level
+  ══════════════════════════════════════════════ -->
+  <tier>
+    <tier-name>Presenting</tier-name>
+    <tier-subtitle>Foundational Partners</tier-subtitle>
+    <logo>
+      <image type="file" path="/_files/golf-invitational/sponsors/acme-corporation-logo.png" />
+      <alt>Acme Corporation</alt>
+      <link>https://www.acmecorp.com</link>
+    </logo>
+    <logo>
+      <image type="file" path="/_files/golf-invitational/sponsors/summit-financial-logo.png" />
+      <alt>Summit Financial Group</alt>
+      <link>https://www.summitfinancial.com</link>
+    </logo>
+  </tier>
+
+  <!-- ═══════════════════════
+       TIER 2: Eagle
+  ════════════════════════ -->
+  <tier>
+    <tier-name>Eagle</tier-name>
+    <tier-subtitle>Distinguished Sponsors</tier-subtitle>
+    <logo>
+      <image type="file" path="/_files/golf-invitational/sponsors/riverside-bank-logo.png" />
+      <alt>Riverside Community Bank</alt>
+      <link>https://www.riversidecommunitybank.com</link>
+    </logo>
+    <logo>
+      <image type="file" path="/_files/golf-invitational/sponsors/hartwell-construction-logo.png" />
+      <alt>Hartwell Construction</alt>
+      <link></link>
+    </logo>
+    <logo>
+      <image type="file" path="/_files/golf-invitational/sponsors/greenway-group-logo.png" />
+      <alt>Greenway Group</alt>
+      <link>https://www.greenwaygroup.org</link>
+    </logo>
+  </tier>
+
+  <!-- ═══════════════════════
+       TIER 3: Birdie
+  ════════════════════════ -->
+  <tier>
+    <tier-name>Birdie</tier-name>
+    <tier-subtitle>Supporting Partners</tier-subtitle>
+    <logo>
+      <image type="file" path="/_files/golf-invitational/sponsors/lakeside-dental-logo.png" />
+      <alt>Lakeside Dental Associates</alt>
+      <link>https://www.lakesidedental.com</link>
+    </logo>
+    <logo>
+      <image type="file" path="/_files/golf-invitational/sponsors/northpoint-realty-logo.png" />
+      <alt>Northpoint Realty</alt>
+      <link></link>
+    </logo>
+  </tier>
+
+  <!-- ══════════════════════════════════════════════════════════════
+       TIER 4: Par — EXAMPLE OF AN EMPTY TIER (no logos this year)
+       To make a tier disappear from the page, simply remove all
+       <logo> child elements from the group. The Format's #if check
+       (logos.size() > 0) will suppress the entire tier block.
+       You may also delete this <tier> element entirely.
+  ═════════════════════════════════════════════════════════════════ -->
+  <!-- <tier>
+    <tier-name>Par</tier-name>
+    <tier-subtitle></tier-subtitle>
+  </tier> -->
+
+  <!-- ═══════════════════════
+       TIER 5: Tee
+  ════════════════════════ -->
+  <tier>
+    <tier-name>Tee</tier-name>
+    <tier-subtitle>Community Contributors</tier-subtitle>
+    <logo>
+      <image type="file" path="/_files/golf-invitational/sponsors/valley-insurance-logo.png" />
+      <alt>Valley Insurance Group</alt>
+      <link>https://www.valleyinsurance.com</link>
+    </logo>
+    <logo>
+      <image type="file" path="/_files/golf-invitational/sponsors/cedar-ridge-auto-logo.png" />
+      <alt>Cedar Ridge Auto Group</alt>
+      <link></link>
+    </logo>
+    <logo>
+      <image type="file" path="/_files/golf-invitational/sponsors/mapleton-law-logo.png" />
+      <alt>Mapleton Law Offices</alt>
+      <link>https://www.mapletonlaw.com</link>
+    </logo>
+  </tier>
+
+  <!-- ═════════════════════════════
+       TIER 6: Hole-in-One — single sponsor
+  ══════════════════════════════ -->
+  <tier>
+    <tier-name>Hole-in-One</tier-name>
+    <tier-subtitle></tier-subtitle>
+    <logo>
+      <image type="file" path="/_files/golf-invitational/sponsors/eastside-printing-logo.png" />
+      <alt>Eastside Printing and Signs</alt>
+      <link>https://www.eastsideprinting.com</link>
+    </logo>
+  </tier>
+
+</system-data-structure>

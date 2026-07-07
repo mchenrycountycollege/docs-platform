@@ -1,0 +1,59 @@
+## Nav Format -- assigned directly to the default region of ONE lightweight
+## container page PER BOOK, with that page's own asset name set to the book
+## slug (e.g. a page named "getting-started" at
+## docs/_system/nav/getting-started.json, no Content Type / DD needed --
+## just override the Format at the page level). Output: _system/nav/<book-
+## slug>.json
+##
+## Uses the Query API (byFolderPath, which is recursive) rather than a
+## per-book Index Block, per current Hannon Hill guidance preferring Query
+## API over Index Blocks. This means onboarding a new book only requires
+## creating one more container page named after the book slug -- no Index
+## Block asset to create per book.
+##
+## Emits a FLAT list of folders (chapters) and pages under the book, each
+## carrying its own path. Building the nested Book->Chapter->Page tree from
+## those flat paths is done client-side (packages/runtime) -- far more
+## robust than reconstructing nesting here, and it lets one Format
+## implementation serve every book.
+##
+## Chapter order follows Cascade's own folder position (drag-and-drop order
+## -- this Format does not re-sort folders). Page order uses the
+## Documentation Page DD's `order` field, which is what the web editor's
+## drag-reorder and git frontmatter both write to.
+
+#import('/_cms/formats/docs-platform/_shared')
+
+#set($bookSlug = $currentPage.name)
+#set($bookPath = "docs/${bookSlug}")
+
+#set($folderAssets = $_.query().byFolderPath($bookPath).foldersOnly().execute())
+
+#set($pageAssets = $_.query().byContentType("Documentation Page").byFolderPath($bookPath).preloadStructuredData().preloadDynamicMetadata().maxResults(-1).execute())
+$_SortTool.addSortCriterion("structuredDataNode(order).textValue", "en", "text", "ascending", "")
+#set($pageAssets = $_SortTool.sort($pageAssets))
+
+#set($folders = [])
+#foreach($folderAsset in $folderAssets)
+    #set($folderMap = {
+        "type": "folder",
+        "path": $folderAsset.path,
+        "displayName": $folderAsset.metadata.displayName
+    })
+    #set($discard = $folders.add($folderMap))
+#end
+
+#set($pages = [])
+#foreach($pageAsset in $pageAssets)
+    #extractDocFields($pageAsset)
+    #set($pageMap = {
+        "type": "page",
+        "path": $docPath,
+        "title": $docTitle,
+        "order": $docOrder,
+        "tags": $docTags
+    })
+    #set($discard = $pages.add($pageMap))
+#end
+
+$_SerializerTool.toJson({"folders": $folders, "pages": $pages})

@@ -1,0 +1,13 @@
+<h1 id="startcontent" class="home-h1">McHenry County College</h1> ## In materials but does not render
+<div class="row info-block-main" role="main">
+    #foreach($callout in $currentPage.getStructuredDataNodes('callout'))
+        #set($image   = $callout.getChild('image').asset.link)  ## required
+        #set($caption = $callout.getChild('caption').textValue) ## required
+        #set($link    = $callout.getChild('link').asset.link)   ## required
+        <div class="medium-6 large-3 columns block-${foreach.count}">
+            <div>
+                <a href="${link}"><span>$_EscapeTool.xml($caption)</span></a>
+            </div>
+        </div>
+    #end 
+</div>

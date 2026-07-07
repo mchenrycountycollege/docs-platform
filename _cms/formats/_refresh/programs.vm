@@ -1,0 +1,79 @@
+#import("_cms/formats/_refresh/_shared")
+#####################################################################################
+#set($programs = $_.query().byContentType("site://Programs/Program Page").bySiteName("Programs").hasStructuredData("PATHWAY/ACTIVE","Yes").maxResults(500).preloadDynamicMetadata().preloadStructuredData().execute())
+#set($pathways = $_.query().byContentType("site://McHenry/Pathway").bySiteName("Programs").hasStructuredData("PATHWAY/ACTIVE","Yes").maxResults(500).preloadDynamicMetadata().preloadStructuredData().execute())
+#set($programs2 = $_.query().byContentType("site://Programs/Program Page").bySiteName("McHenry").hasStructuredData("PATHWAY/ACTIVE","Yes").maxResults(500).preloadDynamicMetadata().preloadStructuredData().execute())
+#set($pathways2 = $_.query().byContentType("site://McHenry/Pathway").bySiteName("McHenry").hasStructuredData("PATHWAY/ACTIVE","Yes").maxResults(500).preloadDynamicMetadata().preloadStructuredData().execute())
+#set($_void = $programs.addAll($pathways))
+#set($_void = $programs.addAll($programs2))
+#set($_void = $programs.addAll($pathways2))
+#####################################################################################
+#set($areas = [])
+#set($degrees = [])
+## $programs.size()
+#set($json = "[system-asset:configuration=JSON]${currentPage.link}?raw[/system-asset:configuration]")
+#foreach($p in $programs)
+    #foreach($d in $p.getStructuredDataNode("PATHWAY/DEGREE").textValues)
+        #if(!$degrees.contains("'${d}'"))
+            #set($_void = $degrees.add("'${d}'"))
+        #end
+    #end
+    #foreach($a in $p.getStructuredDataNode("PATHWAY/AREA").textValues)
+        #if(!$areas.contains("'${a}'"))
+            #set($_void = $areas.add("'${a}'"))
+        #end
+    #end
+#end
+<![CDATA[#protect
+<div class="row">
+	<div class="small-12 medium-12 columns">
+		<header id="startcontent">
+			<h1>$_EscapeTool.xml($currentPage.getStructuredDataNode("h1").textValue)</h1>
+			${currentPage.getStructuredDataNode("content").textValue}
+		</header>
+		<div class="finder" data-finder-initial="12" data-finder-json="${json.replaceAll("amp;", "")}">
+			<form data-finder-form>
+				<div class="finder-search-section">
+					<div class="search-row">
+						<div class="search-input-wrapper"><label class="search-label" for="program-search-input" >Search Programs</label ><input type="search" id="program-search-input" class="search-input" data-finder-filter="search" name="search" placeholder="Enter keywords..." aria-label="Search programs by keywords" /><i class="fas fa-search search-icon" aria-hidden="true"></i></div>
+						<div class="filter-dropdown-wrapper">
+							<label class="filter-label" for="areas-of-study-select" >Areas of Study</label >
+							<select id="areas-of-study-select" class="filter-select" data-finder-filter="department" name="department" aria-label="Filter by area of study" >
+								<option value="">All Areas</option>
+								#foreach($a in $_SortTool.sort($areas))
+								    <option value="$_EscapeTool.xml($a.replaceAll("'",""))">$_EscapeTool.xml($a.replaceAll("'",""))</option>
+								#end
+							</select>
+							<i class="fas fa-chevron-down dropdown-icon" aria-hidden="true" ></i>
+						</div>
+						<div class="filter-dropdown-wrapper">
+							<label class="filter-label" for="degree-level-select" >Degree Level</label >
+							<select id="degree-level-select" class="filter-select" data-finder-filter="level" name="level" aria-label="Filter by degree level" >
+								<option value="">All Levels</option>
+								#foreach($d in $_SortTool.sort($degrees))
+								    <option value="$_EscapeTool.xml($d.replaceAll("'",""))">$_EscapeTool.xml($d.replaceAll("'",""))</option>
+								#end
+							</select>
+							<i class="fas fa-chevron-down dropdown-icon" aria-hidden="true" ></i>
+						</div>
+					</div>
+				</div>
+				<div class="active-filters">
+					<div class="current-filters" data-finder-current role="status" aria-live="polite" aria-atomic="true" ></div>
+					<button type="button" class="button reset-filters" data-finder-reset aria-label="Clear all active filters" ><i class="fas fa-times" aria-hidden="true"></i> Clear All Filters </button>
+				</div>
+			</form>
+			<div class="results-section">
+				<div class="results-header">
+					<div class="button-group" id="filters"><button class="button button--purple" data-filter-view="favorites" aria-label="Show only favorite programs" ><i class="fas fa-heart" aria-hidden="true"></i> Favorites </button><button class="button button--red" data-filter-view="clear-favorites" aria-label="Clear all favorite programs" ><i class="fas fa-xmark" aria-hidden="true"></i> Clear Favorites </button></div>
+					<p class="results-count" data-finder-count role="status" aria-live="polite" aria-atomic="true" ></p>
+					<div class="view-toggle"><button type="button" class="view-btn active" data-view="grid" aria-label="Switch to grid view" aria-pressed="true" ><i class="fas fa-grip-horizontal" aria-hidden="true"></i></button><span class="view-separator" aria-hidden="true">|</span><button type="button" class="view-btn" data-view="list" aria-label="Switch to list view" aria-pressed="false" ><i class="fas fa-list" aria-hidden="true"></i></button></div>
+				</div>
+				<div class="Finder__program-list program-list grid-view" role="region" aria-label="Program search results" ></div>
+				<p class="results-count" data-finder-count role="status" aria-live="polite" aria-atomic="true" ></p>
+				<div class="load-more-section" data-finder-load><button type="button" class="button load-more-btn" data-finder-more="9" aria-label="Load 9 more programs" > Load More Programs </button><button type="button" class="button load-all-btn" data-finder-all aria-label="Load all remaining programs" > Load All Programs </button></div>
+			</div>
+		</div>
+	</div>
+</div>
+#protect]]>

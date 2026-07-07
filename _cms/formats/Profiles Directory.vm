@@ -1,0 +1,368 @@
+##set( $row = $currentPage.getStructuredDataNodes('row').get(0) )
+#showProfileDirectory()
+#macro( showProfileDirectory )
+  <link media="all" rel="stylesheet" href="/_files/css/cfprofiles.css"/>
+  <script src="/_files/js/cfprofiles.js" defer="true"></script>
+  <div class="row">
+      <div class="column medium-6 filter_tabpanel filter_tabpanel_search" role="tabpanel">
+          <form class="filter_search" action="template-people-listing--results" method="get">
+              <label class="filter_label" for="filter_search_input">Search by Name or Specialty</label>
+              <div class="filter_search_form">
+                  <input class="filter_search_input" id="filter_search_input" type="search" placeholder="Example: Humanities"/>
+              </div>
+          </form>
+      </div>
+      <div class="column medium-6 js-programs-filter-checklist programs_filter_select_group">
+          <div class="js-programs-filter-item programs_filter_select_item">
+              <label class="programs_filter_select_label" for="programs_department">
+              <span class="programs_filter_select_label_text">Department</span>
+              </label>
+              <div class="profiles_filter_select_wrapper">
+                  <select class="js-programs-filter-input profiles_filter_select">
+                  </select>
+              </div>
+          </div>
+      </div>
+  </div>
+
+  <div class="row column">
+      <div class="filter_tabpanel filter_tabpanel_alpha" role="tabpanel">
+          <form class="alpha_form" action="template-people-listing--results" method="get">
+              <div class="alpha_field_group">
+                  <label class="alpha_label" for="alpha_select">
+                  <span class="alpha_label_text">Filter Alphabetically</span>
+                  </label>
+                  <div>
+                      <select class="alpha_select" id="alpha_select">
+                          <option value="All">All</option>
+                          <option value="A">A</option>
+                          <option value="B">B</option>
+                          <option value="C">C</option>
+                          <option value="D">D</option>
+                          <option value="E">E</option>
+                          <option value="F">F</option>
+                          <option value="G">G</option>
+                          <option value="H">H</option>
+                          <option value="I">I</option>
+                          <option value="J">J</option>
+                          <option value="K">K</option>
+                          <option value="L">L</option>
+                          <option value="M">M</option>
+                          <option value="N">N</option>
+                          <option value="O">O</option>
+                          <option value="P">P</option>
+                          <option value="Q">Q</option>
+                          <option value="R">R</option>
+                          <option value="S">S</option>
+                          <option value="T">T</option>
+                          <option value="U">U</option>
+                          <option value="V">V</option>
+                          <option value="W">W</option>
+                          <option value="X">X</option>
+                          <option value="Y">Y</option>
+                          <option value="Z">Z</option>
+                      </select>
+                      <span class="alpha_select_icon">
+                          <svg class="icon icon_triangle_down">
+                              >>>
+                          </svg>
+                      </span>
+                  </div>
+              </div>
+              <!--
+              <div class="alpha_form_actions">
+                  <button class="alpha_form_submit" type="submit">
+                  <span class="alpha_form_submit_label">Apply Filters</span>
+                  </button>
+              </div>
+              -->
+          </form>
+
+
+          <div class="row column">
+              <div class="alpha_set">
+                  <div class="alpha_set_title">
+                      <span class="alpha_set_title_text">Filter Alphabetically</span>
+                  </div>
+                  <ul class="alpha_list">
+                      <li class="alpha_item">
+                          <button class="alpha_button">
+                          <span class="alpha_button_label">A</span>
+                          </button>
+                      </li>
+                      <li class="alpha_item">
+                          <button class="alpha_button">
+                          <span class="alpha_button_label">B</span>
+                          </button>
+                      </li>
+                      <li class="alpha_item">
+                          <button class="alpha_button disabled" disabled="">
+                          <span class="alpha_button_label">C</span>
+                          </button>
+                      </li>
+                      <li class="alpha_item">
+                          <button class="alpha_button disabled" disabled="">
+                          <span class="alpha_button_label">D</span>
+                          </button>
+                      </li>
+                      <li class="alpha_item">
+                          <button class="alpha_button disabled" disabled="">
+                          <span class="alpha_button_label">E</span>
+                          </button>
+                      </li>
+                      <li class="alpha_item">
+                          <button class="alpha_button disabled" disabled="">
+                          <span class="alpha_button_label">F</span>
+                          </button>
+                      </li>
+                      <li class="alpha_item">
+                          <button class="alpha_button disabled" disabled="">
+                          <span class="alpha_button_label">G</span>
+                          </button>
+                      </li>
+                      <li class="alpha_item">
+                          <button class="alpha_button disabled" disabled="">
+                          <span class="alpha_button_label">H</span>
+                          </button>
+                      </li>
+                      <li class="alpha_item">
+                          <button class="alpha_button disabled" disabled="">
+                          <span class="alpha_button_label">I</span>
+                          </button>
+                      </li>
+                      <li class="alpha_item">
+                          <button class="alpha_button disabled" disabled="">
+                          <span class="alpha_button_label">J</span>
+                          </button>
+                      </li>
+                      <li class="alpha_item">
+                          <button class="alpha_button disabled" disabled="">
+                          <span class="alpha_button_label">K</span>
+                          </button>
+                      </li>
+                      <li class="alpha_item">
+                          <button class="alpha_button disabled" disabled="">
+                          <span class="alpha_button_label">L</span>
+                          </button>
+                      </li>
+                      <li class="alpha_item">
+                          <button class="alpha_button disabled" disabled="">
+                          <span class="alpha_button_label">M</span>
+                          </button>
+                      </li>
+                      <li class="alpha_item">
+                          <button class="alpha_button disabled" disabled="">
+                          <span class="alpha_button_label">N</span>
+                          </button>
+                      </li>
+                      <li class="alpha_item">
+                          <button class="alpha_button disabled" disabled="">
+                          <span class="alpha_button_label">O</span>
+                          </button>
+                      </li>
+                      <li class="alpha_item">
+                          <button class="alpha_button disabled" disabled="">
+                          <span class="alpha_button_label">P</span>
+                          </button>
+                      </li>
+                      <li class="alpha_item">
+                          <button class="alpha_button disabled" disabled="">
+                          <span class="alpha_button_label">Q</span>
+                          </button>
+                      </li>
+                      <li class="alpha_item">
+                          <button class="alpha_button disabled" disabled="">
+                          <span class="alpha_button_label">R</span>
+                          </button>
+                      </li>
+                      <li class="alpha_item">
+                          <button class="alpha_button disabled" disabled="">
+                          <span class="alpha_button_label">S</span>
+                          </button>
+                      </li>
+                      <li class="alpha_item">
+                          <button class="alpha_button disabled" disabled="">
+                          <span class="alpha_button_label">T</span>
+                          </button>
+                      </li>
+                      <li class="alpha_item">
+                          <button class="alpha_button disabled" disabled="">
+                          <span class="alpha_button_label">U</span>
+                          </button>
+                      </li>
+                      <li class="alpha_item">
+                          <button class="alpha_button disabled" disabled="">
+                          <span class="alpha_button_label">V</span>
+                          </button>
+                      </li>
+                      <li class="alpha_item">
+                          <button class="alpha_button disabled" disabled="">
+                          <span class="alpha_button_label">W</span>
+                          </button>
+                      </li>
+                      <li class="alpha_item">
+                          <button class="alpha_button disabled" disabled="">
+                          <span class="alpha_button_label">X</span>
+                          </button>
+                      </li>
+                      <li class="alpha_item">
+                          <button class="alpha_button disabled" disabled="">
+                          <span class="alpha_button_label">Y</span>
+                          </button>
+                      </li>
+                      <li class="alpha_item">
+                          <button class="alpha_button disabled" disabled="">
+                          <span class="alpha_button_label">Z</span>
+                          </button>
+                      </li>
+                      <li class="alpha_item all">
+                          <button class="alpha_button all">
+                          <span class="alpha_button_label">All</span>
+                          </button>
+                      </li>
+                  </ul>
+              </div>
+          </div>
+
+         
+      </div>
+  </div>
+
+
+
+
+      <div class="faculty-list entity_list_items">
+          
+      </div>
+      
+      <div class="pagination row">
+      <div class="columns">
+	<nav class="pagination_nav" aria-label="Template Pagination">
+		<a class="pagination_arrow pagination_arrow_left pagination_arrow_disabled" href="#">
+			<span class="pagination_arrow_icon">
+      <span class="icon fi-arrow-left large"></span>
+		</span>
+			<span class="pagination_arrow_label">Previous Page</span>
+		</a>
+		<a class="pagination_arrow pagination_arrow_right" href="#">
+			<span class="pagination_arrow_label">Next Page</span>
+			<span class="pagination_arrow_icon">
+      <span class="icon fi-arrow-right large"></span>
+      <!--
+			<svg class="icon icon_chevron_right">
+				<use href="/images/icons.svg#chevron_right" />
+			</svg>
+      -->
+		</span>
+		</a>
+	</nav>
+	<form class="pagination_form" action="#" method="get">
+		<div class="pagination_form_inner">
+			<label class="pagination_form_label" for="pagination_form_select">Page</label>
+			<div class="pagination_form_select_wrapper">
+				<select class="pagination_form_selectX" name="page" id="pagination_form_select" aria-label="Select Page Number">
+											<option value="1">1</option>
+									</select>
+<!--                  
+				<span class="pagination_form_select_icon">
+			<svg class="icon icon_triangle_down">
+				<use href="/images/icons.svg#triangle_down" />
+			</svg>
+		</span>
+    -->
+			</div>
+			<span class="pagination_form_suffix">of 50</span>
+      <!--
+			<button class="pagination_form_button" type="submit" aria-label="View Page">
+				<span class="pagination_form_button_label">Go</span>
+			</button>
+      -->
+		</div>
+	</form>
+</div>
+</div>
+      
+      
+      
+      ##<dh>Division</dh><dd><%= divison %></dd>
+<!--#protect
+	<script type="text/template" id="profile-item-template">
+    <section class="admmision-profiles">
+      <figure class="float-left">
+         <img alt="photo of <%= fname %> <%= lname %>" src="<%= image %>" width="125px" />
+      </figure>
+      <div class="admmision-profiles__content">
+        <header>
+          <h2>
+            <a href="[system-asset:id=39e7da3eac1e009660b461b5c9a3cb35]/faculty/detail[/system-asset]<%= ( ISCCMS ? "&" : "?" ) %>pid=<%= un %>" target="_top"><%= fname %> <%= lname %></a>
+          </h2>
+        </header>
+        <dl>
+          <dh>Title</dh><dd><%= title %></dd>
+          <dh>Department</dh><dd><%= dept %></dd>
+          <dh>Email</dh><dd><a href="mailto:<%= email %>"><%= email %></a></dd>
+          <dh>Phone</dh><dd><a href="tel:<%= phone.replace( /[^\d]/g , '' ) %>"><%= phone %></a></dd>
+        </dl>
+      </div>
+    </section>
+  </script>
+  #*
+	<script type="text/template" id="profile-item-template1">
+    <li>
+      <div class="row">
+        <div class="column"><a class="fl-name" href="[system-asset:id=39e7da3eac1e009660b461b5c9a3cb35]/faculty/detail[/system-asset]<%= ( ISCCMS ? "&" : "?" ) %>pid=<%= un %>">
+          <%= fname %> <%= lname %> <%= title %></a></div>
+          <% if( image != "" ) { %>
+            <div class="column medium-4">
+                <span class="fl-title"></span>
+                <img class="fl-imagee" src="<%= image %>">
+            </div>
+          <% } %>
+          <div class="column medium-4">
+              <span class="fl-title">Contact</span>
+              <% if( phone != "" ) { %>
+                <span class="fl-detail-title">Phone</span>
+                <span class="fl-detail"><a href="tel:<%= phone.replace( /(^\d)/g , "" ) %>"><%= phone %></a>
+              <% } %>
+              <% if( email != "" && phone != "" ) { %>
+                <br />
+              <% } %>
+              <% if( email != "" ) { %>
+                <span class="fl-detail-title">Email</span>
+                <span class="fl-detail"><a href="mailto:<%= email %>"><%= email %></a></span>
+              <% } %>
+          </div>
+          <div class="column medium-4">
+              <span class="fl-title">Location</span>
+              <% if( dept != "" ) { %>
+                <span class="fl-detail-title">Department</span>
+                <span class="fl-detail"><%= dept %></span>
+              <% } %>
+              <% if( divison != "" ) { %>
+                <span class="fl-detail-title">Division</span>
+                <span class="fl-detail"><%= divison %></span>
+              <% } %>
+              <% if( room != "" ) { %>
+                <span class="fl-detail-title">Room</span>
+                <span class="fl-detail"><%= room %></span>
+              <% } %>
+          </div>
+            <% if( false && (url || cv )) { %>
+          <div class="column medium-3">
+              <span class="fl-title">Links</span>
+              <% if( url != "" ) { %>
+                <span class="fl-detail-title">Website</span>
+                <span class="fl-detail"><a href="<%= url %>" target="_blank"><%= url %></a></span>
+              <% } %>
+              <% if( cv != "" ) { %>
+                <span class="fl-detail-title">Curriculum Vitae</span>
+                <span class="fl-detail"><a href="<%= cv %>" target="_blank"><%= cv %></a></span>
+              <% } %>
+          </div>
+            <% } %>
+        </div>
+    </li>
+	</script>
+  *#
+  #protect-->
+#end

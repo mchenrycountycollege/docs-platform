@@ -1,0 +1,72 @@
+#set( $addBanner = $currentPage.getStructuredDataNode("addBanner").textValues.contains("yes") )
+#set( $subtitle  = $_EscapeTool.xml($currentPage.getStructuredDataNode("subtitle").textValue) )
+#set( $rows      = $currentPage.getStructuredDataNodes("content") )
+
+<main role="main" class="large-8 medium-7 small-12 columns mid-main">
+
+    #if( $addBanner )
+        #set( $image = $currentPage.getStructuredDataNode("banner").asset.link )
+        #set( $alt   = $_EscapeTool.xml($currentPage.getStructuredDataNode("alt").textValue) )
+        <figure class="main-banner">
+            <img src="${image}" alt="${alt}" />
+        </figure>
+    #end
+    <h1 id="startcontent" class="main-header">$_EscapeTool.xml($currentPage.metadata.title)</h1>
+    #if( !$_PropertyTool.isEmpty($subtitle) )
+        <p class="adm-content">${subtitle}</p>
+    #end
+	#if( $currentPage.dataDefinitionPath == "Two Column - Pathway" )
+		#import("site://McHenry/_cms/formats/Pathway Info")
+	#end
+    #foreach( $row in $rows )
+        #set( $type = $row.getChild("type").textValue )
+        #if( $type == "wysiwyg")
+            $!row.getChild("wysiwyg").textValue
+        #elseif( $type == "listing" )
+            <article>
+                #set( $lists = $row.getChildren("listing") )
+                #foreach( $list in $lists )
+                    #set( $title   = "" )
+                    #set( $link    = "" )
+                    #set( $image   = $list.getChild("image").asset.link )                   ## required
+                    #set( $alt     = $_EscapeTool.xml($list.getChild("alt").textValue) )    ## required
+                    #set( $title   = $_EscapeTool.xml($list.getChild("title").textValue) )
+                    #set( $link    = $_EscapeTool.xml($list.getChild("link").asset.link) )
+                    #set( $wysiwyg = $list.getChild("wysiwyg").textValue )                  ## required
+                    <section class="admmision-profiles">
+                        <figure class="float-left">
+                            <img src="${image}" alt="$!{alt}" />
+                        </figure>
+                        <div class="admmision-profiles__content">
+                            #if( !$_PropertyTool.isEmpty($title) )
+                                <header>
+                                    <h2>
+                                        #if( !$_PropertyTool.isEmpty($link) )
+                                            <a href="${link}">
+                                        #end
+                                        ${title}
+                                        #if( !$_PropertyTool.isEmpty($link) )
+                                            </a>
+                                        #end
+                                    </h2>
+                                </header>
+                            #end
+                            $!{wysiwyg}
+                        </div>
+                    </section>
+                #end
+            </article>
+        #elseif( $type == "help-block" )
+            <div class="clearfix"></div>
+            $!row.getChild("help-block").asset.xHTML
+        #elseif($type == "spotlight-cards")
+            #import("site://Spotlights/_cms/formats/_shared/spotlight-cards")
+            #spotlightCards($row)
+	    #elseif ($type == "Profiles")
+            #if( $_PropertyTool.isNull( $profileTeaserCount ) && $_PropertyTool.isEmpty( $profileTeaserCount ) )
+              #import("/_cms/formats/_shared/Profile-Teaser")
+            #end
+            #showProfileTeaser($row)
+        #end
+    #end
+</main>

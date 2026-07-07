@@ -1,0 +1,11 @@
+name: Publish Cascade docs
+description: >-
+  Diffs a repo's docs/ folder between two commits and creates/updates/moves/
+  archives the corresponding Cascade pages via @docs-platform/cascade-publish.
+inputs:
+  docs-dir:
+    description: Path to the docs folder, relative to the repo root.
+    default: docs
+runs:
+  using: node20
+  main: dist/index.js

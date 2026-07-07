@@ -1,0 +1,56 @@
+<p>Generated: $_DateTool.format('EE, d MMM yyyy HH:mm:ss z', $_DateTool.getDate())</p>
+<hr />
+#set($incidentBlocks = $_.locateFolder("/", "Campus Safety"))
+#set($years = [])
+#set($incidents = {})
+##
+#iBLoop($incidentBlocks)
+#macro(iBLoop $iBData)
+    #foreach($iB in $iBData.children)
+        #if($iB.assetType == "folder")
+            #iBLoop($iB)
+        #elseif($iB.assetType == "block")
+            #if($iB.dataDefinitionPath == "Incident Report" && !$_PropertyTool.isEmpty($iB.getStructuredDataNode("date").textValue))
+                #set($year = $_DateTool.format("yyyy", $_DateTool.getDate($iB.getStructuredDataNode("date").textValue)))
+                #if(!$years.contains($year))
+                    #set($_void = $years.add($year))
+                #end
+                #set($incidents[$iB.identifier.Id] = {})
+                #set($incidents[$iB.identifier.Id]["number"] = $_EscapeTool.xml($iB.getStructuredDataNode("caseNumber").textValue))
+                #set($incidents[$iB.identifier.Id]["location"] = $_EscapeTool.xml($iB.getStructuredDataNode("location").textValue))
+                #set($incidents[$iB.identifier.Id]["offense"] = $_EscapeTool.xml($iB.getStructuredDataNode("offense").textValue))
+                #set($incidents[$iB.identifier.Id]["disposition"] = $_EscapeTool.xml($iB.getStructuredDataNode("disposition").textValue))
+                #set($incidents[$iB.identifier.Id]["date"] = $iB.getStructuredDataNode("date").textValue)
+            #end
+        #end
+    #end
+#end
+#set($sortedIncidents = $_SortTool.sort($incidents, "date:desc"))
+##
+#foreach($incident in $sortedIncidents)
+<table>
+<tbody>
+<tr>
+<td>Case Number</td>
+<td>$incident['number']</td>
+</tr>
+<tr>
+<td>Date and Time Reported</td>
+<td>$_DateTool.format("M/dd/yyyy h:mm:ss a", $_DateTool.getDate($incident['date']))</td>
+</tr>
+<tr>
+<td>Location</td>
+<td>$incident['location']</td>
+</tr>
+<tr>
+<td>Offense/Incident</td>
+<td>$incident['offense']</td>
+</tr>
+<tr>
+<td>Disposition</td>
+<td>$incident['disposition']</td>
+</tr>
+</tbody>
+</table>
+<hr/>
+#end

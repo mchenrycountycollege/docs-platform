@@ -1,0 +1,85 @@
+#set( $hasOutputPathwayInfo = false )
+#set( $hasOutputProfileInfo = false )
+#foreach($row in $currentPage.getStructuredDataNodes('row'))
+    
+    #if( $foreach.index == 1 && ( $currentPage.path == "faculty/directory/index" || $currentPage.path == "faculty/index" ) )
+      #import("/_cms/formats/Profiles Directory")
+    #elseif( $foreach.index == 1 && ( $currentPage.path == "faculty/directory/detail" || $currentPage.path == "faculty/detail" ) )
+      #import("/_cms/formats/Profile Detail")
+    #end
+
+    #set($type = $row.getChild('type').textValue)
+    #set($heading = $row.getChild('heading'))    ## optional 
+    #if($type == 'content')
+        <section style="padding-bottom:20px;">
+            #if(!$_PropertyTool.isEmpty($heading.textValue))
+               <header><h2>$_EscapeTool.xml($heading.textValue)</h2></header>
+            #end
+            $row.getChild('content-w').textValue
+        </section>
+    #elseif($type == 'Help Block')
+        #set($helpBlock = $row.getChild('help-block').asset) ## required
+        
+        <div class="clearfix"></div>
+        <section class="help">
+            #if(!$_PropertyTool.isEmpty($heading).textValue)
+               <!-- <header><h2>$_EscapeTool.xml($heading.textValue)</h2></header>-->
+            #end
+            $helpBlock.xHTML
+        </section>
+    #elseif($type == 'Two Columned Callout')
+        <section class="extra">
+            #foreach($col in $row.getChildren('column-w')) ## optional 
+                <div class="medium-6 column">
+                    #if(!$_PropertyTool.isEmpty($col.textValue))
+                        $col.textValue
+                    #end 
+                </div>
+            #end
+            <div class="clearfix"></div>
+        </section>
+    #elseif($type == "spotlight-cards")
+        #import("site://Spotlights/_cms/formats/_shared/spotlight-cards")
+        #spotlightCards($row)
+    #elseif($type == "accordions")
+        #import("/_cms/formats/_shared/accordions")
+        #outputAccordions($row.getChildren("accordion"))
+    #elseif($type == "photo-gallery")
+        #import("/_cms/formats/_shared/photo-gallery")
+        #outputPhotoGallery($row)
+    #elseif( $type == "news")
+        #import("/_cms/formats/_shared/news")
+        #outputNews($row)
+    #elseif( $type == "Pathway Info")
+		#set( $hasOutputPathwayInfo = true )
+		#if(!$_PropertyTool.isEmpty($heading.textValue))
+			 <header><h2>$_EscapeTool.xml($heading.textValue)</h2></header>
+		#end
+		#import("site://McHenry/_cms/formats/Pathway Info")
+	#elseif ($type == "Profiles")
+    #if( $_PropertyTool.isNull( $profileTeaserCount ) && $_PropertyTool.isEmpty( $profileTeaserCount ) )
+      #import("/_cms/formats/_shared/Profile-Teaser")
+    #end
+    #showProfileTeaser($row)
+	#elseif ($type == "events")
+	<section>
+	    #import("/_cms/formats/_shared/events")
+	    #outputEvents($row)
+	    </section>
+	#elseif ($type == "media-gallery")
+	    #import("site://Mediagallery/_cms/formats/_gallery")
+	    <div class="clearfix"></div>
+	    #outputGallery($row.getChild("gallery-block").asset $foreach.count)
+    #end
+#end
+
+#if( ! $hasOutputProfileInfo && ( $currentPage.path == "faculty/directory/index" || $currentPage.path == "faculty/index" ) )
+  #import("/_cms/formats/Profiles Directory")
+#elseif( ! $hasOutputProfileInfo && ( $currentPage.path == "faculty/directory/detail" || $currentPage.path == "faculty/detail" ) )
+  #import("/_cms/formats/Profile Detail")
+#end
+#if( ! $hasOutputPathwayInfo && $currentPage.dataDefinitionPath == "One Column Pathway" )
+	#import("site://McHenry/_cms/formats/Pathway Info")
+#end
+
+

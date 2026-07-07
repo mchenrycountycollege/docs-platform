@@ -1,0 +1,13 @@
+<h1 id="startcontent">$_EscapeTool.xml($currentPage.label)</h1>
+#set ($status   = $currentPage.metadata.getDynamicField("active").value.contains("yes"))
+#set ($date     = $currentPage.metadata.startDate + " - " + $currentPage.metadata.endDate)
+#set ($summary  = $_EscapeTool.xml($currentPage.metadata.summary))
+## Alert Info
+<p><strong>Status: </strong> #if (!$status)Not#end Active</p>
+<p><strong>Date: </strong> ${date}</p>
+<p><Strong>Summary: </Strong> ${summary}</p>
+
+#set($intro = $currentPage.getStructuredDataNode('intro-w').textValue)
+#if(!$_PropertyTool.isEmpty($intro))
+    $intro
+#end 

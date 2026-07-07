@@ -1,0 +1,12 @@
+#import ("/_cms/formats/_shared/sidebar")
+
+<aside class="large-4 medium-5 small-12 columns left-sidebar">
+ 
+   ## Side Navigation
+    #import( "/_cms/formats/side-nav" )
+
+
+    ## Sidebar Content
+    #set( $rows = $currentPage.getStructuredDataNodes("sidebar") )
+    #outputSidebar($rows)
+</aside>

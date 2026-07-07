@@ -1,0 +1,55 @@
+#set( $debug = false )
+
+#macro( debug $str )
+#if( $debug )<b>${str}</b>#end
+#end
+#macro( debugP $obj , $disable )
+#if( $debug && !$disable )
+$_PropertyTool.outputProperties( $obj )
+#end
+#end
+#macro( toJSON $str ) #set( $str = $_EscapeTool.javascript( $str.replaceAll( '\"' , '\\\"' ).replaceAll("\r\n", "").replaceAll("\n", "").replaceAll("\r", "").replaceAll("\t", "").replaceAll("--", "-") ).replaceAll("\\'","'") )${str}#end
+##${_EscapeTool.javascript( $str ).replaceAll( "'/" , "'" )}#end
+
+##set($_PAGES = $_XPathTool.selectNodes($contentRoot, '//system-data-structure/PROGRAM'))
+#set($_PAGES = $_XPathTool.selectNodes($contentRoot, '//system-page'))
+
+<!--#protect-top
+#set( $id = 0 )
+[
+	#foreach( $page in $_PAGES )
+		#set( $data = $_XPathTool.selectSingleNode( $page , 'system-data-structure' ) )
+		#set( $row = $_XPathTool.selectSingleNode( $data , 'PATHWAY' ) )
+		#set( $title = $_EscapeTool.xml( $page.getChild("title").value ) )
+		#set( $description = "" )
+		#set( $description = $_SerializerTool.serialize( $row.getChild("HTML") , true ) )
+		#if( $_PropertyTool.isEmpty( $description ) || $description == "<HTML />" )
+			#set( $description = "" )
+			#set( $description = $_EscapeTool.xml( $page.getChild("summary").value ) )
+		#end
+		#set( $link = $page.getChild( "link" ).value )
+		#if( $link.indexOf( "--" ) > 0 )
+			##a linkt with -- will break the JSON
+		#else
+			{    
+				"title": "#toJSON( $title )",
+				"link": "$link",
+				"id": "${foreach.count}",
+				"degree": [ #getCheckboxValuesAsJSONArrayValues( $row.getChild("DEGREE") ) ],
+				"area": [ #getCheckboxValuesAsJSONArrayValues( $row.getChild("AREA") ) ],
+				"goal": [ #getCheckboxValuesAsJSONArrayValues( $row.getChild("GOAL") ) ],
+				##"location": [ #getCheckboxValuesAsJSONArrayValues( $row.getChild("LOCATION") ) ],
+				"description": "#toJSON( $description )"
+			}#if( ! $foreach.last ),#end 
+	
+		#end
+	#end 
+]
+
+#protect-top-->
+
+#macro ( getCheckboxValuesAsJSONArrayValues $node )
+#foreach( $item in $node.getChildren("value") )
+"${item.value}"#if(!$foreach.last), #end 
+#end 
+#end	

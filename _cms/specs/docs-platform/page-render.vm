@@ -1,0 +1,48 @@
+## Documentation Page render Format.
+## Assigned to the default region of pages using the Documentation Page
+## Content Type. Renders the DD body plus a sidebar mount point and a config
+## script tag; the client runtime (packages/runtime in the docs-platform
+## repo) fetches _system/nav/<book>.json + _system/search-index.json and
+## hydrates the sidebar tree + Cmd+K search. Deriving the book slug from the
+## path is left to that JS (trivial there, brittle to guess correctly here in
+## Velocity), so this Format only needs to emit the raw page path.
+
+#set($titleNode = $currentPage.getStructuredDataNode("title"))
+#set($tagNodes = $currentPage.getStructuredDataNodes("tags"))
+#set($docPath = $currentPage.path)
+## $currentPage.getStructuredDataNode() returns Cascade's PageAPIAdapter
+## wrapper, not a JDOM Element -- fine for .textValue, but SerializerTool
+## needs a real Element (confirmed live: passing the wrapper in doesn't
+## error, it just silently fails to resolve and prints the literal source).
+## $contentRoot is documented as a genuine JDOM Element, so fetch body via
+## XPath against that instead, matching the docs' own WYSIWYG example.
+#set($bodyNode = $_XPathTool.selectSingleNode($contentRoot, "//body"))
+
+<div class="row docs-page" data-docs-path="$_EscapeTool.xml($docPath)">
+    <nav class="small-12 medium-3 columns" id="docs-sidebar" aria-label="Documentation navigation">
+        <!-- hydrated client-side from _system/nav/<book>.json -->
+    </nav>
+    <main class="small-12 medium-9 columns" id="docs-content">
+        <header>
+            <h1 id="startcontent">$_EscapeTool.xml($titleNode.textValue)</h1>
+            #if($tagNodes.size() > 0)
+            <ul class="docs-tags">
+                #foreach($tagNode in $tagNodes)
+                <li><a href="/docs/tags/$_EscapeTool.url($tagNode.textValue.toLowerCase())">$_EscapeTool.xml($tagNode.textValue)</a></li>
+                #end
+            </ul>
+            #end
+        </header>
+        <div class="docs-body">
+            $_SerializerTool.serialize($bodyNode, true)
+        </div>
+    </main>
+</div>
+
+<script type="application/json" id="docs-runtime-config">
+//<![CDATA[
+#set($configMap = {"path": $docPath, "searchUrl": "/docs/_system/search-index.json"})
+$_SerializerTool.toJson($configMap)
+//]]>
+</script>
+<script src="/docs/_runtime/docs-runtime.js" defer="defer"></script>

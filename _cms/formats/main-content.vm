@@ -1,0 +1,5 @@
+#set($editor = $_XPathTool.selectSingleNode($contentRoot, "/system-data-structure/editor"))
+##$editor.value
+<div class="large-12 columns">
+$_SerializerTool.serialize($editor, true)
+</div>
