@@ -1,11 +1,15 @@
 ## Documentation Page render Format.
 ## Assigned to the default region of pages using the Documentation Page
-## Content Type. Renders the DD body plus a sidebar mount point and a config
-## script tag; the client runtime (packages/runtime in the docs-platform
-## repo) fetches _system/nav/<book>.json + _system/search-index.json and
-## hydrates the sidebar tree + Cmd+K search. Deriving the book slug from the
-## path is left to that JS (trivial there, brittle to guess correctly here in
-## Velocity), so this Format only needs to emit the raw page path.
+## Content Type -- lands inside the docs-platform-page Template's
+## <system-region name="DEFAULT"/>, alongside a static topbar the Template
+## itself provides. Emits exactly the three grid children the Template's
+## CSS expects: #docs-sidebar, #docs-content, #docs-rail. The client
+## runtime (packages/runtime, bundled into the Template's inline <script>)
+## fetches _system/nav/<book>.json + _system/search-index.json and
+## hydrates the sidebar tree, breadcrumb, and Cmd+K search. Deriving the
+## book slug from the path and building the breadcrumb is left to that JS
+## (trivial there, brittle to guess correctly here in Velocity), so this
+## Format only needs to emit the raw page path.
 
 #set($titleNode = $currentPage.getStructuredDataNode("title"))
 #set($tagNodes = $currentPage.getStructuredDataNodes("tags"))
@@ -18,15 +22,22 @@
 ## XPath against that instead, matching the docs' own WYSIWYG example.
 #set($bodyNode = $_XPathTool.selectSingleNode($contentRoot, "//body"))
 
-<div class="row docs-page" data-docs-path="$_EscapeTool.xml($docPath)">
-    <nav class="small-12 medium-3 columns" id="docs-sidebar" aria-label="Documentation navigation">
-        <!-- hydrated client-side from _system/nav/<book>.json -->
-    </nav>
-    <main class="small-12 medium-9 columns" id="docs-content">
+## Provenance metadata (docId/origin/sourceRepoPath/editorName/authorEmail)
+## lives in the Metadata Set, same wrapper family the Query API results in
+## _shared.vm's extractDocFields already read via .metadata.getDynamicField.
+#set($origin = $currentPage.metadata.getDynamicField("origin").value)
+#set($sourceRepoPathNode = $currentPage.metadata.getDynamicField("sourceRepoPath"))
+#set($sourceRepoPath = $sourceRepoPathNode.value)
+
+<nav aria-label="Documentation navigation" class="sidebar" id="docs-sidebar">
+    <!-- hydrated client-side from _system/nav/<book>.json -->
+</nav>
+<main class="content-col" id="docs-content">
+    <article class="content">
         <header>
             <h1 id="startcontent">$_EscapeTool.xml($titleNode.textValue)</h1>
             #if($tagNodes.size() > 0)
-            <ul class="docs-tags">
+            <ul class="doc-tags">
                 #foreach($tagNode in $tagNodes)
                 <li><a href="/docs/tags/$_EscapeTool.url($tagNode.textValue.toLowerCase())">$_EscapeTool.xml($tagNode.textValue)</a></li>
                 #end
@@ -36,13 +47,30 @@
         <div class="docs-body">
             $_SerializerTool.serialize($bodyNode, true)
         </div>
-    </main>
-</div>
+    </article>
+</main>
+<aside aria-label="Page information" class="rail" id="docs-rail">
+    <div class="rail-box">
+        <p class="rail-label">Page info</p>
+        #if($origin == "git")
+        <span class="origin-badge">
+            <svg width="11" height="11" viewBox="0 0 11 11" fill="none"><path d="M5.5 1v9M1 5.5h9" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+            Published via git
+        </span>
+        #end
+        #if($sourceRepoPath && $sourceRepoPath.length() > 0)
+        <span class="source-path">$_EscapeTool.xml($sourceRepoPath)</span>
+        #end
+    </div>
+    <div class="rail-box" id="page-toc-box" style="display: none;">
+        <p class="rail-label">On this page</p>
+        <ul class="toc-list" id="page-toc"></ul>
+    </div>
+</aside>
 
-<script type="application/json" id="docs-runtime-config">
+<script id="docs-runtime-config" type="application/json">
 //<![CDATA[
-#set($configMap = {"path": $docPath, "searchUrl": "/docs/_system/search-index.json"})
+#set($configMap = {"path": $docPath, "title": $titleNode.textValue, "searchUrl": "/docs/_system/search-index.json"})
 $_SerializerTool.toJson($configMap)
 //]]>
 </script>
-<script src="/docs/_runtime/docs-runtime.js" defer="defer"></script>

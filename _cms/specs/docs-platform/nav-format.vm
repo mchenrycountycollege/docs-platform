@@ -56,4 +56,6 @@ $_SortTool.addSortCriterion("structuredDataNode(order).textValue", "en", "text",
     #set($discard = $pages.add($pageMap))
 #end
 
+<!--#protect-top
 $_SerializerTool.toJson({"folders": $folders, "pages": $pages})
+#protect-top-->

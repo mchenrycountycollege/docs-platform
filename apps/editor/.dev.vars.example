@@ -1,0 +1,14 @@
+# Local `pnpm pages:dev` secrets/vars. Copy to .dev.vars (gitignored) and fill
+# in real values. In production these are set as Pages project secrets/vars
+# (editor-implementation-plan.md section 7, item 2) -- never committed.
+CASCADE_BASE_URL=https://your-instance.cascadecms.com
+CASCADE_SITE_NAME=docs
+CASCADE_API_KEY=
+CASCADE_DOC_CONTENT_TYPE_ID=
+CASCADE_NAV_CONTENT_TYPE_ID=
+# The Access application's AUD tag (Zero Trust dashboard -> Access ->
+# Applications -> this app -> Overview).
+ACCESS_AUD=
+# e.g. mchenry.cloudflareaccess.com -- used for both the JWKS URL and the
+# expected JWT `iss` claim.
+ACCESS_TEAM_DOMAIN=

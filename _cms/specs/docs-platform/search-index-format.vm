@@ -27,4 +27,6 @@
     #set($discard = $entries.add($entryMap))
 #end
 
+<!--#protect-top
 $_SerializerTool.toJson({"pages": $entries})
+#protect-top-->

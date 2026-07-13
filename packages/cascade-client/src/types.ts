@@ -70,6 +70,26 @@ export interface RawPageAsset {
   contentTypeId: string;
 }
 
+/**
+ * A File asset -- static content (unlike pages, not templated/serialized
+ * from structured data). Used to host docs-runtime.js so it can be
+ * referenced from the Template via <script src>, instead of being pasted
+ * inline (see implementation-checklist.md Phase 6b for why: manual paste
+ * of a large minified bundle into the Template editor was corrupting
+ * \uXXXX escapes into raw bytes).
+ */
+export interface FileAsset {
+  /** Internal Cascade asset id -- required to identify the file for edit(). */
+  id: string;
+  path: string;
+  /** Parent folder path, needed because edit() requires it be resupplied even when unchanged. */
+  parentFolderPath: string;
+  siteName: string;
+  /** Cascade's lastModifiedDate, used as the optimistic-concurrency version token. */
+  version: string;
+  data: Buffer;
+}
+
 export interface FolderEntry {
   path: string;
   type: AssetType;

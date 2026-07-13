@@ -9,6 +9,7 @@ import {
 import type {
   AssetType,
   CascadeConfig,
+  FileAsset,
   FolderAsset,
   MetadataFields,
   PageAsset,
@@ -503,4 +504,114 @@ export async function unpublishAsset(
     `publish/${type}/${config.siteName}/${scoped}`,
     { publishInformation: { unpublish: true } },
   );
+}
+
+interface ReadFileResponse {
+  asset: {
+    file: {
+      id: string;
+      path: string;
+      parentFolderPath: string;
+      lastModifiedDate: string;
+      // ASSUMPTION: field name/shape not confirmed against a live instance
+      // yet -- the only local documentation is a one-line note that "Reading/
+      // Editing File assets using REST API uses byte array format whereas
+      // SOAP uses base64 encoded format" (rest-api-cascade-cms-knowledge-base.md),
+      // which implies a plain JSON array of byte values rather than a base64
+      // string. Verify with a real read/file call and adjust the field name/
+      // decoding here (and in create/editFile below) if wrong.
+      data: number[];
+    };
+  };
+}
+
+/** Read a File asset's raw bytes. See ReadFileResponse for the byte-array-format caveat. */
+export async function readFile(config: CascadeConfig, path: string): Promise<FileAsset> {
+  const scoped = assertInScope(path);
+  const res = await request<ReadFileResponse>(
+    config,
+    "GET",
+    `read/file/${config.siteName}/${scoped}`,
+  );
+  return {
+    id: res.asset.file.id,
+    path: res.asset.file.path,
+    parentFolderPath: res.asset.file.parentFolderPath,
+    siteName: config.siteName,
+    version: res.asset.file.lastModifiedDate,
+    data: Buffer.from(res.asset.file.data),
+  };
+}
+
+export async function fileExists(config: CascadeConfig, path: string): Promise<boolean> {
+  const scoped = assertInScope(path);
+  try {
+    await request<unknown>(config, "GET", `read/file/${config.siteName}/${scoped}`);
+    return true;
+  } catch (err) {
+    if (err instanceof CascadeApiError && /unable to identify an entity/i.test(err.message)) {
+      return false;
+    }
+    throw err;
+  }
+}
+
+export async function createFile(config: CascadeConfig, path: string, data: Buffer): Promise<void> {
+  const scoped = assertInScope(path);
+  const parentFolderPath = scoped.slice(0, scoped.lastIndexOf("/")) || "docs";
+  const name = scoped.slice(scoped.lastIndexOf("/") + 1);
+  await request<CreateResponse>(config, "POST", "create", {
+    asset: {
+      file: {
+        name,
+        parentFolderPath,
+        siteName: config.siteName,
+        data: Array.from(data),
+      },
+    },
+  });
+}
+
+/** Edit a File asset's bytes, with the same optimistic-concurrency contract as editPage(). */
+export async function editFile(
+  config: CascadeConfig,
+  path: string,
+  data: Buffer,
+  expectedVersion: string,
+): Promise<{ version: string }> {
+  const scoped = assertInScope(path);
+  const current = await readFile(config, scoped);
+  if (current.version !== expectedVersion) {
+    throw new VersionConflictError(current.version, current.data.toString("utf8"));
+  }
+  await request<EditResponse>(config, "POST", "edit", {
+    asset: {
+      file: {
+        id: current.id,
+        parentFolderPath: current.parentFolderPath,
+        siteName: config.siteName,
+        data: Array.from(data),
+      },
+    },
+  });
+  const updated = await readFile(config, scoped);
+  return { version: updated.version };
+}
+
+/**
+ * Create-or-update a File asset's contents and publish it, so the bytes at
+ * `path` end up matching `data` regardless of whether anything was there
+ * before -- the primitive the docs-runtime push script uses (see
+ * push-runtime.ts) to make "make Cascade's copy match this Buffer" a single
+ * idempotent call instead of a manual paste-into-Template round trip.
+ */
+export async function upsertFile(config: CascadeConfig, path: string, data: Buffer): Promise<void> {
+  const scoped = assertInScope(path);
+  if (await fileExists(config, scoped)) {
+    const current = await readFile(config, scoped);
+    await editFile(config, scoped, data, current.version);
+  } else {
+    await createFile(config, scoped, data);
+  }
+  await publishAsset(config, "file", scoped);
 }

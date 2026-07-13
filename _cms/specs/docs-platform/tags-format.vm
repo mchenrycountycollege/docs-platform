@@ -36,4 +36,6 @@
     #set($discard = $tagGroups.add({"tag": $tag, "pages": $pagesForTag}))
 #end
 
+<!--#protect-top
 $_SerializerTool.toJson({"tags": $tagGroups})
+#protect-top-->

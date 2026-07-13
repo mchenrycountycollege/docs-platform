@@ -1,0 +1,26 @@
+{
+  "name": "@docs-platform/editor",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "typecheck": "tsc -p tsconfig.json --noEmit && tsc -p functions/tsconfig.json --noEmit",
+    "pages:dev": "wrangler pages dev out --compatibility-date=2026-07-13"
+  },
+  "dependencies": {
+    "@docs-platform/cascade-client": "workspace:*",
+    "jose": "^6.2.3",
+    "next": "^16.2.10",
+    "react": "^19.2.7",
+    "react-dom": "^19.2.7"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^5.20260713.1",
+    "@types/react": "^19.2.17",
+    "@types/react-dom": "^19.2.3",
+    "typescript": "^5.7.3",
+    "wrangler": "^4.110.0"
+  }
+}

@@ -1,0 +1,8 @@
+# Local `pnpm pages:dev` config for the Pages Functions proxy. The Cloudflare
+# Pages *project* itself (build settings, secrets/vars, Access policy) is
+# configured in the dashboard -- see
+# project-management/editor-implementation-plan.md section 7.
+name = "mcc-docs-editor"
+pages_build_output_dir = "out"
+compatibility_date = "2026-07-13"
+compatibility_flags = ["nodejs_compat"]

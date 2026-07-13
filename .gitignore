@@ -6,6 +6,14 @@ dist/
 .DS_Store
 .claude/settings.local.json
 
+# apps/editor (Next.js static export + Cloudflare Pages Functions)
+apps/editor/.next/
+apps/editor/out/
+apps/editor/.wrangler/
+apps/editor/.dev.vars
+apps/editor/next-env.d.ts
+apps/editor/*.tsbuildinfo
+
 # actions/publish/dist is a checked-in bundle, not a build cache -- GitHub
 # Actions can't run `pnpm install`/build for a referenced action, so the
 # bundled dist/index.js this repo ships must be committed.
