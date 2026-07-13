@@ -1,8 +1,22 @@
-# Local `pnpm pages:dev` config for the Pages Functions proxy. The Cloudflare
-# Pages *project* itself (build settings, secrets/vars, Access policy) is
-# configured in the dashboard -- see
+# Config for the Pages Functions proxy, used both for local `pnpm pages:dev`
+# and as the deployed project's config -- Cloudflare Pages treats a
+# wrangler.toml with `pages_build_output_dir` as authoritative for the
+# project once it's picked up in a build, which disables dashboard-managed
+# plain vars (only Secrets stay dashboard-editable). So non-secret vars live
+# here, committed, instead of the dashboard -- see
 # project-management/editor-implementation-plan.md section 7.
+# CASCADE_API_KEY is NOT here -- it's a secret, set via
+# `wrangler pages secret put CASCADE_API_KEY --project-name=docs-platform`
+# (or the dashboard's Secrets section), never committed.
 name = "mcc-docs-editor"
 pages_build_output_dir = "out"
 compatibility_date = "2026-07-13"
 compatibility_flags = ["nodejs_compat"]
+
+[vars]
+CASCADE_BASE_URL = "https://mchenry.cascadecms.com"
+CASCADE_SITE_NAME = "DEV-Sean"
+CASCADE_DOC_CONTENT_TYPE_ID = "38fb95dcac1e006c6867b46d2eeda735"
+CASCADE_NAV_CONTENT_TYPE_ID = "3955711bac1e006c6867b46daad4d5d1"
+ACCESS_TEAM_DOMAIN = "muddy-hill-1fe8.cloudflareaccess.com"
+ACCESS_AUD = "bed4b7b66dd4af02bb5fc17f9eb39dcf9a296dd10f112de9e874434c12b8f340"
