@@ -5,6 +5,8 @@
  * instead of parsing raw Response objects themselves.
  */
 
+import type { NavResponse, SearchEntry } from "@docs-platform/doc-shell";
+
 export interface FolderEntry {
   path: string;
   type: "page" | "file" | "folder";
@@ -83,6 +85,31 @@ export function getTree(path: string): Promise<TreeResult> {
 
 export function getPage(path: string): Promise<PageResult> {
   return getJson<PageResult>(`/api/page?path=${encodeURIComponent(path)}`);
+}
+
+/**
+ * Background half of the save model (editor-implementation-plan.md section
+ * 4b, "instant vs. reconciled"): Save already shows the in-memory optimistic
+ * body immediately (see DocEditor/PageView). Once the publish sequence has
+ * had time to settle, the caller re-fetches with this and quietly swaps the
+ * on-screen body if the stored/published canonical HTML differs (e.g. a
+ * server-side normalizeHtml adjustment the optimistic copy wouldn't
+ * reflect) -- silent on match, no modal either way.
+ */
+export function reconcilePage(path: string): Promise<PageResult> {
+  return getPage(path);
+}
+
+/** One book's nav, built live from Cascade (editor-implementation-plan.md E-Shell/E4) -- bookPath is "docs/<book-slug>". */
+export function getNav(bookPath: string): Promise<NavResponse> {
+  return getJson<NavResponse>(`/api/nav?path=${encodeURIComponent(bookPath)}`);
+}
+
+/** Whole-site search index for the cmdk palette, loaded once per session and cached (mirrors runtime's loadIndex). */
+let searchIndexPromise: Promise<SearchEntry[]> | null = null;
+export function getSearchIndex(): Promise<SearchEntry[]> {
+  searchIndexPromise ??= getJson<{ pages: SearchEntry[] }>("/api/search-index").then((r) => r.pages);
+  return searchIndexPromise;
 }
 
 async function putPageFields(input: {

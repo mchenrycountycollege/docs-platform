@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
+import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "docs-platform editor",
+  title: "MCC Docs · editor",
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {

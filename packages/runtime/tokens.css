@@ -1,0 +1,98 @@
+/* Shared design tokens (editor-implementation-plan.md section 4a, "shared
+   design tokens ... both consume"). Canonical source of the color/type
+   custom properties both renderers style against:
+     - the public reader's Cascade Template
+       (_cms/specs/docs-platform/docs-platform-page-template.html), which
+       inlines its own literal copy (Cascade Templates aren't part of this
+       JS build, so they can't `@import` this file directly -- keep that
+       copy byte-identical to the `:root` blocks below by hand, the same way
+       push-runtime.ts pushes the built runtime bundle to Cascade separately
+       from source)
+     - apps/editor's front-door shell, which imports this file directly.
+   Values sourced from the live site's own _refresh/style.css custom
+   properties: --purple-*, --yellow-*, --green-*, --gray-*, and the --slab /
+   --font-primary type stack. */
+
+:root {
+  --bg: #f8f6fb;
+  --bg-sidebar: #e4e0ef;
+  --bg-raised: #ffffff;
+  --border: #dbd6e9;
+  --text: #241a38;
+  --text-muted: #666666;
+  --accent: #47348b;
+  --accent-ink: #ffffff;
+  --accent-soft: #e4e0ef;
+  --accent-soft-border: #dbd6e9;
+  --code-bg: #e4e0ef;
+  --code-text: #3a2a63;
+  --badge-git: #52832f;
+  --badge-git-soft: #e6f0dc;
+  --highlight: #f3bd50;
+  --shadow: 0 12px 32px -12px rgba(40, 7, 89, 0.22);
+  --focus-ring: #47348b;
+
+  --font-display: "Hepta Slab", "Roboto Slab", "Zilla Slab", Georgia, serif;
+  --font-body: "Hanken Grotesk", -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #1a1229;
+    --bg-sidebar: #201933;
+    --bg-raised: #241c39;
+    --border: #392c5c;
+    --text: #ede9f6;
+    --text-muted: #a79fc0;
+    --accent: #b6a2e6;
+    --accent-ink: #1a1229;
+    --accent-soft: #2c2249;
+    --accent-soft-border: #3d3062;
+    --code-bg: #291f45;
+    --code-text: #e3d9f7;
+    --badge-git: #93c672;
+    --badge-git-soft: #23331b;
+    --highlight: #f3bd50;
+    --shadow: 0 12px 32px -12px rgba(0, 0, 0, 0.55);
+    --focus-ring: #b6a2e6;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #1a1229;
+  --bg-sidebar: #201933;
+  --bg-raised: #241c39;
+  --border: #392c5c;
+  --text: #ede9f6;
+  --text-muted: #a79fc0;
+  --accent: #b6a2e6;
+  --accent-ink: #1a1229;
+  --accent-soft: #2c2249;
+  --accent-soft-border: #3d3062;
+  --code-bg: #291f45;
+  --code-text: #e3d9f7;
+  --badge-git: #93c672;
+  --badge-git-soft: #23331b;
+  --highlight: #f3bd50;
+  --shadow: 0 12px 32px -12px rgba(0, 0, 0, 0.55);
+  --focus-ring: #b6a2e6;
+}
+:root[data-theme="light"] {
+  --bg: #f8f6fb;
+  --bg-sidebar: #e4e0ef;
+  --bg-raised: #ffffff;
+  --border: #dbd6e9;
+  --text: #241a38;
+  --text-muted: #666666;
+  --accent: #47348b;
+  --accent-ink: #ffffff;
+  --accent-soft: #e4e0ef;
+  --accent-soft-border: #dbd6e9;
+  --code-bg: #e4e0ef;
+  --code-text: #3a2a63;
+  --badge-git: #52832f;
+  --badge-git-soft: #e6f0dc;
+  --highlight: #f3bd50;
+  --shadow: 0 12px 32px -12px rgba(40, 7, 89, 0.22);
+  --focus-ring: #47348b;
+}

@@ -1,61 +1,58 @@
 "use client";
 
-import { useState } from "react";
-import { DocEditor } from "../components/editor/DocEditor";
+import { deriveBookSlug } from "@docs-platform/doc-shell";
+import { useEffect, useState } from "react";
+import { Breadcrumb } from "../components/shell/Breadcrumb";
+import { usePageView } from "../components/shell/PageView";
+import { SearchPalette } from "../components/shell/SearchPalette";
+import { ShellChrome } from "../components/shell/ShellChrome";
+import { useBookNav } from "../components/shell/useBookNav";
 import { DocsTree } from "../components/tree/DocsTree";
 
-// E2: a real book/chapter/page tree (react-arborist, lazily loaded via
-// GET /api/tree) replaces E0's raw-JSON diagnostic. Create/rename/move/
-// reorder all live in DocsTree; this component just wires "open a page" and
-// "an open page moved" between the tree and the editor.
-
+// The front door (editor-implementation-plan.md section 4a, "editor-as-
+// front-door + shared shell"): a single client-rendered page, not a router
+// with per-page routes -- "opening" a page is a state change inside the same
+// shell (sidebar/breadcrumb/⌘K/ToC persist), matching "no separate editor
+// screen, no context switch" from the plan. Every page opens read-only by
+// default (usePageView); "Edit this page" swaps the body in place.
 export default function Home() {
-  const [openPagePath, setOpenPagePath] = useState<string | null>(null);
-  const [manualPath, setManualPath] = useState("");
+  const [openPath, setOpenPath] = useState<string | null>(null);
+  const [searchOpen, setSearchOpen] = useState(false);
+
+  useEffect(() => {
+    function onKeyDown(e: KeyboardEvent) {
+      const isMac = /Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent);
+      const mod = isMac ? e.metaKey : e.ctrlKey;
+      if (mod && e.key.toLowerCase() === "k") {
+        e.preventDefault();
+        setSearchOpen((v) => !v);
+      }
+    }
+    document.addEventListener("keydown", onKeyDown);
+    return () => document.removeEventListener("keydown", onKeyDown);
+  }, []);
+
+  const bookSlug = openPath ? deriveBookSlug(openPath) : null;
+  const { tree } = useBookNav(bookSlug);
+  const { content, rail } = usePageView(openPath);
 
   return (
-    <main style={{ fontFamily: "system-ui, sans-serif", padding: "1.5rem", maxWidth: 1200, margin: "0 auto" }}>
-      <h1>docs-platform editor</h1>
-
-      <div style={{ display: "flex", gap: "1.5rem", alignItems: "flex-start" }}>
-        <aside style={{ width: 320, flexShrink: 0 }}>
+    <>
+      <ShellChrome
+        breadcrumb={<Breadcrumb tree={tree} currentPath={openPath} />}
+        sidebar={
           <DocsTree
-            onOpenPage={setOpenPagePath}
+            onOpenPage={setOpenPath}
             onPageMoved={(fromPath, toPath) => {
-              setOpenPagePath((current) => (current === fromPath ? toPath : current));
+              setOpenPath((current) => (current === fromPath ? toPath : current));
             }}
           />
-
-          <details style={{ marginTop: "1rem" }}>
-            <summary>Open by path (debug)</summary>
-            <form
-              onSubmit={(e) => {
-                e.preventDefault();
-                setOpenPagePath(manualPath);
-              }}
-              style={{ marginTop: "0.5rem" }}
-            >
-              <input
-                value={manualPath}
-                onChange={(e) => setManualPath(e.target.value)}
-                placeholder="docs/some-book/some-page"
-                style={{ width: "100%" }}
-              />
-              <button type="submit" style={{ marginTop: "0.25rem" }}>
-                Open
-              </button>
-            </form>
-          </details>
-        </aside>
-
-        <section style={{ flex: 1, minWidth: 0 }}>
-          {openPagePath ? (
-            <DocEditor key={openPagePath} path={openPagePath} />
-          ) : (
-            <p style={{ color: "#666" }}>Select a page from the tree, or create a new one.</p>
-          )}
-        </section>
-      </div>
-    </main>
+        }
+        content={content}
+        rail={rail}
+        onOpenSearch={() => setSearchOpen(true)}
+      />
+      <SearchPalette open={searchOpen} onOpenChange={setSearchOpen} onSelect={setOpenPath} />
+    </>
   );
 }

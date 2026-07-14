@@ -282,8 +282,8 @@ export function DocsTree({ onOpenPage, onPageMoved }: DocsTreeProps) {
   }
 
   return (
-    <div>
-      <div style={{ display: "flex", gap: "0.5rem", marginBottom: "0.5rem" }}>
+    <>
+      <div className="sidebar-actions">
         <button type="button" onClick={() => void handleNewBook()}>
           + Book
         </button>
@@ -295,33 +295,35 @@ export function DocsTree({ onOpenPage, onPageMoved }: DocsTreeProps) {
         </button>
       </div>
       {error && (
-        <p style={{ color: "crimson", fontSize: "0.9em" }}>
+        <p className="sidebar-error">
           {error} <button type="button" onClick={() => setError(null)}>dismiss</button>
         </p>
       )}
-      <Tree<TreeNode>
-        data={root.children ?? []}
-        width="100%"
-        height={600}
-        rowHeight={28}
-        openByDefault={false}
-        disableMultiSelection
-        onToggle={handleToggle}
-        onSelect={(nodes) => setSelectedId(nodes[0]?.id ?? null)}
-        onActivate={(node) => {
-          if (node.data.itemType === "page") onOpenPage(node.data.path);
-        }}
-        onRename={(args) => void handleRename(args)}
-        onMove={(args) => void handleMove(args)}
-        disableEdit={(data) => data.itemType === "loading"}
-        disableDrag={(data) => data.itemType === "loading" || data.itemType === "file"}
-        disableDrop={({ parentNode }) =>
-          parentNode.isRoot || parentNode.data.itemType !== "folder" || !parentNode.data.loaded
-        }
-      >
-        {Row}
-      </Tree>
-    </div>
+      <div className="sidebar-tree">
+        <Tree<TreeNode>
+          data={root.children ?? []}
+          width="100%"
+          height={640}
+          rowHeight={30}
+          openByDefault={false}
+          disableMultiSelection
+          onToggle={handleToggle}
+          onSelect={(nodes) => setSelectedId(nodes[0]?.id ?? null)}
+          onActivate={(node) => {
+            if (node.data.itemType === "page") onOpenPage(node.data.path);
+          }}
+          onRename={(args) => void handleRename(args)}
+          onMove={(args) => void handleMove(args)}
+          disableEdit={(data) => data.itemType === "loading"}
+          disableDrag={(data) => data.itemType === "loading" || data.itemType === "file"}
+          disableDrop={({ parentNode }) =>
+            parentNode.isRoot || parentNode.data.itemType !== "folder" || !parentNode.data.loaded
+          }
+        >
+          {Row}
+        </Tree>
+      </div>
+    </>
   );
 }
 
@@ -343,26 +345,23 @@ function Row({ node, style, dragHandle }: NodeRendererProps<TreeNode>) {
 
   if (data.itemType === "loading") {
     return (
-      <div style={{ ...style, opacity: 0.6, paddingLeft: 4 }}>
+      <div style={{ ...style, opacity: 0.6, paddingLeft: 4 }} className="tree-row">
         Loading…
       </div>
     );
   }
 
+  const isFolder = data.itemType === "folder";
+  const rowClass = `tree-row${isFolder ? " folder-row" : ""}${node.isSelected ? " active" : ""}`;
+
   return (
     <div
       ref={dragHandle}
-      style={{
-        ...style,
-        display: "flex",
-        alignItems: "center",
-        gap: 6,
-        cursor: "pointer",
-        background: node.isSelected ? "#e6f0ff" : undefined,
-      }}
+      style={style}
+      className={rowClass}
       onClick={(e) => {
         node.handleClick(e);
-        if (data.itemType === "folder") node.toggle();
+        if (isFolder) node.toggle();
       }}
     >
       <span>{icon(node)}</span>
@@ -376,7 +375,6 @@ function Row({ node, style, dragHandle }: NodeRendererProps<TreeNode>) {
             if (e.key === "Escape") node.reset();
             if (e.key === "Enter") node.submit((e.target as HTMLInputElement).value);
           }}
-          style={{ flex: 1 }}
         />
       ) : (
         <span

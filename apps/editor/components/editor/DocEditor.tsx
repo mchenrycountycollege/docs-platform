@@ -18,6 +18,14 @@ import { schema } from "../../lib/blocknote-schema";
 
 type LoadState = { status: "loading" } | { status: "error"; message: string } | { status: "ready"; page: PageResult };
 
+export interface DocEditorProps {
+  path: string;
+  /** Called with the saved page (E4/section 4b: the parent shows this instantly and schedules the background reconcile). */
+  onSaved?: (page: PageResult) => void;
+  /** Called when the author backs out without saving -- swaps the shell back to the read-only view, no API call. */
+  onCancel?: () => void;
+}
+
 /**
  * BlockNote wrapper for editing a single docs page (editor-implementation-plan.md
  * sub-phase E1). Handles: loading canonical HTML into blocks, save with
@@ -25,7 +33,7 @@ type LoadState = { status: "loading" } | { status: "error"; message: string } | 
  * git-owned read-only banner. Structure ops (create/rename/move/delete) are
  * E2/E3 -- this component only edits an existing page's body.
  */
-export function DocEditor({ path }: { path: string }) {
+export function DocEditor({ path, onSaved, onCancel }: DocEditorProps) {
   const editor = useCreateBlockNote({ schema });
 
   const [state, setState] = useState<LoadState>({ status: "loading" });
@@ -73,9 +81,11 @@ export function DocEditor({ path }: { path: string }) {
       const bodyHtml = await blocksToHtml(editor, editor.document);
       const result = await savePage({ path, bodyHtml, expectedVersion: state.page.version });
       if (result.ok) {
-        setState({ status: "ready", page: { ...state.page, bodyHtml, version: result.version } });
+        const saved: PageResult = { ...state.page, bodyHtml, version: result.version };
+        setState({ status: "ready", page: saved });
         setConflict(null);
         setSavedAt(new Date());
+        onSaved?.(saved);
       } else if (result.kind === "conflict") {
         setConflict(result);
       } else if (result.kind === "git-owned") {
@@ -99,43 +109,27 @@ export function DocEditor({ path }: { path: string }) {
   }
 
   if (state.status === "loading") {
-    return <p>Loading…</p>;
+    return <p className="loading-hint">Loading…</p>;
   }
 
   if (state.status === "error") {
-    return <p style={{ color: "crimson" }}>Error: {state.message}</p>;
+    return <p className="banner banner-error">Error: {state.message}</p>;
   }
 
   const { page } = state;
   const isGitOwned = page.origin === "git";
 
   return (
-    <div>
+    <article className="content">
       {isGitOwned && (
-        <div
-          style={{
-            background: "#fff3cd",
-            border: "1px solid #ffe69c",
-            borderRadius: 4,
-            padding: "0.5rem 0.75rem",
-            marginBottom: "0.75rem",
-          }}
-        >
-          This page is managed in <code>{page.sourceRepoPath ?? "a git repository"}</code>. Edit it there
-          — changes made here would be overwritten on the next publish.
-        </div>
+        <p className="banner banner-git">
+          This page is managed in <code>{page.sourceRepoPath ?? "a git repository"}</code>. Edit it there — changes
+          made here would be overwritten on the next publish.
+        </p>
       )}
 
       {conflict && (
-        <div
-          style={{
-            background: "#f8d7da",
-            border: "1px solid #f1aeb5",
-            borderRadius: 4,
-            padding: "0.5rem 0.75rem",
-            marginBottom: "0.75rem",
-          }}
-        >
+        <div className="banner banner-warn">
           <p style={{ margin: "0 0 0.5rem" }}>
             Someone else saved this page since you loaded it. Reload to see their changes before saving again — your
             unsaved edits in this tab will be discarded.
@@ -146,20 +140,23 @@ export function DocEditor({ path }: { path: string }) {
         </div>
       )}
 
-      {saveError && <p style={{ color: "crimson" }}>{saveError}</p>}
+      {saveError && <p className="banner banner-error">{saveError}</p>}
 
-      <div style={{ border: "1px solid #e0e0e0", borderRadius: 4 }}>
+      <div style={{ border: "1px solid var(--border)", borderRadius: 8 }}>
         <BlockNoteView editor={editor} editable={!isGitOwned} theme="light" />
       </div>
 
       {!isGitOwned && (
-        <div style={{ marginTop: "0.75rem", display: "flex", alignItems: "center", gap: "0.75rem" }}>
-          <button type="button" onClick={() => void handleSave()} disabled={saving}>
+        <div className="edit-toolbar">
+          <button type="button" className="save-btn" onClick={() => void handleSave()} disabled={saving}>
             {saving ? "Saving…" : "Save & publish"}
           </button>
-          {savedAt && <span style={{ color: "#2d7a2d" }}>Saved {savedAt.toLocaleTimeString()}</span>}
+          <button type="button" className="cancel-btn" onClick={() => onCancel?.()} disabled={saving}>
+            Cancel
+          </button>
+          {savedAt && <span className="saved-hint">Saved {savedAt.toLocaleTimeString()}</span>}
         </div>
       )}
-    </div>
+    </article>
   );
 }

@@ -8,7 +8,11 @@
 /*<![CDATA[*/
 /* ---------- tokens (sourced from the live site's own _refresh/style.css
    custom properties: --purple-*, --yellow-*, --green-*, --gray-*, and the
-   --slab / --font-primary type stack) ---------- */
+   --slab / --font-primary type stack) ----------
+   Canonical copy: packages/runtime/tokens.css -- apps/editor's front-door
+   shell imports that file directly; this Template can't (Cascade Templates
+   aren't part of the JS build), so keep this block byte-identical to it by
+   hand when either changes. ---------- */
 :root {
   --bg: #f8f6fb;
   --bg-sidebar: #e4e0ef;

@@ -16,6 +16,7 @@ import {
   type StructuredDataFields,
 } from "@docs-platform/cascade-client";
 import { normalizeHtml, slugify } from "@docs-platform/doc-core";
+import type { NavFolder, NavPage, SearchEntry } from "@docs-platform/doc-shell";
 import { AccessAuthError, verifyAccessJwt } from "./lib/access-auth.js";
 import { cascadeConfigFromEnv } from "./lib/cascade-config.js";
 import type { Env } from "./lib/env.js";
@@ -40,6 +41,69 @@ async function nextPageOrder(config: CascadeConfig, parentPath: string): Promise
   if (siblingPages.length === 0) return 500;
   const orders = await Promise.all(siblingPages.map((c) => readPage(config, c.path).then((p) => p.fields.order)));
   return Math.max(...orders) + 10;
+}
+
+/**
+ * Live equivalent of nav-format.vm's output for one book (editor-
+ * implementation-plan.md E4/E-Shell): a flat `{ folders, pages }` shape
+ * doc-shell's buildTree() groups into a tree, built directly from Cascade
+ * REST instead of fetching the *published* nav.json artifact. The published
+ * static docs site's hostname isn't wired into this app at all (see
+ * editor-implementation-plan.md section 7 -- only the editor's own
+ * `*.pages.dev` hostname is settled; the git path's publish destination is
+ * still "the existing static web server", no fixed URL in any env var
+ * here), so cross-origin-fetching it would be undefined behavior. Reading
+ * live from Cascade instead also means the editor's own front-door never
+ * waits on the publish-lag §4b already accepts for the *public* site.
+ * Docs are two levels deep (book -> chapter -> page, chapters don't nest --
+ * see DocsTree's depthOf reasoning), so this is a bounded two-level walk.
+ */
+/** Chapter folder paths + page paths one level down under a book, without reading any page content. */
+async function listBookChildren(config: CascadeConfig, bookPath: string): Promise<{ folderPaths: string[]; pagePaths: string[] }> {
+  const bookFolder = await readFolder(config, bookPath);
+  const chapterFolders = bookFolder.children.filter((c) => c.type === "folder");
+  const rootPages = bookFolder.children.filter((c) => c.type === "page");
+  const chapterPages = await Promise.all(
+    chapterFolders.map(async (chapter) => (await readFolder(config, chapter.path)).children.filter((c) => c.type === "page")),
+  );
+  return {
+    folderPaths: chapterFolders.map((c) => c.path),
+    pagePaths: [...rootPages, ...chapterPages.flat()].map((c) => c.path),
+  };
+}
+
+async function buildBookNav(config: CascadeConfig, bookPath: string): Promise<{ folders: NavFolder[]; pages: NavPage[] }> {
+  const { folderPaths, pagePaths } = await listBookChildren(config, bookPath);
+  const pages = await Promise.all(pagePaths.map((p) => readPage(config, p)));
+  pages.sort((a, b) => a.fields.order - b.fields.order);
+
+  return {
+    folders: folderPaths.map((path) => ({ type: "folder", path })),
+    pages: pages.map((p) => ({
+      type: "page",
+      path: p.path,
+      title: p.fields.title,
+      order: String(p.fields.order),
+      tags: p.fields.tags,
+    })),
+  };
+}
+
+/** Plain-text excerpt from canonical body HTML, mirroring _shared.vm's extractDocFields (strip tags, truncate to 200). */
+function excerptFromHtml(html: string): string {
+  const text = html
+    .replace(/<[^>]+>/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+  return text.length <= 200 ? text : `${text.slice(0, 200).trimEnd()}...`;
+}
+
+/** Every Documentation Page path under docs/, across every book (for the cmdk search index). Skips docs/_system, the derived-artifact output area. */
+async function listAllPagePaths(config: CascadeConfig): Promise<string[]> {
+  const root = await readFolder(config, "docs");
+  const books = root.children.filter((c) => c.type === "folder" && c.path !== "docs/_system");
+  const perBook = await Promise.all(books.map((b) => listBookChildren(config, b.path)));
+  return perBook.flatMap((b) => b.pagePaths);
 }
 
 /**
@@ -95,6 +159,27 @@ async function handleApi(request: Request, env: WorkerEnv): Promise<Response> {
         }),
       );
       return json({ path: folder.path, children });
+    }
+
+    if (request.method === "GET" && route === "nav") {
+      const path = url.searchParams.get("path");
+      if (!path) {
+        return json({ error: "bad-request", message: "path query param is required" }, { status: 400 });
+      }
+      const nav = await buildBookNav(config, path);
+      return json(nav);
+    }
+
+    if (request.method === "GET" && route === "search-index") {
+      const paths = await listAllPagePaths(config);
+      const pages = await Promise.all(paths.map((p) => readPage(config, p)));
+      const entries: SearchEntry[] = pages.map((p) => ({
+        title: p.fields.title,
+        path: p.path,
+        tags: p.fields.tags,
+        excerpt: excerptFromHtml(p.fields.bodyHtml),
+      }));
+      return json({ pages: entries });
     }
 
     if (request.method === "GET" && route === "page") {

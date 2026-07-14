@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "next dev",
-    "build": "pnpm --filter @docs-platform/cascade-client --filter @docs-platform/doc-core build && next build && node build-worker.mjs",
+    "build": "pnpm --filter @docs-platform/cascade-client --filter @docs-platform/doc-core --filter @docs-platform/doc-shell build && next build && node build-worker.mjs",
     "typecheck": "tsc -p tsconfig.json --noEmit && tsc -p functions/tsconfig.json --noEmit",
     "test": "vitest run",
     "pages:dev": "wrangler pages dev out --compatibility-date=2026-07-13"
@@ -16,6 +16,8 @@
     "@blocknote/react": "^0.51.4",
     "@docs-platform/cascade-client": "workspace:*",
     "@docs-platform/doc-core": "workspace:*",
+    "@docs-platform/doc-shell": "workspace:*",
+    "cmdk": "^1.1.1",
     "@mantine/core": "^8.3.11",
     "@mantine/hooks": "^8.3.11",
     "jose": "^6.2.3",
