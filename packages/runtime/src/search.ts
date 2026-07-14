@@ -1,8 +1,11 @@
-import Fuse from "fuse.js";
+import { createSearchIndex, type SearchIndex } from "@docs-platform/doc-shell";
 import type { SearchEntry, SearchResponse } from "./types.js";
 
+// The Fuse config + query semantics now live in doc-shell's createSearchIndex,
+// so the editor's cmdk palette searches identically. This file keeps only the
+// public-URL fetch/cache and all the DOM overlay wiring below.
 let cachedEntries: SearchEntry[] | null = null;
-let fuse: Fuse<SearchEntry> | null = null;
+let index: SearchIndex | null = null;
 
 async function loadIndex(searchUrl: string): Promise<SearchEntry[]> {
   if (cachedEntries) return cachedEntries;
@@ -10,14 +13,13 @@ async function loadIndex(searchUrl: string): Promise<SearchEntry[]> {
   if (!res.ok) throw new Error(`failed to load search index: ${res.status}`);
   const data = (await res.json()) as SearchResponse;
   cachedEntries = data.pages;
-  fuse = new Fuse(cachedEntries, { keys: ["title", "excerpt", "tags"], threshold: 0.35 });
+  index = createSearchIndex(cachedEntries);
   return cachedEntries;
 }
 
 function filter(entries: SearchEntry[], query: string): SearchEntry[] {
-  const q = query.trim();
-  if (!q || !fuse) return entries;
-  return fuse.search(q).map((r) => r.item);
+  if (!index) return entries;
+  return index.search(query);
 }
 
 function escapeHtml(value: string): string {

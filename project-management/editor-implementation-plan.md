@@ -17,7 +17,24 @@ decisions and focuses only on what it takes to ship the editor app.
 | `cascade-publish` (git orchestrator) | **Done, live-verified** — `publishDoc`, `processDiff`, manifest, archive |
 | Git path (GitHub Actions) | **Done, live-verified** — two real consuming repos onboarded |
 | Runtime **viewer** (`packages/runtime`) | **Done, live** — sidebar hydration, breadcrumb, ⌘K search, ToC, theme toggle; shipped as `docs/_system/docs-runtime.js` |
-| **Web editor (`apps/editor`)** | **E0–E2 built** (E0 scaffold/auth, E1 read/edit round-trip, E2 create/rename/move/reorder) — E3 (delete + image upload) and E4 (polish + rollout) remain |
+| **Web editor (`apps/editor`)** | **E0–E2 built** (E0 scaffold/auth, E1 read/edit round-trip, E2 create/rename/move/reorder) — E3 (delete + image upload) and E4 (front-door shell + polish + rollout) remain |
+| **Shared shell (`packages/doc-shell`)** | **E-Shell built 2026-07-14** — `buildTree`/slug/search extracted from `runtime`; runtime adopts it (9 existing tests unchanged), doc-shell has 21 own tests; pure refactor, byte-identical bundle. Live-visual reader check outstanding. |
+
+> **UI-model revision — 2026-07-14 (supersedes the standalone-admin-panel shape of E3/E4).**
+> The E0–E2 UI was built as a standalone CMS-admin panel (a bare file tree +
+> an editor pane — see the `docs-platform editor` screenshot), visually
+> unrelated to the beautiful BookStack-inspired **public reader** the runtime
+> (`packages/runtime`) already ships. That was never an explicit requirement
+> either way, and it drifted into the conventional "two separate apps" split.
+> **The user's actual requirement (confirmed 2026-07-14):** an authenticated
+> editor should feel like *the same delightful reader site, with edit powers* —
+> one login, browse the pretty UI, and at any moment either **edit the page
+> you're on** or **create a new book/page**, seeing the change immediately.
+> The chosen model is **"editor-as-front-door + shared shell package"** (§4a).
+> Nothing below the UI changes — `cascade-client`, `doc-core`, the proxy, and
+> the BlockNote round-trip are all unaffected. E3 and E4 below are recast
+> around this; the phase *numbers* and their backend deliverables are
+> unchanged, but E4's UI target is now shell-parity, not a separate admin skin.
 
 The editor is the last major vertical slice. Critically, it is **not**
 greenfield below the UI: every Cascade write it needs already exists as a
@@ -134,11 +151,15 @@ tree, **cmdk + Fuse** command palette, **shadcn/ui + Tailwind**.
 ```
 apps/editor/
 ├─ app/                      # Next.js App Router, output: export
-│  ├─ layout.tsx  page.tsx   # shell; single-page, client-rendered
-│  └─ (editor)/…             # tree + editor split view
+│  ├─ layout.tsx  page.tsx   # front-door shell; single-page, client-rendered
+│  └─ (reader)/…             # reader-shell route: sidebar + page body, read-only
+│                            #   by default, "Edit this page" swaps body → BlockNote
 ├─ components/
-│  ├─ tree/                  # react-arborist sidebar (lazy load via /api/tree)
+│  ├─ shell/                 # React renderers of the shared doc-shell (§4a):
+│  │                         #   Sidebar, Breadcrumb, Search (⌘K), ToC — visual
+│  │                         #   parity with the public reader
 │  ├─ editor/                # BlockNote wrapper + toolbar + raw-HTML block
+│  │                         #   (mounted in-place when Edit is clicked)
 │  ├─ command/               # cmdk palette (open page, new page, search)
 │  └─ ui/                    # shadcn primitives
 ├─ lib/
@@ -148,6 +169,91 @@ apps/editor/
 └─ functions/
    └─ api/[[route]].ts       # Cloudflare Pages Function proxy (§3)
 ```
+
+### 4a. UI model — editor-as-front-door + shared shell (revision 2026-07-14)
+
+There are **two audiences, two doors, one Cascade backend, one shared body of
+rendering logic**:
+
+| | Public reader | Authenticated editor |
+|---|---|---|
+| Who | Anyone with the URL, no login | Allow-listed staff (Cloudflare Access OTP) |
+| Where | Static HTML **published by Cascade** to the college web server | `apps/editor` on Cloudflare Pages (`*.pages.dev`) |
+| Renders with | `packages/runtime` (vanilla DOM) | `apps/editor` React components |
+| Can | Read + search only | Read + search **and** edit-in-place / create / delete |
+| Changed by this revision? | **No — untouched.** Still the canonical public face. | **Yes — becomes the front door**, not a separate admin panel. |
+
+**Editor-as-front-door:** an authenticated user *never has to visit the public
+site to browse*. `apps/editor` loads the **same** derived artifacts Cascade
+publishes — `nav.json`, `search-index.json`, `tags.json`, and each page's
+canonical body HTML — and renders them in a shell that is a visual match for the
+public reader (same sidebar, breadcrumb, ⌘K search, ToC, typography). **Every
+page opens read-only by default** (just the canonical HTML in a container).
+Clicking **"Edit this page"** swaps *that one page's body* into BlockNote, in
+place, on the same route and shell — no separate editor screen, no context
+switch. "+ New book / + New page" are affordances in the same chrome. When you
+land somewhere and want to change it, you're already there.
+
+**Shared shell package (the "middle path"):** to keep the two renderers from
+silently drifting (which is exactly how the current mismatch happened), the
+**framework-agnostic logic** — group `nav.json` into the chapter/page tree
+(`buildTree`), humanize slugs / derive book slug, and the Fuse search **config**
+(keys + threshold) — moves into a new package **`packages/doc-shell`**. It
+exports plain data transforms and types, **no DOM and no React**. (Scope
+confirmed by reading the runtime source 2026-07-14 — the genuinely shareable
+surface is small and centers on `buildTree`; fetching, all DOM rendering, and
+the ToC h2-scan stay per-renderer. See E-Shell in §5 for the exact split.) Both
+surfaces consume it:
+
+- `packages/runtime` (public) calls `doc-shell` and renders the result to the
+  **DOM** (its existing vanilla approach — minimal change; it just stops owning
+  the parsing/search logic and imports it instead).
+- `apps/editor` (authenticated) calls the **same** `doc-shell` functions and
+  renders the result as **React** components (`components/shell/`).
+
+We deliberately **share the brains, not the pixels**: search behavior, nav
+structure, and sort order — the things that cause real, hard-to-spot bugs when
+duplicated — have exactly one implementation; each app keeps an idiomatic
+renderer so neither is forced into the other's paradigm. Visual parity between
+the two renderers is maintained by eye + shared design tokens (a small CSS
+variables / Tailwind theme both consume), not by sharing a rendering engine.
+
+**What this is *not*:** it is not "put the public site behind a login." The
+public reader stays unauthenticated on the real web server. The editor is a
+*second, richer* front door for the people who also edit. They share look and
+logic, not hosting or auth.
+
+### 4b. Save → live latency and the "instant vs. reconciled" model (settled 2026-07-14)
+
+"See my change immediately" splits into two different *live*s, and the editor
+handles them differently:
+
+- **In the editor (instant):** on Save, the app already holds the just-authored
+  HTML in memory. It **immediately** renders the read-only shell view from that
+  in-memory copy — zero round-trip — so the author's own experience is instant.
+- **On the public Cascade site (seconds-to-a-minute):** Save → proxy writes to
+  Cascade → publish-sequence regenerates the static page + `nav.json` +
+  `search-index.json` + `tags.json` → they land on the web server. This is the
+  parent plan's locked, accepted tradeoff (*"publish latency of
+  seconds-to-minutes save→live"*) — inherent to *Cascade-is-the-only-persistence-
+  layer + static public site*, **not** something the UI can remove. Truly-instant
+  public updates would require a live server in front of the public site, i.e.
+  exactly the persistence layer the project deliberately did **not** build.
+
+**Settled behavior after Save (user-confirmed 2026-07-14): do *both*.**
+1. **Optimistic instant render** — show the in-memory version in the read-only
+   shell the moment Save returns, for responsiveness.
+2. **Background reconcile** — after the publish settles, re-fetch the *stored/
+   published* canonical HTML and quietly reconcile the on-screen view against it,
+   so what the author sees converges on what the world sees (this is what catches
+   any server-side `normalizeHtml` adjustment the optimistic copy wouldn't
+   reflect). Reconcile is non-blocking and silent on match; on a divergence it
+   just updates the rendered body (no modal, no interruption).
+
+This is a UI/UX behavior only — no backend or schema change. It lives in
+`lib/api.ts` (save returns the optimistic body immediately; a follow-up fetch
+reconciles) and the reader-shell route (§5, E1 wires the instant half; E4 adds
+the background reconcile polish).
 
 ### The one hard frontend problem: BlockNote HTML round-trip fidelity
 
@@ -228,16 +334,80 @@ and so the riskiest thing (HTML round-trip) is proven before UI polish.
   image `src` to the published URL, insert into the BlockNote doc.
   *Exit:* upload an image into a page and see it render live; delete a page and
   confirm it unpublishes (reversible) — a simple confirm-to-orphan dialog, no
-  hard-delete option presented.
+  hard-delete option presented. **These operate through whatever chrome exists
+  at the time (E2's tree is fine); E3 does not depend on the shell rewrite.**
 
-- **E4 — Command palette + polish + rollout.**
-  cmdk palette (jump-to-page over the tree, "new page", quick search via the same
-  `search-index.json` Fuse index the viewer uses), empty/error/loading states,
-  BookStack-like layout parity with the viewer, autosave-draft-on-blur (optional),
-  onboarding docs. Finalize Cloudflare Pages + Access config (§7).
-  *Exit:* an allow-listed non-technical user does a full create→edit→image→
-  reorder→publish loop unaided; conflict + git-owned + denied-email paths all
-  behave; deployed to the real Pages project behind Access.
+- **E-Shell — `packages/doc-shell` extraction + runtime adoption (do before E4;
+  can run in parallel with E3). — BUILT 2026-07-14, pending live-visual check.**
+  `packages/doc-shell` now exists (framework-agnostic, no DOM/React) holding
+  `buildTree`/`deriveBookSlug`/`humanizeSlug`/`folderDisplayName` (lifted
+  verbatim), `slugify` (lifted from `toc.ts`), and `SEARCH_OPTIONS` +
+  `createSearchIndex` (the Fuse config extracted out of `search.ts`'s
+  module-level singletons). `runtime` imports all of them: `types.ts` re-exports
+  the shared types, `nav.ts` re-exports the pure transforms (so `index.ts` /
+  `nav.test.ts` import from `./nav.js` **unchanged**), `search.ts` routes through
+  `createSearchIndex`, `toc.ts` imports `slugify`. Verified: `runtime`'s 9
+  existing tests pass unchanged; `doc-shell` has 21 of its own tests (incl. the
+  previously-untested search/slug/folderDisplayName cores); full-workspace
+  typecheck+test green; the esbuild bundle inlines Fuse + the `||"section"`
+  slugify fallback with zero unresolved imports (byte-identical logic → pure
+  refactor). **Not yet done:** a live side-by-side visual check of the public
+  reader (no published site available in this env) — the only remaining exit item.
+  Original spec below:
+
+  Create `packages/doc-shell` (framework-agnostic,
+  no DOM/React) holding *only the drift-prone logic*, which — after reading the
+  runtime source (2026-07-14) — is smaller than "the whole nav/search/toc files":
+
+  | Moves to `doc-shell` | Notes |
+  |---|---|
+  | `buildTree` (nav grouping) | **Lifts verbatim** — already pure, already covered by `nav.test.ts` (5 cases). This is the real drift risk and the clean win. |
+  | `deriveBookSlug`, `humanizeSlug`, `folderDisplayName`, `slugify` | Pure string helpers; lift verbatim. |
+  | Fuse **config** (`{keys:["title","excerpt","tags"],threshold:0.35}`) + `SearchEntry` shape, as a small `createSearchIndex(entries)` | **Extraction, not a lift** — `search.ts` today uses module-level singletons (`cachedEntries`/`fuse`) and `filter` closes over them; refactor that caching out. The editor reuses ~5 lines of config, *not* the 90-line `initSearch`. |
+
+  **Stays in `runtime` (does NOT move):** all DOM renderers (`renderSidebar`,
+  `renderBreadcrumb`, `initSearch`, `initToc`) — these are runtime's idiomatic
+  "pixels"; the editor writes React equivalents and uses cmdk instead of
+  `initSearch`. **`fetchNav`/`loadIndex` also stay** — they hardcode the public
+  URL scheme (`/docs/_system/nav/<slug>.json`), whereas the editor fetches the
+  same JSON via its `/api/*` proxy; `doc-shell` operates on **already-fetched
+  JSON**, it does not fetch. **ToC:** share only `slugify`; the h2-scan in
+  `initToc` reads *and mutates* the live DOM (assigns `heading.id` for anchors),
+  so it stays per-renderer rather than forcing `doc-shell` to touch the DOM.
+
+  Refactor `runtime` to import the moved pieces instead of owning them (behavior
+  must be byte-identical). **Test guard is partial:** `nav.test.ts` genuinely
+  guards the `buildTree`/slug extraction, but there are currently **no tests for
+  search or toc**, so new `doc-shell` unit tests for the Fuse config and
+  `slugify` are *required*, not optional.
+  *Exit:* `runtime` builds and passes its existing tests unchanged after the
+  extraction; the public reader is visually and behaviorally identical (pure
+  refactor, zero user-visible change); `doc-shell` has its own unit tests for
+  every transform it owns (including the previously-untested search/toc cores).
+
+- **E4 — Front-door shell + command palette + polish + rollout.** *This is the
+  phase recast by the 2026-07-14 UI-model revision (§4a).* The editor becomes the
+  **front door**: a reader-shell route that renders the sidebar / breadcrumb /
+  ⌘K search / ToC from `doc-shell` (E-Shell) as React components in
+  `components/shell/`, visually matched to the public reader, with every page
+  **read-only by default** and an **"Edit this page"** control that mounts
+  BlockNote in place (E1's editor, no route change). "+ New book / + New page"
+  live in this same chrome. cmdk palette (jump-to-page, "new page", quick search
+  over the same `search-index.json` Fuse index the public reader uses — now via
+  `doc-shell`). Wire the **background-reconcile** half of the save model (§4b):
+  E1 already shows the in-memory copy instantly on Save; E4 adds the silent
+  post-publish re-fetch that reconciles the on-screen body against the stored
+  canonical HTML. Empty/error/loading states, shared design tokens for parity,
+  autosave-draft-on-blur (optional), onboarding docs. Finalize Cloudflare Pages +
+  Access config (§7).
+  *Exit:* an allow-listed non-technical user, from the editor URL alone, browses
+  the tree in the pretty shell, searches with ⌘K, opens a page read-only, clicks
+  Edit and sees the change instantly, and that change appears on the **public**
+  Cascade site within the accepted seconds-to-a-minute window; a full
+  create→edit→image→reorder→publish loop completes unaided; conflict + git-owned
+  + denied-email paths all behave; deployed to the real Pages project behind
+  Access. Side-by-side, the editor's read-only view and the public reader are
+  visibly the same product.
 
 ---
 
@@ -253,7 +423,16 @@ and so the riskiest thing (HTML round-trip) is proven before UI polish.
 3. **JWT verification module** in the proxy (JWKS cache, `aud`, clock skew). Small,
    security-critical, test it in isolation.
 4. **Typed API client** (`lib/api.ts`) shared by all UI components; centralizes
-   409/401/git-owned handling so components stay dumb.
+   409/401/git-owned handling so components stay dumb. Also owns the **save model**
+   (§4b): a save returns the optimistic in-memory body immediately, and exposes a
+   follow-up `reconcile(path)` that re-fetches the stored canonical HTML once the
+   publish settles.
+5. **`packages/doc-shell` (shared shell logic).** Framework-agnostic nav/search/
+   ToC/breadcrumb transforms consumed by both `packages/runtime` (DOM) and
+   `apps/editor` (React), so the public reader and the editor front-door share
+   one implementation of the drift-prone logic. *Extract from `runtime` first
+   (E-Shell), proving it against `runtime`'s existing tests, before the editor
+   consumes it.* This is the structural fix for the 2026-07-14 UI mismatch.
 
 ---
 
@@ -303,6 +482,8 @@ later; nothing in the build below depends on the hostname.
 | 6 | Image `src` points at unpublished/relative path | Upload to `docs/uploads/<book>/…`, publish the file, rewrite `src` to the published URL before storing body |
 | 7 | Publish-order drift between paths | Shared publish-sequencing helper (§6 task 1) — single implementation |
 | 8 | Editor writes valid-in-BlockNote but invalid-in-viewer HTML | Same `normalizeHtml` schema the viewer/git path already assume; fixture corpus includes git-authored pages loaded into the editor |
+| 9 | Reader shell & public reader drift apart again (the 2026-07-14 mismatch, recurring) | Shared `packages/doc-shell` owns the drift-prone logic (nav/search/sort/ToC); shared design tokens for visual parity; extract-and-prove-against-runtime-tests before the editor consumes it (E-Shell) |
+| 10 | Author confused when editor shows their edit but public site lags | Explicit two-live model (§4b): instant in-editor render is the optimistic copy; background reconcile converges on the stored version; publish latency is the parent plan's accepted tradeoff, surfaced honestly in-UI (e.g. a subtle "publishing…" → "live" indicator), not hidden |
 
 ---
 
@@ -313,7 +494,15 @@ later; nothing in the build below depends on the hostname.
   open a **git-owned** page → read-only banner; fixture corpus green in CI.
 - **E2:** build book→chapter→page in UI; reorder + reparent → nav.json + viewer reflect it.
 - **E3:** upload image → renders live; delete → unpublishes (reversible); hard-delete gated.
-- **E4:** a non-technical user completes a full authoring loop unaided; deployed behind Access.
+- **E-Shell:** `runtime` builds + all its existing tests pass unchanged after the
+  `doc-shell` extraction; public reader visibly/behaviorally identical (pure refactor).
+- **E4:** from the editor URL alone, a non-technical user browses the pretty shell,
+  ⌘K-searches, opens a page read-only, clicks Edit, sees the change **instantly**
+  in-editor, and confirms it lands on the **public** Cascade site within the
+  accepted seconds-to-a-minute window; background reconcile leaves the on-screen
+  body matching the stored HTML; side-by-side, editor read-only view and public
+  reader look like one product; completes a full authoring loop unaided; deployed
+  behind Access.
 - **Regression:** after any editor write, confirm nav/search/tags republish (shared helper),
   and that a subsequent **git push** to the same book still works (paths don't interfere).
 
@@ -342,4 +531,18 @@ later; nothing in the build below depends on the hostname.
    (`delete: true` in frontmatter, per the parent plan's delete/rename
    semantics). Simplifies E3 — no hard-delete confirmation dialog needed.
    (Default: orphan-only in the UI; hard delete deferred.)
+5. ~~Editor UI model~~ — **settled 2026-07-14, see §4a**: **editor-as-front-door
+   + shared shell**. The editor is not a standalone admin panel; it's a second,
+   authenticated front door that renders the same reader shell (sidebar /
+   breadcrumb / ⌘K search / ToC) as the public site, every page read-only by
+   default with an in-place "Edit this page". The public reader stays
+   unauthenticated on the real web server, **unchanged**. Drift-prone rendering
+   logic is shared via `packages/doc-shell`; look is shared via design tokens;
+   auth/hosting are *not* shared. Recasts E3/E4 and adds an E-Shell step.
+6. ~~"After you save" freshness model~~ — **settled 2026-07-14, see §4b**: **do
+   both** — render the in-memory copy instantly for responsiveness, then
+   silently **background-reconcile** against the stored/published canonical HTML
+   once the publish settles. In-editor is instant; the public site follows in
+   the parent plan's accepted seconds-to-a-minute publish window (a static-
+   publishing property of the locked architecture, not a UI defect).
 ```

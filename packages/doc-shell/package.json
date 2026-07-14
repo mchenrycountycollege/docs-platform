@@ -1,19 +1,19 @@
 {
-  "name": "@docs-platform/runtime",
+  "name": "@docs-platform/doc-shell",
   "version": "0.0.0",
   "private": true,
   "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "scripts": {
-    "build": "node esbuild.config.mjs",
-    "typecheck": "tsc -p tsconfig.json --noEmit",
-    "test": "vitest run"
+    "build": "tsc -p tsconfig.json",
+    "test": "vitest run",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
-    "@docs-platform/doc-shell": "workspace:*",
     "fuse.js": "^7.0.0"
   },
   "devDependencies": {
-    "esbuild": "^0.28.1",
     "typescript": "^5.7.3",
     "vitest": "^3.0.5",
     "@types/node": "^22.10.7"

@@ -1,12 +1,4 @@
-function slugify(text: string): string {
-  return (
-    text
-      .toLowerCase()
-      .trim()
-      .replace(/[^a-z0-9]+/g, "-")
-      .replace(/(^-|-$)/g, "") || "section"
-  );
-}
+import { slugify } from "@docs-platform/doc-shell";
 
 // "On this page" outline, built client-side from whatever h2s ended up in
 // the rendered body -- page-render.vm's own comment already established
