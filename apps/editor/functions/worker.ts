@@ -189,8 +189,18 @@ async function handleApi(request: Request, env: WorkerEnv): Promise<Response> {
       const children = await Promise.all(
         folder.children.map(async (child) => {
           if (child.type !== "page") return child;
-          const page = await readPage(config, child.path);
-          return { ...child, displayName: page.fields.title };
+          // A page whose structured data doesn't match the current Documentation
+          // Page DD (e.g. a stray/partial asset from a script or a manual edit)
+          // throws out of readPage/fromStructuredData -- don't let one bad page
+          // 500 the whole folder's listing. Fall back to readFolder's
+          // path-derived displayName instead.
+          try {
+            const page = await readPage(config, child.path);
+            return { ...child, displayName: page.fields.title };
+          } catch (err) {
+            console.error(`[api] tree: failed to read page ${child.path}, using path-derived name`, err);
+            return child;
+          }
         }),
       );
       return json({ path: folder.path, children });
