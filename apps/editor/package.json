@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "next dev",
-    "build": "pnpm --filter @docs-platform/cascade-client build && next build && node build-worker.mjs",
+    "build": "pnpm --filter @docs-platform/cascade-client --filter @docs-platform/doc-core build && next build && node build-worker.mjs",
     "typecheck": "tsc -p tsconfig.json --noEmit && tsc -p functions/tsconfig.json --noEmit",
     "test": "vitest run",
     "pages:dev": "wrangler pages dev out --compatibility-date=2026-07-13"
