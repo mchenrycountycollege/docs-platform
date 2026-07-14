@@ -124,3 +124,21 @@ export class VersionConflictError extends Error {
     this.name = "VersionConflictError";
   }
 }
+
+/**
+ * A page's structuredData/metadata didn't match what fromStructuredData/
+ * fromMetadata expect (e.g. a stray/partial asset from a script or a manual
+ * edit, or a page authored against an older Data Definition) -- distinct from
+ * CascadeApiError so callers can tell "Cascade answered, but this asset's
+ * shape is wrong" apart from an upstream request failure, and give the user
+ * an actionable message instead of a generic 500.
+ */
+export class MalformedPageError extends Error {
+  constructor(
+    public readonly path: string,
+    cause: unknown,
+  ) {
+    super(`Page at ${path} has data that doesn't match the current Data Definition: ${(cause as Error)?.message ?? cause}`);
+    this.name = "MalformedPageError";
+  }
+}

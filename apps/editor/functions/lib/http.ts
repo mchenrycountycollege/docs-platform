@@ -1,4 +1,4 @@
-import { CascadeApiError, Forbidden, VersionConflictError } from "@docs-platform/cascade-client";
+import { CascadeApiError, Forbidden, MalformedPageError, VersionConflictError } from "@docs-platform/cascade-client";
 
 export function json(data: unknown, init?: ResponseInit): Response {
   return new Response(JSON.stringify(data), {
@@ -27,6 +27,16 @@ export function errorResponse(err: unknown): Response {
   if (err instanceof CascadeApiError) {
     console.error(`[api] Cascade API error (status ${err.status}): ${err.message}`);
     return json({ error: "cascade-error", message: "Upstream Cascade request failed" }, { status: 502 });
+  }
+  if (err instanceof MalformedPageError) {
+    console.error(`[api] malformed page: ${err.message}`);
+    return json(
+      {
+        error: "malformed-page",
+        message: `This page's stored data doesn't match the current Data Definition and can't be opened here. Fix it directly in Cascade at ${err.path}.`,
+      },
+      { status: 422 },
+    );
   }
   console.error("[api] unexpected error", err);
   return json({ error: "internal", message: "Unexpected server error" }, { status: 500 });

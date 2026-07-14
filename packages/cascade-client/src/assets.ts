@@ -16,7 +16,7 @@ import type {
   RawPageAsset,
   StructuredDataFields,
 } from "./types.js";
-import { CascadeApiError, VersionConflictError } from "./types.js";
+import { CascadeApiError, MalformedPageError, VersionConflictError } from "./types.js";
 
 async function request<T>(
   config: CascadeConfig,
@@ -123,15 +123,19 @@ export async function readPage(config: CascadeConfig, path: string): Promise<Pag
     "GET",
     `read/page/${config.siteName}/${scoped}`,
   );
-  return {
-    id: res.asset.page.id,
-    path: res.asset.page.path,
-    parentFolderPath: res.asset.page.parentFolderPath,
-    siteName: config.siteName,
-    version: res.asset.page.lastModifiedDate,
-    fields: fromStructuredData(res.asset.page.structuredData),
-    metadata: fromMetadata(res.asset.page.metadata),
-  };
+  try {
+    return {
+      id: res.asset.page.id,
+      path: res.asset.page.path,
+      parentFolderPath: res.asset.page.parentFolderPath,
+      siteName: config.siteName,
+      version: res.asset.page.lastModifiedDate,
+      fields: fromStructuredData(res.asset.page.structuredData),
+      metadata: fromMetadata(res.asset.page.metadata),
+    };
+  } catch (err) {
+    throw new MalformedPageError(path, err);
+  }
 }
 
 export async function readFolder(config: CascadeConfig, path: string): Promise<FolderAsset> {

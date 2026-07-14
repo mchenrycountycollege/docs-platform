@@ -77,7 +77,21 @@ async function listBookChildren(config: CascadeConfig, bookPath: string): Promis
 
 async function buildBookNav(config: CascadeConfig, bookPath: string): Promise<{ folders: NavFolder[]; pages: NavPage[] }> {
   const { folderPaths, pagePaths } = await listBookChildren(config, bookPath);
-  const pages = await Promise.all(pagePaths.map((p) => readPage(config, p)));
+  // Same tolerance as GET /api/tree: one page with structured data that
+  // doesn't match the current DD shouldn't 500 the whole book's nav -- drop
+  // it from the list instead (it's still reachable directly, where GET
+  // /api/page reports the malformed-page error specifically).
+  const results = await Promise.all(
+    pagePaths.map(async (p) => {
+      try {
+        return await readPage(config, p);
+      } catch (err) {
+        console.error(`[api] nav: failed to read page ${p}, omitting from nav`, err);
+        return null;
+      }
+    }),
+  );
+  const pages = results.filter((p): p is NonNullable<typeof p> => p !== null);
   pages.sort((a, b) => a.fields.order - b.fields.order);
 
   return {
@@ -217,13 +231,26 @@ async function handleApi(request: Request, env: WorkerEnv): Promise<Response> {
 
     if (request.method === "GET" && route === "search-index") {
       const paths = await listAllPagePaths(config);
-      const pages = await Promise.all(paths.map((p) => readPage(config, p)));
-      const entries: SearchEntry[] = pages.map((p) => ({
-        title: p.fields.title,
-        path: p.path,
-        tags: p.fields.tags,
-        excerpt: excerptFromHtml(p.fields.bodyHtml),
-      }));
+      // Same tolerance as GET /api/tree and /api/nav -- one malformed page
+      // anywhere on the site shouldn't take down search for everyone.
+      const pages = await Promise.all(
+        paths.map(async (p) => {
+          try {
+            return await readPage(config, p);
+          } catch (err) {
+            console.error(`[api] search-index: failed to read page ${p}, omitting from index`, err);
+            return null;
+          }
+        }),
+      );
+      const entries: SearchEntry[] = pages
+        .filter((p): p is NonNullable<typeof p> => p !== null)
+        .map((p) => ({
+          title: p.fields.title,
+          path: p.path,
+          tags: p.fields.tags,
+          excerpt: excerptFromHtml(p.fields.bodyHtml),
+        }));
       return json({ pages: entries });
     }
 
