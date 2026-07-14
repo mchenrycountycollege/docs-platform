@@ -1,5 +1,21 @@
-import { editPage, publishPageAndArtifacts, readFolder, readPage, type MetadataFields } from "@docs-platform/cascade-client";
-import { normalizeHtml } from "@docs-platform/doc-core";
+import {
+  createFolder,
+  createPage,
+  editPage,
+  ensureBookNavPage,
+  folderExists,
+  moveAsset,
+  pageExists,
+  publishAsset,
+  publishPageAndArtifacts,
+  readFolder,
+  readPage,
+  type AssetType,
+  type CascadeConfig,
+  type MetadataFields,
+  type StructuredDataFields,
+} from "@docs-platform/cascade-client";
+import { normalizeHtml, slugify } from "@docs-platform/doc-core";
 import { AccessAuthError, verifyAccessJwt } from "./lib/access-auth.js";
 import { cascadeConfigFromEnv } from "./lib/cascade-config.js";
 import type { Env } from "./lib/env.js";
@@ -10,6 +26,20 @@ function bookSlugFromPath(path: string): string {
   const slug = path.split("/")[1];
   if (!slug) throw new Error(`path has no book segment: ${path}`);
   return slug;
+}
+
+/**
+ * Order for a newly created page: after all existing siblings. Falls back to
+ * doc-core's own frontmatter default (500 -- see frontmatter.ts) when the
+ * folder has no page children yet, so a fresh web-created page interleaves
+ * sensibly with git-authored pages instead of always sorting first.
+ */
+async function nextPageOrder(config: CascadeConfig, parentPath: string): Promise<number> {
+  const folder = await readFolder(config, parentPath);
+  const siblingPages = folder.children.filter((c) => c.type === "page");
+  if (siblingPages.length === 0) return 500;
+  const orders = await Promise.all(siblingPages.map((c) => readPage(config, c.path).then((p) => p.fields.order)));
+  return Math.max(...orders) + 10;
 }
 
 /**
@@ -50,7 +80,21 @@ async function handleApi(request: Request, env: WorkerEnv): Promise<Response> {
     if (request.method === "GET" && route === "tree") {
       const path = url.searchParams.get("path") ?? "docs";
       const folder = await readFolder(config, path);
-      return json({ path: folder.path, children: folder.children });
+      // readFolder's own displayName is derived from the path segment (see
+      // its comment in assets.ts) -- for pages, swap in the real DD `title`
+      // so the tree shows what editors actually typed and an inline rename
+      // (which writes both slug and title together) visibly reflects what
+      // was submitted. Bounded to one folder's worth of children at a time
+      // (lazy per-expand loading), so this stays cheap even though it's an
+      // extra read per page.
+      const children = await Promise.all(
+        folder.children.map(async (child) => {
+          if (child.type !== "page") return child;
+          const page = await readPage(config, child.path);
+          return { ...child, displayName: page.fields.title };
+        }),
+      );
+      return json({ path: folder.path, children });
     }
 
     if (request.method === "GET" && route === "page") {
@@ -74,14 +118,21 @@ async function handleApi(request: Request, env: WorkerEnv): Promise<Response> {
     }
 
     if (request.method === "PUT" && route === "page") {
-      const body = (await request.json()) as { path?: unknown; bodyHtml?: unknown; expectedVersion?: unknown };
-      if (typeof body.path !== "string" || typeof body.bodyHtml !== "string" || typeof body.expectedVersion !== "string") {
+      const body = (await request.json()) as {
+        path?: unknown;
+        expectedVersion?: unknown;
+        bodyHtml?: unknown;
+        title?: unknown;
+        order?: unknown;
+        tags?: unknown;
+      };
+      if (typeof body.path !== "string" || typeof body.expectedVersion !== "string") {
         return json(
-          { error: "bad-request", message: "path, bodyHtml, and expectedVersion are all required strings" },
+          { error: "bad-request", message: "path and expectedVersion are required strings" },
           { status: 400 },
         );
       }
-      const { path, bodyHtml, expectedVersion } = body;
+      const { path, expectedVersion } = body;
 
       // Ownership guard (editor-implementation-plan.md section 3): the UI
       // renders git-owned pages read-only, but the proxy enforces it
@@ -96,11 +147,20 @@ async function handleApi(request: Request, env: WorkerEnv): Promise<Response> {
         );
       }
 
-      // Only the body changes in E1 -- title/order/tags editing arrives with
-      // rename/reorder in E2. normalizeHtml is authoritative here (section 4,
-      // "Server normalize is authoritative"): a lossy BlockNote export can't
-      // corrupt storage even if the client-side sanitization has a gap.
-      const fields = { ...current.fields, bodyHtml: normalizeHtml(bodyHtml) };
+      // Every field is optional and merges onto the current value -- the E1
+      // BlockNote save flow only ever sends bodyHtml, while E2's rename/
+      // reorder flows send title/order alone. normalizeHtml is authoritative
+      // here (section 4, "Server normalize is authoritative"): a lossy
+      // BlockNote export can't corrupt storage even if client-side
+      // sanitization has a gap.
+      const fields: StructuredDataFields = {
+        title: typeof body.title === "string" ? body.title : current.fields.title,
+        order: typeof body.order === "number" ? body.order : current.fields.order,
+        tags: Array.isArray(body.tags)
+          ? body.tags.filter((t): t is string => typeof t === "string")
+          : current.fields.tags,
+        bodyHtml: typeof body.bodyHtml === "string" ? normalizeHtml(body.bodyHtml) : current.fields.bodyHtml,
+      };
       const metadata: MetadataFields = { ...current.metadata, authorEmail: email };
 
       // editPage() re-reads the page itself and compares against
@@ -109,6 +169,216 @@ async function handleApi(request: Request, env: WorkerEnv): Promise<Response> {
       const result = await editPage(config, path, fields, metadata, expectedVersion);
       await publishPageAndArtifacts(config, path, bookSlugFromPath(path));
       return json({ path, version: result.version });
+    }
+
+    if (request.method === "POST" && route === "page") {
+      const body = (await request.json()) as { parentPath?: unknown; title?: unknown; tags?: unknown };
+      if (typeof body.parentPath !== "string" || typeof body.title !== "string" || body.title.trim() === "") {
+        return json(
+          { error: "bad-request", message: "parentPath and a non-empty title are required" },
+          { status: 400 },
+        );
+      }
+      const tags = Array.isArray(body.tags) ? body.tags.filter((t): t is string => typeof t === "string") : [];
+      const slug = slugify(body.title);
+      if (!slug) {
+        return json(
+          { error: "bad-request", message: "title must contain at least one alphanumeric character" },
+          { status: 400 },
+        );
+      }
+      const path = `${body.parentPath}/${slug}`;
+
+      if ((await pageExists(config, path)) || (await folderExists(config, path))) {
+        return json({ error: "conflict", message: `${path} already exists` }, { status: 409 });
+      }
+
+      const order = await nextPageOrder(config, body.parentPath);
+      const fields: StructuredDataFields = { title: body.title, order, tags, bodyHtml: "" };
+      const metadata: MetadataFields = { docId: crypto.randomUUID(), origin: "web", authorEmail: email };
+      await createPage(config, path, fields, metadata);
+      await publishPageAndArtifacts(config, path, bookSlugFromPath(path));
+      const created = await readPage(config, path);
+      return json({ path, version: created.version });
+    }
+
+    if (request.method === "POST" && route === "folder") {
+      const body = (await request.json()) as { parentPath?: unknown; name?: unknown };
+      if (typeof body.parentPath !== "string" || typeof body.name !== "string" || body.name.trim() === "") {
+        return json(
+          { error: "bad-request", message: "parentPath and a non-empty name are required" },
+          { status: 400 },
+        );
+      }
+      const slug = slugify(body.name);
+      if (!slug) {
+        return json(
+          { error: "bad-request", message: "name must contain at least one alphanumeric character" },
+          { status: 400 },
+        );
+      }
+      const path = `${body.parentPath}/${slug}`;
+
+      if ((await folderExists(config, path)) || (await pageExists(config, path))) {
+        return json({ error: "conflict", message: `${path} already exists` }, { status: 409 });
+      }
+
+      await createFolder(config, path);
+
+      // A folder created directly under "docs" is a new book -- give it a
+      // nav container immediately so it shows up in the viewer/search on
+      // first publish instead of only after its first page exists.
+      if (body.parentPath === "docs") {
+        await ensureBookNavPage(config, slug);
+      }
+
+      return json({ path });
+    }
+
+    if (request.method === "POST" && route === "page/move") {
+      const body = (await request.json()) as {
+        type?: unknown;
+        fromPath?: unknown;
+        toParentPath?: unknown;
+        newName?: unknown;
+        title?: unknown;
+      };
+      if (
+        (body.type !== "page" && body.type !== "folder") ||
+        typeof body.fromPath !== "string" ||
+        typeof body.toParentPath !== "string" ||
+        typeof body.newName !== "string" ||
+        body.newName.trim() === ""
+      ) {
+        return json(
+          {
+            error: "bad-request",
+            message: "type ('page'|'folder'), fromPath, toParentPath, and newName are required",
+          },
+          { status: 400 },
+        );
+      }
+      const type: AssetType = body.type;
+      const { fromPath, toParentPath } = body;
+      const slug = slugify(body.newName);
+      if (!slug) {
+        return json(
+          { error: "bad-request", message: "newName must contain at least one alphanumeric character" },
+          { status: 400 },
+        );
+      }
+      const toPath = `${toParentPath}/${slug}`;
+
+      if (type === "page") {
+        const current = await readPage(config, fromPath);
+        if (current.metadata.origin === "git") {
+          return json(
+            { error: "git-owned", repo: current.metadata.sourceRepoPath },
+            { status: 409 },
+          );
+        }
+      }
+
+      if (fromPath !== toPath) {
+        await moveAsset(config, type, fromPath, toPath);
+      }
+
+      if (type === "page") {
+        // A plain drag-to-reparent sends no `title` (the display name isn't
+        // changing); an inline rename sends the new human title alongside
+        // the slugified newName so the DD's `title` field (and nav.json's
+        // docTitle) stay in sync with what the tree now shows.
+        if (typeof body.title === "string" && body.title.trim() !== "") {
+          const current = await readPage(config, toPath);
+          const fields: StructuredDataFields = { ...current.fields, title: body.title };
+          const metadata: MetadataFields = { ...current.metadata, authorEmail: email };
+          await editPage(config, toPath, fields, metadata, current.version);
+        }
+        await publishPageAndArtifacts(config, toPath, bookSlugFromPath(toPath));
+
+        // A cross-book move leaves the old book's nav.json stale (still
+        // listing a page that's no longer there) until something republishes
+        // it -- the page's own publish above only refreshes the *new* book.
+        const fromBook = bookSlugFromPath(fromPath);
+        const toBook = bookSlugFromPath(toPath);
+        if (fromBook !== toBook) {
+          const oldNavPath = `docs/_system/nav/${fromBook}`;
+          if (await pageExists(config, oldNavPath)) {
+            await publishAsset(config, "page", oldNavPath);
+          }
+        }
+      } else {
+        // Folder move (reparenting a chapter, or a whole book under docs/).
+        // Republish nav.json for whichever book(s) just changed contents.
+        const fromBook = bookSlugFromPath(fromPath);
+        const toBook = bookSlugFromPath(toPath);
+        for (const book of new Set([fromBook, toBook])) {
+          const navPath = `docs/_system/nav/${book}`;
+          if (await pageExists(config, navPath)) {
+            await publishAsset(config, "page", navPath);
+          }
+        }
+        // ASSUMPTION, not yet confirmed against a live instance: this
+        // assumes moveAsset carries each page inside the moved folder to its
+        // new location already published, the same way a single page move
+        // appears to (see publish-doc.ts, which republishes only the moved
+        // page itself, never its siblings). If pages inside a moved chapter
+        // come back unpublished in practice, this needs to walk the moved
+        // subtree and call publishAsset on each page too.
+      }
+
+      return json({ path: toPath });
+    }
+
+    if (request.method === "POST" && route === "page/reorder") {
+      const body = (await request.json()) as { items?: unknown };
+      if (!Array.isArray(body.items)) {
+        return json(
+          { error: "bad-request", message: "items (array of { path, type }) is required" },
+          { status: 400 },
+        );
+      }
+      const items: { path: string; type: AssetType }[] = [];
+      for (const raw of body.items as unknown[]) {
+        const item = raw as { path?: unknown; type?: unknown };
+        if (typeof item.path !== "string" || (item.type !== "page" && item.type !== "folder")) {
+          return json(
+            { error: "bad-request", message: "each item needs a string path and type 'page'|'folder'" },
+            { status: 400 },
+          );
+        }
+        items.push({ path: item.path, type: item.type });
+      }
+
+      // Only pages carry an `order` field (chapters/books are plain folders
+      // -- see nav-format.vm, which sorts pages by `order` but leaves folder
+      // order as whatever Cascade's own child position is). Folder entries
+      // in the list are skipped but still consume an index, which is fine:
+      // only the *relative* order of the page entries matters here.
+      let bookSlug: string | undefined;
+      for (const [index, item] of items.entries()) {
+        if (item.type !== "page") continue;
+        const current = await readPage(config, item.path);
+        // Git-owned order comes from frontmatter; rewriting it here would
+        // just be clobbered by the next git publish, so leave those alone
+        // rather than fighting the git path.
+        if (current.metadata.origin === "git") continue;
+        const order = index * 10;
+        if (current.fields.order !== order) {
+          const fields: StructuredDataFields = { ...current.fields, order };
+          await editPage(config, item.path, fields, current.metadata, current.version);
+        }
+        bookSlug ??= bookSlugFromPath(item.path);
+      }
+
+      if (bookSlug) {
+        const navPath = `docs/_system/nav/${bookSlug}`;
+        if (await pageExists(config, navPath)) {
+          await publishAsset(config, "page", navPath);
+        }
+      }
+
+      return json({ ok: true });
     }
 
     return json(

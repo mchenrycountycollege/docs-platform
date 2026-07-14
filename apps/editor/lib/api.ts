@@ -85,7 +85,14 @@ export function getPage(path: string): Promise<PageResult> {
   return getJson<PageResult>(`/api/page?path=${encodeURIComponent(path)}`);
 }
 
-export async function savePage(input: { path: string; bodyHtml: string; expectedVersion: string }): Promise<SavePageResult> {
+async function putPageFields(input: {
+  path: string;
+  expectedVersion: string;
+  bodyHtml?: string;
+  title?: string;
+  order?: number;
+  tags?: string[];
+}): Promise<SavePageResult> {
   const res = await fetch("/api/page", {
     method: "PUT",
     headers: { "content-type": "application/json" },
@@ -118,4 +125,113 @@ export async function savePage(input: { path: string; bodyHtml: string; expected
       ? String((data as { message: unknown }).message)
       : `HTTP ${res.status}`;
   return { ok: false, kind: "error", message };
+}
+
+export function savePage(input: { path: string; bodyHtml: string; expectedVersion: string }): Promise<SavePageResult> {
+  return putPageFields(input);
+}
+
+/** Rename a page's display title without touching its URL slug or body. */
+export function renamePageTitle(input: {
+  path: string;
+  title: string;
+  expectedVersion: string;
+}): Promise<SavePageResult> {
+  return putPageFields(input);
+}
+
+export interface CreatePageResult {
+  path: string;
+  version: string;
+}
+
+export async function createPage(input: { parentPath: string; title: string; tags?: string[] }): Promise<CreatePageResult> {
+  const res = await fetch("/api/page", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify(input),
+  });
+  if (res.status === 401) throw new ApiUnauthorizedError();
+  const data: unknown = await res.json();
+  if (!res.ok) {
+    const message =
+      data !== null && typeof data === "object" && "message" in data
+        ? String((data as { message: unknown }).message)
+        : `HTTP ${res.status}`;
+    throw new Error(message);
+  }
+  return data as CreatePageResult;
+}
+
+export async function createFolder(input: { parentPath: string; name: string }): Promise<{ path: string }> {
+  const res = await fetch("/api/folder", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify(input),
+  });
+  if (res.status === 401) throw new ApiUnauthorizedError();
+  const data: unknown = await res.json();
+  if (!res.ok) {
+    const message =
+      data !== null && typeof data === "object" && "message" in data
+        ? String((data as { message: unknown }).message)
+        : `HTTP ${res.status}`;
+    throw new Error(message);
+  }
+  return data as { path: string };
+}
+
+export interface MoveItemInput {
+  type: "page" | "folder";
+  fromPath: string;
+  toParentPath: string;
+  newName: string;
+  /** Pages only: the new human title, when this is a rename rather than a plain drag-to-reparent. */
+  title?: string;
+}
+
+export type MoveItemResult =
+  | { ok: true; path: string }
+  | { ok: false; kind: "git-owned"; repo?: string }
+  | { ok: false; kind: "error"; message: string };
+
+export async function moveItem(input: MoveItemInput): Promise<MoveItemResult> {
+  const res = await fetch("/api/page/move", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify(input),
+  });
+  if (res.status === 401) throw new ApiUnauthorizedError();
+  const data: unknown = await res.json();
+  if (res.ok) {
+    return { ok: true, path: (data as { path: string }).path };
+  }
+  if (res.status === 409) {
+    const body = data as { error: string; repo?: string };
+    if (body.error === "git-owned") {
+      return { ok: false, kind: "git-owned", repo: body.repo };
+    }
+  }
+  const message =
+    data !== null && typeof data === "object" && "message" in data
+      ? String((data as { message: unknown }).message)
+      : `HTTP ${res.status}`;
+  return { ok: false, kind: "error", message };
+}
+
+export async function reorderItems(items: { path: string; type: "page" | "folder" }[]): Promise<void> {
+  const res = await fetch("/api/page/reorder", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ items }),
+  });
+  if (res.status === 401) throw new ApiUnauthorizedError();
+  const data: unknown = await res.json();
+  if (!res.ok) {
+    const message =
+      data !== null && typeof data === "object" && "message" in data
+        ? String((data as { message: unknown }).message)
+        : `HTTP ${res.status}`;
+    throw new Error(message);
+  }
 }

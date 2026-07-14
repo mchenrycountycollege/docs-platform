@@ -17,7 +17,7 @@ decisions and focuses only on what it takes to ship the editor app.
 | `cascade-publish` (git orchestrator) | **Done, live-verified** — `publishDoc`, `processDiff`, manifest, archive |
 | Git path (GitHub Actions) | **Done, live-verified** — two real consuming repos onboarded |
 | Runtime **viewer** (`packages/runtime`) | **Done, live** — sidebar hydration, breadcrumb, ⌘K search, ToC, theme toggle; shipped as `docs/_system/docs-runtime.js` |
-| **Web editor (`apps/editor`)** | **Not started — this plan** |
+| **Web editor (`apps/editor`)** | **E0–E2 built** (E0 scaffold/auth, E1 read/edit round-trip, E2 create/rename/move/reorder) — E3 (delete + image upload) and E4 (polish + rollout) remain |
 
 The editor is the last major vertical slice. Critically, it is **not**
 greenfield below the UI: every Cascade write it needs already exists as a
@@ -191,12 +191,35 @@ and so the riskiest thing (HTML round-trip) is proven before UI polish.
   `authorEmail` set; a two-tab conflict yields a 409 prompt; the fixture corpus is
   green; a git-owned page opens **read-only** with a "managed in `<repo>`" banner.
 
-- **E2 — Create + structure ops (parent Phase 3, part 1).**
+- **E2 — Create + structure ops (parent Phase 3, part 1).** **Built 2026-07-13,
+  pending live verification.**
   `POST /api/page` (generate `docId`, `origin:"web"`), `POST /api/folder`
   (book/chapter, `ensureBookNavPage` on new book), inline rename, and
-  react-arborist drag → `POST /api/page/move` (reparent) / order edits (reorder).
+  react-arborist drag → `POST /api/page/move` (reparent) / a new
+  `POST /api/page/reorder` (recomputes the `order` field for a folder's page
+  siblings after a drag). `GET /api/tree` now also preloads each page child's
+  real DD `title` (one extra read per page, bounded to whatever folder is
+  currently expanding) instead of showing the URL slug, so inline rename
+  (which writes slug + title together) visibly reflects what was typed.
   *Exit:* create a book→chapter→page from scratch in the UI, reorder siblings,
   drag a page to another chapter — all reflected live in nav.json + the viewer.
+  Verified so far: `pnpm typecheck`/`test`/`build` green; the built worker
+  boots under `wrangler pages dev` and every new route is reachable and
+  correctly 401s pre-auth; the tree/create/rename/open-in-editor flows were
+  driven end-to-end in a real browser against a mocked API (Playwright +
+  `page.route`) with zero console errors. **Not yet verified against the live
+  Cascade instance** (no Access token available in this environment) — that
+  step, and actually dragging a page in the real UI, are still on the
+  developer per this phase's exit criteria.
+  **Known limitations, deliberately deferred:** (1) chapters/books can't be
+  reordered or dropped at the very top level — there's no `order` field for
+  folders to persist against (nav-format.vm: chapter/book order follows
+  Cascade's own folder position, which this proxy doesn't expose a way to
+  change); (2) moving a *folder* (a whole chapter) is unverified for whether
+  Cascade auto-republishes the pages inside it at their new location the way
+  a single page move does — flagged as an ASSUMPTION in `worker.ts`, revisit
+  if pages inside a moved chapter come back unpublished in practice; (3) file
+  attachments aren't draggable/renameable (that's E3's territory).
 
 - **E3 — Delete + image upload (parent Phase 3, part 2).**
   `DELETE /api/page` (orphan+unpublish only — no hard-delete path in the UI at
