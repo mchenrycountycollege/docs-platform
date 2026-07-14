@@ -139,17 +139,16 @@ export function usePageView(path: string | null): { content: ReactNode; rail: Re
             </ul>
           )}
         </div>
-        {!isGitOwned && (
-          <button type="button" className="edit-toggle" onClick={() => setEditing(true)}>
-            Edit this page
-          </button>
-        )}
+        <button type="button" className="edit-toggle" onClick={() => setEditing(true)}>
+          Edit this page
+        </button>
       </header>
 
       {isGitOwned && (
         <p className="banner banner-git">
-          Managed in <code>{page.sourceRepoPath ?? "a git repository"}</code>. Edit it there — changes made here
-          would be overwritten on the next publish.
+          Currently managed in <code>{page.sourceRepoPath ?? "a git repository"}</code>. Saving a change here takes
+          ownership from git — the next publish of that source file will be rejected until it sets{" "}
+          <code>takeover: true</code>.
         </p>
       )}
 

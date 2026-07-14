@@ -284,25 +284,15 @@ async function handleApi(request: Request, env: WorkerEnv): Promise<Response> {
       }
       const { path, expectedVersion } = body;
 
-      // Ownership guard (editor-implementation-plan.md section 3): the UI
-      // renders git-owned pages read-only, but the proxy enforces it
-      // regardless of the client, since Access-authenticated callers other
-      // than the SPA (curl, a future integration) could otherwise bypass a
-      // client-only check.
       const current = await readPage(config, path);
-      if (current.metadata.origin === "git") {
-        return json(
-          { error: "git-owned", repo: current.metadata.sourceRepoPath },
-          { status: 409 },
-        );
-      }
 
-      // Every field is optional and merges onto the current value -- the E1
-      // BlockNote save flow only ever sends bodyHtml, while E2's rename/
-      // reorder flows send title/order alone. normalizeHtml is authoritative
-      // here (section 4, "Server normalize is authoritative"): a lossy
-      // BlockNote export can't corrupt storage even if client-side
-      // sanitization has a gap.
+      // Ownership (editor-implementation-plan.md section 3, extended): a web
+      // save on a git-owned page takes it over -- flips origin to "web" and
+      // drops sourceRepoPath, mirroring publishDoc's git-side takeover (the
+      // `takeover: true` frontmatter flag flips a web-owned page back to
+      // "git"). Without this flip the page would keep the git badge while
+      // silently diverging from its source file, and the next git publish
+      // would clobber the web edit with no warning.
       const fields: StructuredDataFields = {
         title: typeof body.title === "string" ? body.title : current.fields.title,
         order: typeof body.order === "number" ? body.order : current.fields.order,
@@ -311,7 +301,12 @@ async function handleApi(request: Request, env: WorkerEnv): Promise<Response> {
           : current.fields.tags,
         bodyHtml: typeof body.bodyHtml === "string" ? normalizeHtml(body.bodyHtml) : current.fields.bodyHtml,
       };
-      const metadata: MetadataFields = { ...current.metadata, authorEmail: email };
+      const metadata: MetadataFields = {
+        ...current.metadata,
+        origin: "web",
+        sourceRepoPath: undefined,
+        authorEmail: email,
+      };
 
       // editPage() re-reads the page itself and compares against
       // expectedVersion, throwing VersionConflictError (-> 409 via

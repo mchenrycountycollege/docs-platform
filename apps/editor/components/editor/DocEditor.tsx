@@ -95,7 +95,17 @@ export function DocEditor({ path, onSaved, onCancel }: DocEditorProps) {
       const bodyHtml = await blocksToHtml(editor, editor.document);
       const result = await savePage({ path, bodyHtml, expectedVersion: state.page.version });
       if (result.ok) {
-        const saved: PageResult = { ...state.page, bodyHtml, version: result.version };
+        // The proxy takes ownership on every web save (see worker.ts's PUT
+        // /page handler) -- mirror that here so a git-owned page's badge
+        // flips immediately instead of waiting on PageView's reconcile
+        // fetch, which only diffs bodyHtml/version and would miss this.
+        const saved: PageResult = {
+          ...state.page,
+          bodyHtml,
+          version: result.version,
+          origin: "web",
+          sourceRepoPath: undefined,
+        };
         setState({ status: "ready", page: saved });
         setConflict(null);
         setSavedAt(new Date());
@@ -137,8 +147,8 @@ export function DocEditor({ path, onSaved, onCancel }: DocEditorProps) {
     <article className="content">
       {isGitOwned && (
         <p className="banner banner-git">
-          This page is managed in <code>{page.sourceRepoPath ?? "a git repository"}</code>. Edit it there — changes
-          made here would be overwritten on the next publish.
+          Currently managed in <code>{page.sourceRepoPath ?? "a git repository"}</code>. Saving here takes ownership
+          from git — the next publish of that source file will be rejected until it sets <code>takeover: true</code>.
         </p>
       )}
 
@@ -157,20 +167,18 @@ export function DocEditor({ path, onSaved, onCancel }: DocEditorProps) {
       {saveError && <p className="banner banner-error">{saveError}</p>}
 
       <div style={{ border: "1px solid var(--border)", borderRadius: 8 }}>
-        <BlockNoteView editor={editor} editable={!isGitOwned} theme="light" />
+        <BlockNoteView editor={editor} theme="light" />
       </div>
 
-      {!isGitOwned && (
-        <div className="edit-toolbar">
-          <button type="button" className="save-btn" onClick={() => void handleSave()} disabled={saving}>
-            {saving ? "Saving…" : "Save & publish"}
-          </button>
-          <button type="button" className="cancel-btn" onClick={() => onCancel?.()} disabled={saving}>
-            Cancel
-          </button>
-          {savedAt && <span className="saved-hint">Saved {savedAt.toLocaleTimeString()}</span>}
-        </div>
-      )}
+      <div className="edit-toolbar">
+        <button type="button" className="save-btn" onClick={() => void handleSave()} disabled={saving}>
+          {saving ? "Saving…" : "Save & publish"}
+        </button>
+        <button type="button" className="cancel-btn" onClick={() => onCancel?.()} disabled={saving}>
+          Cancel
+        </button>
+        {savedAt && <span className="saved-hint">Saved {savedAt.toLocaleTimeString()}</span>}
+      </div>
     </article>
   );
 }
