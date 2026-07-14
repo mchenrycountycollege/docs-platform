@@ -1,11 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { DocEditor } from "../components/editor/DocEditor";
 
-// E0 diagnostic only: proves the Function proxy + Access JWT verification +
-// readFolder/readPage wiring work end-to-end against the live Cascade
-// instance. Real BlockNote/react-arborist UI arrives in E1+
-// (project-management/editor-implementation-plan.md).
+// E1: real BlockNote editing UI for a single page, given its path. The tree
+// section below is still the E0 diagnostic -- react-arborist + a proper
+// split-view tree/editor layout is E2 (project-management/editor-implementation-plan.md).
 
 const boxStyle: React.CSSProperties = {
   background: "#f4f4f4",
@@ -33,9 +33,8 @@ export default function Home() {
   const [tree, setTree] = useState<unknown>(null);
   const [treeError, setTreeError] = useState<string | null>(null);
 
-  const [pagePath, setPagePath] = useState("");
-  const [page, setPage] = useState<unknown>(null);
-  const [pageError, setPageError] = useState<string | null>(null);
+  const [pagePathInput, setPagePathInput] = useState("");
+  const [openPagePath, setOpenPagePath] = useState<string | null>(null);
 
   async function loadTree(path: string) {
     setTreeError(null);
@@ -44,17 +43,6 @@ export default function Home() {
     } catch (err) {
       setTree(null);
       setTreeError(err instanceof Error ? err.message : String(err));
-    }
-  }
-
-  async function loadPage(path: string) {
-    if (!path) return;
-    setPageError(null);
-    try {
-      setPage(await fetchJson(`/api/page?path=${encodeURIComponent(path)}`));
-    } catch (err) {
-      setPage(null);
-      setPageError(err instanceof Error ? err.message : String(err));
     }
   }
 
@@ -67,11 +55,10 @@ export default function Home() {
 
   return (
     <main style={{ fontFamily: "system-ui, sans-serif", padding: "2rem", maxWidth: 800, margin: "0 auto" }}>
-      <h1>docs-platform editor -- E0 diagnostic</h1>
-      <p>Proxy wiring check only. No editing UI yet.</p>
+      <h1>docs-platform editor</h1>
 
       <section style={{ marginBottom: "2rem" }}>
-        <h2>GET /api/tree</h2>
+        <h2>Browse (E0 diagnostic -- tree UI arrives in E2)</h2>
         <form
           onSubmit={(e) => {
             e.preventDefault();
@@ -86,23 +73,22 @@ export default function Home() {
       </section>
 
       <section>
-        <h2>GET /api/page</h2>
+        <h2>Edit a page</h2>
         <form
           onSubmit={(e) => {
             e.preventDefault();
-            void loadPage(pagePath);
+            setOpenPagePath(pagePathInput);
           }}
         >
           <input
-            value={pagePath}
-            onChange={(e) => setPagePath(e.target.value)}
+            value={pagePathInput}
+            onChange={(e) => setPagePathInput(e.target.value)}
             placeholder="docs/some-book/some-page"
             style={{ width: 300 }}
           />
-          <button type="submit">Load</button>
+          <button type="submit">Open</button>
         </form>
-        {pageError && <p style={{ color: "crimson" }}>Error: {pageError}</p>}
-        <pre style={boxStyle}>{page ? JSON.stringify(page, null, 2) : "..."}</pre>
+        {openPagePath && <DocEditor key={openPagePath} path={openPagePath} />}
       </section>
     </main>
   );

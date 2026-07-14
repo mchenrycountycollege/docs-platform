@@ -1,8 +1,16 @@
-import { readFolder, readPage } from "@docs-platform/cascade-client";
+import { editPage, publishPageAndArtifacts, readFolder, readPage, type MetadataFields } from "@docs-platform/cascade-client";
+import { normalizeHtml } from "@docs-platform/doc-core";
 import { AccessAuthError, verifyAccessJwt } from "./lib/access-auth.js";
 import { cascadeConfigFromEnv } from "./lib/cascade-config.js";
 import type { Env } from "./lib/env.js";
 import { errorResponse, json } from "./lib/http.js";
+
+/** docs/<book-slug>/... -- publishPageAndArtifacts needs the book slug to publish its nav.json. */
+function bookSlugFromPath(path: string): string {
+  const slug = path.split("/")[1];
+  if (!slug) throw new Error(`path has no book segment: ${path}`);
+  return slug;
+}
 
 /**
  * Cloudflare Pages "Advanced Mode" entry point: a single self-contained
@@ -34,10 +42,6 @@ async function handleApi(request: Request, env: WorkerEnv): Promise<Response> {
     }
     throw err;
   }
-  // Identity isn't used by any route yet -- the write routes added in E1+
-  // stamp it into MetadataFields.authorEmail/editorName on create/edit.
-  void email;
-
   const url = new URL(request.url);
   const route = url.pathname.replace(/^\/api\/?/, "");
   const config = cascadeConfigFromEnv(env);
@@ -63,9 +67,48 @@ async function handleApi(request: Request, env: WorkerEnv): Promise<Response> {
         tags: page.fields.tags,
         bodyHtml: page.fields.bodyHtml,
         origin: page.metadata.origin,
+        sourceRepoPath: page.metadata.sourceRepoPath,
         editorName: page.metadata.editorName,
         authorEmail: page.metadata.authorEmail,
       });
+    }
+
+    if (request.method === "PUT" && route === "page") {
+      const body = (await request.json()) as { path?: unknown; bodyHtml?: unknown; expectedVersion?: unknown };
+      if (typeof body.path !== "string" || typeof body.bodyHtml !== "string" || typeof body.expectedVersion !== "string") {
+        return json(
+          { error: "bad-request", message: "path, bodyHtml, and expectedVersion are all required strings" },
+          { status: 400 },
+        );
+      }
+      const { path, bodyHtml, expectedVersion } = body;
+
+      // Ownership guard (editor-implementation-plan.md section 3): the UI
+      // renders git-owned pages read-only, but the proxy enforces it
+      // regardless of the client, since Access-authenticated callers other
+      // than the SPA (curl, a future integration) could otherwise bypass a
+      // client-only check.
+      const current = await readPage(config, path);
+      if (current.metadata.origin === "git") {
+        return json(
+          { error: "git-owned", repo: current.metadata.sourceRepoPath },
+          { status: 409 },
+        );
+      }
+
+      // Only the body changes in E1 -- title/order/tags editing arrives with
+      // rename/reorder in E2. normalizeHtml is authoritative here (section 4,
+      // "Server normalize is authoritative"): a lossy BlockNote export can't
+      // corrupt storage even if the client-side sanitization has a gap.
+      const fields = { ...current.fields, bodyHtml: normalizeHtml(bodyHtml) };
+      const metadata: MetadataFields = { ...current.metadata, authorEmail: email };
+
+      // editPage() re-reads the page itself and compares against
+      // expectedVersion, throwing VersionConflictError (-> 409 via
+      // errorResponse) on a mismatch -- no separate check needed here.
+      const result = await editPage(config, path, fields, metadata, expectedVersion);
+      await publishPageAndArtifacts(config, path, bookSlugFromPath(path));
+      return json({ path, version: result.version });
     }
 
     return json(

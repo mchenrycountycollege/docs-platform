@@ -23761,6 +23761,24 @@ async function unpublishAsset(config, type, path3) {
   await request(config, "POST", `publish/${type}/${config.siteName}/${scoped}`, { publishInformation: { unpublish: true } });
 }
 
+// ../../packages/cascade-client/dist/publish-sequence.js
+async function publishPageAndArtifacts(config, path3, bookSlug) {
+  await publishAsset(config, "page", path3);
+  const navPath = `docs/_system/nav/${bookSlug}`;
+  const navAlreadyExisted = await pageExists(config, navPath);
+  await ensureBookNavPage(config, bookSlug);
+  if (navAlreadyExisted) {
+    await publishAsset(config, "page", navPath);
+  }
+  for (const artifactPath of ["docs/_system/search-index", "docs/_system/tags"]) {
+    try {
+      await publishAsset(config, "page", artifactPath);
+    } catch (err) {
+      console.warn(`[cascade-client] could not publish ${artifactPath} (has it been created yet? see implementation-checklist.md Phase 7): ${err instanceof Error ? err.message : String(err)}`);
+    }
+  }
+}
+
 // ../../packages/cascade-publish/dist/manifest.js
 var MANIFEST_PATH = "docs/_system/manifest.json";
 var MAX_RETRIES = 4;
@@ -48235,20 +48253,7 @@ async function publishDoc(config, input) {
     await createPage(config, path3, fields, metadata);
     version = (await readPage(config, path3)).version;
   }
-  await publishAsset(config, "page", path3);
-  const navPath = `docs/_system/nav/${bookSlug}`;
-  const navAlreadyExisted = await pageExists(config, navPath);
-  await ensureBookNavPage(config, bookSlug);
-  if (navAlreadyExisted) {
-    await publishAsset(config, "page", navPath);
-  }
-  for (const artifactPath of ["docs/_system/search-index", "docs/_system/tags"]) {
-    try {
-      await publishAsset(config, "page", artifactPath);
-    } catch (err) {
-      console.warn(`[cascade-publish] could not publish ${artifactPath} (has it been created yet? see implementation-checklist.md Phase 7): ${err instanceof Error ? err.message : String(err)}`);
-    }
-  }
+  await publishPageAndArtifacts(config, path3, bookSlug);
   await updateManifestEntry(config, fm.docId, path3);
   return { path: path3, version, moved };
 }
