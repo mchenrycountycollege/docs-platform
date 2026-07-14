@@ -43,6 +43,23 @@ describe("structured data mapping", () => {
   it("round-trips fields through the wire shape", () => {
     expect(fromStructuredData(toStructuredData(fields))).toEqual(fields);
   });
+
+  it("treats a body node with no 'text' property as an empty body, not malformed", () => {
+    // Confirmed against a live instance: Cascade drops `text` entirely for a
+    // node whose value was an empty string (e.g. a freshly created page with
+    // bodyHtml: "") -- the node itself is still present.
+    const wire = toStructuredData({ ...fields, bodyHtml: "" });
+    const bodyNode = wire.structuredDataNodes.find((n) => n.identifier === "body");
+    expect(bodyNode).toBeDefined();
+    delete bodyNode!.text;
+    expect(fromStructuredData(wire)).toEqual({ ...fields, bodyHtml: "" });
+  });
+
+  it("still throws when the 'body' node itself is missing", () => {
+    const wire = toStructuredData(fields);
+    wire.structuredDataNodes = wire.structuredDataNodes.filter((n) => n.identifier !== "body");
+    expect(() => fromStructuredData(wire)).toThrow(/missing 'body' node/);
+  });
 });
 
 describe("metadata mapping", () => {

@@ -51,10 +51,10 @@ export function toStructuredData(fields: StructuredDataFields): StructuredDataWi
 export function fromStructuredData(wire: StructuredDataWire): StructuredDataFields {
   const title = wire.structuredDataNodes.find((n) => n.identifier === "title")?.text;
   const order = wire.structuredDataNodes.find((n) => n.identifier === "order")?.text;
-  const body = wire.structuredDataNodes.find((n) => n.identifier === "body")?.text;
+  const bodyNode = wire.structuredDataNodes.find((n) => n.identifier === "body");
   if (title === undefined) throw new Error("structuredData missing 'title' node");
   if (order === undefined) throw new Error("structuredData missing 'order' node");
-  if (body === undefined) throw new Error("structuredData missing 'body' node");
+  if (bodyNode === undefined) throw new Error("structuredData missing 'body' node");
   const tags = wire.structuredDataNodes
     .filter((n) => n.identifier === "tags" && n.text !== undefined)
     .map((n) => n.text as string);
@@ -62,7 +62,13 @@ export function fromStructuredData(wire: StructuredDataWire): StructuredDataFiel
     title,
     order: unpadOrder(order),
     tags,
-    bodyHtml: body,
+    // Cascade drops the `text` property entirely for a node whose value was
+    // an empty string on create/edit (confirmed against a live instance --
+    // same "empty string counts as absent" behavior documented for
+    // createRawPage's xhtml). A brand-new page has bodyHtml: "", so the node
+    // itself is still present (it's in the DD) but `.text` is undefined --
+    // that's an empty body, not a malformed page.
+    bodyHtml: bodyNode.text ?? "",
   };
 }
 

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { markdownToHtml } from "./markdown.js";
+import { htmlToMarkdown, markdownToHtml } from "./markdown.js";
 
 describe("markdownToHtml", () => {
   it("converts headings, paragraphs, and links", async () => {
@@ -25,5 +25,27 @@ describe("markdownToHtml", () => {
     const html = await markdownToHtml("```js\nconst x = 1;\n```\n");
     expect(html).toContain("<pre>");
     expect(html).toContain("const x = 1;");
+  });
+});
+
+describe("htmlToMarkdown", () => {
+  it("converts headings, paragraphs, and links", async () => {
+    const markdown = await htmlToMarkdown('<h2>Title</h2><p>Some <a href="https://example.com">text</a>.</p>');
+    expect(markdown).toContain("## Title");
+    expect(markdown).toContain("[text](https://example.com)");
+  });
+
+  it("converts lists", async () => {
+    const markdown = await htmlToMarkdown("<ul><li>one</li><li>two</li></ul>");
+    expect(markdown).toContain("* one");
+    expect(markdown).toContain("* two");
+  });
+
+  it("round-trips through markdownToHtml", async () => {
+    const original = "## Title\n\nSome **bold** text with a [link](https://example.com).\n";
+    const html = await markdownToHtml(original);
+    const roundTripped = await htmlToMarkdown(html);
+    const reHtml = await markdownToHtml(roundTripped);
+    expect(reHtml).toBe(html);
   });
 });

@@ -10,11 +10,13 @@
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "vitest run",
     "dry-run": "tsx src/dry-run.ts",
-    "cli": "tsx src/cli.ts"
+    "cli": "tsx src/cli.ts",
+    "sync-doc": "tsx src/cli-sync-doc.ts"
   },
   "dependencies": {
     "@docs-platform/cascade-client": "workspace:*",
-    "@docs-platform/doc-core": "workspace:*"
+    "@docs-platform/doc-core": "workspace:*",
+    "gray-matter": "^4.0.3"
   },
   "devDependencies": {
     "typescript": "^5.7.3",

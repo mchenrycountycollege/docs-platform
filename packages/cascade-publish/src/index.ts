@@ -15,3 +15,4 @@ export {
   type PublishDocResult,
 } from "./publish-doc.js";
 export { processDiff, type ProcessDiffInput, type ProcessDiffResult } from "./process-diff.js";
+export { syncDoc, type SyncDocResult } from "./resolve-conflict.js";
