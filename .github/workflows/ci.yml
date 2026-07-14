@@ -33,8 +33,16 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
 
+      # Build first: apps/editor and packages/cascade-publish both import
+      # @docs-platform/doc-core and @docs-platform/cascade-client as built
+      # packages (resolved via dist/, per each package's package.json
+      # "main"/"types") rather than TS source references. typecheck/test
+      # fail with "Cannot find module" against a clean checkout otherwise --
+      # confirmed live: this was a pre-existing gap (cascade-publish hit it
+      # too, unrelated to the editor work), just never surfaced before since
+      # there was no CI and dist/ was always already built locally.
+      - run: pnpm build
+
       - run: pnpm typecheck
 
       - run: pnpm test
-
-      - run: pnpm build
