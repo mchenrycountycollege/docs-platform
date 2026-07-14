@@ -17,8 +17,8 @@ decisions and focuses only on what it takes to ship the editor app.
 | `cascade-publish` (git orchestrator) | **Done, live-verified** — `publishDoc`, `processDiff`, manifest, archive |
 | Git path (GitHub Actions) | **Done, live-verified** — two real consuming repos onboarded |
 | Runtime **viewer** (`packages/runtime`) | **Done, live** — sidebar hydration, breadcrumb, ⌘K search, ToC, theme toggle; shipped as `docs/_system/docs-runtime.js` |
-| **Web editor (`apps/editor`)** | **E0–E2 built** (E0 scaffold/auth, E1 read/edit round-trip, E2 create/rename/move/reorder) — E3 (delete + image upload) and E4 (front-door shell + polish + rollout) remain |
-| **Shared shell (`packages/doc-shell`)** | **E-Shell built 2026-07-14** — `buildTree`/slug/search extracted from `runtime`; runtime adopts it (9 existing tests unchanged), doc-shell has 21 own tests; pure refactor, byte-identical bundle. Live-visual reader check outstanding. |
+| **Web editor (`apps/editor`)** | **E0–E4 all built** (E0 scaffold/auth, E1 read/edit round-trip, E2 create/rename/move/reorder, E3 delete + image upload, E4 front-door reader shell — see §5) — no sub-phase left unstarted. Live/Access verification still outstanding for E2/E3/E4. |
+| **Shared shell (`packages/doc-shell`)** | **E-Shell built 2026-07-14** — `buildTree`/slug/search extracted from `runtime`; runtime adopts it (9 existing tests unchanged), doc-shell has 21 own tests; pure refactor, byte-identical bundle. Now also consumed by `apps/editor`'s E4 shell. Live-visual reader check outstanding. |
 
 > **UI-model revision — 2026-07-14 (supersedes the standalone-admin-panel shape of E3/E4).**
 > The E0–E2 UI was built as a standalone CMS-admin panel (a bare file tree +
@@ -108,13 +108,15 @@ function names now available.)
 |---|---|---|
 | `GET /api/tree?path=` | Lazy children for react-arborist | `readFolder` |
 | `GET /api/page?path=` | Load page for editing (returns body + `version` = lastModified) | `readPage` → `fromStructuredData`/`fromMetadata` |
+| `GET /api/nav?path=docs/<book>` | **Added E4.** Live `NavResponse` (flat folders+pages) for one book — feeds the reader-shell's breadcrumb/ToC via `doc-shell`'s `buildTree`. Computed from Cascade directly, not the *published* nav.json (that artifact's hostname isn't configured anywhere in this app — see §5's E4 entry) | `readFolder` (book, then each chapter) + `readPage` per page |
+| `GET /api/search-index` | **Added E4.** `{ pages: SearchEntry[] }` across every book, for the cmdk palette (`doc-shell`'s `createSearchIndex`) | `readFolder` (walk) + `readPage` per page, excerpt via strip+truncate-200 |
 | `POST /api/page` | Create page (generate `docId`, stamp `origin:"web"` + identity) | `ensureFolder` + `createPage` + `publishAsset` |
 | `PUT /api/page` | Edit page (optimistic `expectedVersion`) | `readPage` (compare) → `normalizeHtml` → `editPage` → `publishAsset` |
 | `POST /api/page/move` | Reparent and/or reorder | `moveAsset` and/or `editPage` (order) |
-| `DELETE /api/page?path=` | Orphan+unpublish (only mode exposed via the editor — see §10 item 4) | `unpublishAsset` (+ status) |
+| `DELETE /api/page?path=` | **Built E3.** Orphan+unpublish (only mode exposed via the editor — see §10 item 4), git-owned guarded same as PUT; republishes the book's `nav.json` afterward so the orphaned entry drops out immediately | `readPage` (ownership check) → `deletePage` (default soft mode) → `publishAsset` (nav) |
 | `POST /api/folder` | Create book/chapter | `createFolder` / `ensureFolder` (+ `ensureBookNavPage` for a new book) |
-| `POST /api/upload` | Upload image/attachment | `upsertFile` (bytes) → `publishAsset` |
-| `POST /api/publish?path=` | Manual republish | `publishAsset` |
+| `POST /api/upload` | **Built E3.** Multipart `{ file, path }` (`path` = the page being edited, to derive the book). Stores under `docs/uploads/<book>/<uuid>.<ext>` (images only, 15MB cap), returns `{ path, url }` where `url` is the root-relative canonical path (same convention as `packages/runtime`'s hrefs) — that's what lands in the saved `bodyHtml` | `upsertFile` (bytes) → `publishAsset` |
+| `GET /api/file?path=` | **Added E3.** Streams a File asset's raw bytes with an inferred image Content-Type. Exists solely so the editor's *own* preview (BlockNote's `resolveFileUrl`, `PageView`'s read-only render) can display an uploaded image right now — the canonical root-relative `src` only resolves on the real public web server, whose hostname isn't configured anywhere in this app (same constraint as `GET /api/nav`, see below) | `readFile` |
 
 **Derived-artifact republish after writes.** The proxy mirrors `publishDoc`'s
 sequencing: after a page write it publishes the page → the book's `nav.json`
@@ -327,15 +329,62 @@ and so the riskiest thing (HTML round-trip) is proven before UI polish.
   if pages inside a moved chapter come back unpublished in practice; (3) file
   attachments aren't draggable/renameable (that's E3's territory).
 
-- **E3 — Delete + image upload (parent Phase 3, part 2).**
-  `DELETE /api/page` (orphan+unpublish only — no hard-delete path in the UI at
-  all; hard delete stays a git-`delete:true` affordance, see §10 item 4),
-  `POST /api/upload` → `upsertFile` under `docs/uploads/<book>/…`, rewrite the
-  image `src` to the published URL, insert into the BlockNote doc.
-  *Exit:* upload an image into a page and see it render live; delete a page and
-  confirm it unpublishes (reversible) — a simple confirm-to-orphan dialog, no
+- **E3 — Delete + image upload (parent Phase 3, part 2). — BUILT 2026-07-14,
+  pending live/Access verification.**
+  - **Delete:** a small trash button on each page row in `DocsTree` (visible on
+    row hover, via a `TreeActionsContext` so the react-arborist-owned `Row`
+    renderer can reach a handler defined in `DocsTree` without becoming a
+    fresh component identity every render), `window.confirm`'d with wording
+    that states plainly this only unpublishes (stays in Cascade, reversible;
+    matches E2's existing `window.prompt`-based create/rename UX rather than
+    introducing a custom modal). Wired through `lib/api.ts`'s `deletePage()`
+    to `DELETE /api/page?path=` — same git-owned guard as PUT/move, and after
+    unpublishing it republishes the book's `nav.json` (otherwise the orphaned
+    page would linger in the nav artifact). If the deleted page was open,
+    `app/page.tsx`'s `onPageDeleted` clears `openPath`. **Note:** the editor's
+    own tree still lists an unpublished page afterward (it reads live Cascade
+    state, not published state — same as every other row) — the confirm
+    dialog's wording is what sets the correct expectation, not a UI badge;
+    revisit only if that proves confusing in practice.
+  - **Image upload:** `POST /api/upload` takes a multipart `{ file, path }`
+    (`path` = the page being edited, to derive the book slug) and calls
+    `upsertFile` under `docs/uploads/<book>/<uuid>.<ext>` (images only —
+    png/jpg/gif/webp/svg — 15MB cap), returning `{ path, url }` where `url` is
+    root-relative (`/docs/uploads/...`) — the **same convention `packages/
+    runtime` already uses for hrefs** (confirmed against `nav.ts`/`search.ts`
+    before building this, not invented fresh), and what's saved verbatim in
+    `bodyHtml` since it's the correct src once the real public site publishes
+    it. Wired into BlockNote via `useCreateBlockNote`'s `uploadFile` option in
+    `DocEditor` (BlockNote's native image-upload UI — drag-drop, paste, or the
+    image block's upload button — needed zero custom UI, `uploadFile` is a
+    stock BlockNoteEditorOptions hook), so images upload and insert with the
+    editor's own built-in flow.
+  - **The preview problem, and how it's resolved:** the root-relative stored
+    `src` can't resolve on the editor's own `*.pages.dev` origin (the real web
+    server's hostname isn't wired into this app anywhere — same constraint
+    `buildBookNav`'s comment already documents for `nav.json`). Rather than
+    invent a new mechanism, this reuses BlockNote's existing `resolveFileUrl`
+    editor option (confirmed via the compiled bundle it's consulted only by
+    the live image/video block renderer, `bn-visual-media` — **not** by
+    `blocksToFullHTML` export, so it can't leak into what gets saved) to route
+    display through a new `GET /api/file?path=` proxy (`readFile` + a small
+    image-extension→Content-Type map). `PageView`'s read-only render — plain
+    `dangerouslySetInnerHTML`, no BlockNote involved — gets the same rewrite
+    via a small regex helper, `withDisplayableImages()`, since sanitized HTML
+    from `normalizeHtml` always emits simple double-quoted `src="..."`
+    attributes. Both funnel through one shared `imageDisplayUrl()` in
+    `lib/api.ts` so the rewrite rule lives in exactly one place.
+  *Exit:* upload an image into a page and see it render live (both the
+  BlockNote editing view and the read-only view); delete a page and confirm
+  it unpublishes (reversible) — a simple confirm-to-orphan dialog, no
   hard-delete option presented. **These operate through whatever chrome exists
   at the time (E2's tree is fine); E3 does not depend on the shell rewrite.**
+  Workspace typecheck/test/build all green (needed one fix: `apps/editor/
+  functions/tsconfig.json`'s `types` array was `["@cloudflare/workers-types"]`
+  only, dropping the ambient `Buffer` type `upsertFile`'s caller needs even
+  though `nodejs_compat` already provides it at runtime — added `"node"`
+  alongside it). **Not yet verified:** the live Access-gated flow (no Access
+  token in this environment, same outstanding item as E2/E4).
 
 - **E-Shell — `packages/doc-shell` extraction + runtime adoption (do before E4;
   can run in parallel with E3). — BUILT 2026-07-14, pending live-visual check.**
@@ -385,21 +434,62 @@ and so the riskiest thing (HTML round-trip) is proven before UI polish.
   refactor, zero user-visible change); `doc-shell` has its own unit tests for
   every transform it owns (including the previously-untested search/toc cores).
 
-- **E4 — Front-door shell + command palette + polish + rollout.** *This is the
-  phase recast by the 2026-07-14 UI-model revision (§4a).* The editor becomes the
-  **front door**: a reader-shell route that renders the sidebar / breadcrumb /
-  ⌘K search / ToC from `doc-shell` (E-Shell) as React components in
-  `components/shell/`, visually matched to the public reader, with every page
-  **read-only by default** and an **"Edit this page"** control that mounts
-  BlockNote in place (E1's editor, no route change). "+ New book / + New page"
-  live in this same chrome. cmdk palette (jump-to-page, "new page", quick search
-  over the same `search-index.json` Fuse index the public reader uses — now via
-  `doc-shell`). Wire the **background-reconcile** half of the save model (§4b):
-  E1 already shows the in-memory copy instantly on Save; E4 adds the silent
-  post-publish re-fetch that reconciles the on-screen body against the stored
-  canonical HTML. Empty/error/loading states, shared design tokens for parity,
-  autosave-draft-on-blur (optional), onboarding docs. Finalize Cloudflare Pages +
-  Access config (§7).
+- **E4 — Front-door shell + command palette + polish + rollout. — BUILT
+  2026-07-14, pending live/Access verification.** *This is the phase recast by
+  the 2026-07-14 UI-model revision (§4a).* The standalone tree+pane admin panel
+  (`app/page.tsx`) is gone. In its place:
+  - `components/shell/ShellChrome.tsx` — the topbar/sidebar/content/rail grid,
+    React port of `runtime`'s chrome (theme toggle, mobile nav), styled from
+    the new shared tokens (below).
+  - `components/shell/Breadcrumb.tsx`, `Toc.tsx`, `useBookNav.ts` — React ports
+    of `runtime`'s `renderBreadcrumb`/`initToc`, built on `doc-shell`
+    (`buildTree`, `folderDisplayName`, `slugify`) via a live-from-Cascade
+    `GET /api/nav?path=docs/<book>` route (see below) rather than fetching the
+    *published* nav.json — that artifact's hostname isn't configured anywhere
+    in this app (only the editor's own `*.pages.dev` host is settled, per §7),
+    so the proxy now computes the same `NavResponse` shape directly from
+    Cascade REST (bounded two-level walk: book → chapters → pages).
+  - `components/shell/PageView.tsx` (`usePageView` hook) — the reader-shell
+    "route" for one page: read-only by default (canonical `bodyHtml` rendered
+    with reader typography + tags + origin badge), **"Edit this page"** swaps
+    to `DocEditor` in place (no route change), git-owned pages get the banner
+    instead of an Edit button. Implements §4b in full: `onSaved` renders the
+    just-saved copy instantly, then a 6s-delayed background `reconcilePage`
+    (new `lib/api.ts` export) silently swaps in the stored copy if it
+    differs — no modal either way. Empty/loading/error states included.
+  - `components/shell/SearchPalette.tsx` — cmdk-based ⌘K palette (global
+    keydown handler in `app/page.tsx`), backed by a new `GET /api/search-index`
+    route (walks every book, excerpts via the same strip-and-truncate-200 rule
+    `_shared.vm` uses) and `doc-shell`'s `createSearchIndex`/`SEARCH_OPTIONS` —
+    literally the same Fuse config the public reader's ⌘K uses.
+  - `packages/runtime/tokens.css` — the shared design tokens (the `:root`
+    custom properties, lifted verbatim out of the Cascade Template), imported
+    directly by `apps/editor/app/globals.css`. The Cascade Template can't
+    `@import` it back (Templates aren't part of this JS build), so it keeps a
+    cross-reference comment instead; layout/typography CSS around the tokens
+    is kept in sync by eye per §4a, not shared verbatim.
+  - `DocsTree` (E2's react-arborist tree) is **kept, not replaced** — restyled
+    to the shared tokens (chapter-style uppercase group labels, active-page
+    highlight, accent colors) rather than rebuilt as a second read-only nav
+    renderer. This was a deliberate scope call: rebuilding drag-and-drop nav
+    from scratch risked E2 regressions for a parity gain achievable by
+    restyling; "+ Book / + Chapter / + Page" already lived in this same
+    persistent sidebar chrome, just restyled now instead of moved.
+  - Deferred, matching the plan's own framing: autosave-draft-on-blur (marked
+    optional in §5 already); §7's Cloudflare Pages/Access console config
+    (manual dashboard work, no environment access here).
+  *Verified so far:* `pnpm typecheck`/`test`/`build` green for the whole
+  workspace including the new `doc-shell`-consuming code; the built worker's
+  static export renders the full expected shell HTML server-side (topbar,
+  restyled sidebar tree, empty-state content pane, all with the new CSS
+  classes) confirmed via `wrangler pages dev` + `curl` before local
+  verification was cut short in favor of the developer testing remotely.
+  **Not yet verified:** the live Access-gated flow end to end (sign-in →
+  browse real nav/search data → edit → save → see it live) — no Access token
+  in this environment; also the very first live check that `doc-shell`'s
+  extraction left the *public* reader pixel-for-pixel unchanged (E-Shell's
+  own outstanding item, now doubly relevant since E4 is the tokens' first
+  real second consumer).
   *Exit:* an allow-listed non-technical user, from the editor URL alone, browses
   the tree in the pretty shell, searches with ⌘K, opens a page read-only, clicks
   Edit and sees the change instantly, and that change appears on the **public**

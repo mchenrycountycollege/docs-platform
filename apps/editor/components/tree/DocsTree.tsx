@@ -1,12 +1,13 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { createContext, useContext, useEffect, useRef, useState } from "react";
 import type { NodeRendererProps } from "react-arborist";
 import { Tree } from "react-arborist";
 import {
   ApiUnauthorizedError,
   createFolder as apiCreateFolder,
   createPage as apiCreatePage,
+  deletePage,
   getTree,
   moveItem,
   reorderItems,
@@ -87,7 +88,12 @@ export interface DocsTreeProps {
   onOpenPage: (path: string) => void;
   /** Called after a page this component moved/renamed lands at a new path, so the caller can re-point an already-open editor. */
   onPageMoved?: (fromPath: string, toPath: string) => void;
+  /** Called after a page this component unpublished, so the caller can close it if it was the one open. */
+  onPageDeleted?: (path: string) => void;
 }
+
+/** Row-level actions Row needs but can't receive as props (react-arborist owns Row's call signature) -- see the component doc comment. */
+const TreeActionsContext = createContext<{ onDelete: (node: TreeNode) => void } | null>(null);
 
 /**
  * react-arborist tree over docs/, lazily loaded one folder at a time via
@@ -104,7 +110,7 @@ export interface DocsTreeProps {
  * which this proxy doesn't expose a way to change). File attachments aren't
  * draggable/renameable yet either -- that's E3.
  */
-export function DocsTree({ onOpenPage, onPageMoved }: DocsTreeProps) {
+export function DocsTree({ onOpenPage, onPageMoved, onPageDeleted }: DocsTreeProps) {
   const [root, setRoot] = useState<TreeNode>({
     id: ROOT_PATH,
     name: ROOT_PATH,
@@ -281,6 +287,28 @@ export function DocsTree({ onOpenPage, onPageMoved }: DocsTreeProps) {
     if (isReparent) await refreshFolder(srcParentPath);
   }
 
+  async function handleDelete(node: TreeNode) {
+    if (node.itemType !== "page") return;
+    const confirmed = window.confirm(
+      `Unpublish "${node.name}"? It stops appearing in the tree, search, and the public site, but stays in Cascade -- ` +
+        `you (or anyone) can undo this by editing and saving it again. This does not permanently delete it.`,
+    );
+    if (!confirmed) return;
+
+    const parentPath = dirnameOf(node.path);
+    const result = await deletePage(node.path);
+    if (!result.ok) {
+      setError(
+        result.kind === "git-owned"
+          ? `This page is managed in ${result.repo ?? "a git repository"} and can't be deleted here.`
+          : result.message,
+      );
+      return;
+    }
+    onPageDeleted?.(node.path);
+    await refreshFolder(parentPath);
+  }
+
   return (
     <>
       <div className="sidebar-actions">
@@ -300,28 +328,30 @@ export function DocsTree({ onOpenPage, onPageMoved }: DocsTreeProps) {
         </p>
       )}
       <div className="sidebar-tree">
-        <Tree<TreeNode>
-          data={root.children ?? []}
-          width="100%"
-          height={640}
-          rowHeight={30}
-          openByDefault={false}
-          disableMultiSelection
-          onToggle={handleToggle}
-          onSelect={(nodes) => setSelectedId(nodes[0]?.id ?? null)}
-          onActivate={(node) => {
-            if (node.data.itemType === "page") onOpenPage(node.data.path);
-          }}
-          onRename={(args) => void handleRename(args)}
-          onMove={(args) => void handleMove(args)}
-          disableEdit={(data) => data.itemType === "loading"}
-          disableDrag={(data) => data.itemType === "loading" || data.itemType === "file"}
-          disableDrop={({ parentNode }) =>
-            parentNode.isRoot || parentNode.data.itemType !== "folder" || !parentNode.data.loaded
-          }
-        >
-          {Row}
-        </Tree>
+        <TreeActionsContext.Provider value={{ onDelete: (node) => void handleDelete(node) }}>
+          <Tree<TreeNode>
+            data={root.children ?? []}
+            width="100%"
+            height={640}
+            rowHeight={30}
+            openByDefault={false}
+            disableMultiSelection
+            onToggle={handleToggle}
+            onSelect={(nodes) => setSelectedId(nodes[0]?.id ?? null)}
+            onActivate={(node) => {
+              if (node.data.itemType === "page") onOpenPage(node.data.path);
+            }}
+            onRename={(args) => void handleRename(args)}
+            onMove={(args) => void handleMove(args)}
+            disableEdit={(data) => data.itemType === "loading"}
+            disableDrag={(data) => data.itemType === "loading" || data.itemType === "file"}
+            disableDrop={({ parentNode }) =>
+              parentNode.isRoot || parentNode.data.itemType !== "folder" || !parentNode.data.loaded
+            }
+          >
+            {Row}
+          </Tree>
+        </TreeActionsContext.Provider>
       </div>
     </>
   );
@@ -342,6 +372,7 @@ function icon(node: NodeRendererProps<TreeNode>["node"]): string {
 
 function Row({ node, style, dragHandle }: NodeRendererProps<TreeNode>) {
   const data = node.data;
+  const actions = useContext(TreeActionsContext);
 
   if (data.itemType === "loading") {
     return (
@@ -385,6 +416,19 @@ function Row({ node, style, dragHandle }: NodeRendererProps<TreeNode>) {
         >
           {data.name}
         </span>
+      )}
+      {data.itemType === "page" && (
+        <button
+          type="button"
+          className="tree-row-delete"
+          title="Unpublish this page (reversible -- stays in Cascade)"
+          onClick={(e) => {
+            e.stopPropagation();
+            actions?.onDelete(data);
+          }}
+        >
+          🗑
+        </button>
       )}
     </div>
   );

@@ -1,6 +1,7 @@
 import {
   createFolder,
   createPage,
+  deletePage,
   editPage,
   ensureBookNavPage,
   folderExists,
@@ -8,8 +9,10 @@ import {
   pageExists,
   publishAsset,
   publishPageAndArtifacts,
+  readFile,
   readFolder,
   readPage,
+  upsertFile,
   type AssetType,
   type CascadeConfig,
   type MetadataFields,
@@ -87,6 +90,38 @@ async function buildBookNav(config: CascadeConfig, bookPath: string): Promise<{ 
       tags: p.fields.tags,
     })),
   };
+}
+
+/**
+ * Image uploads only (editor-implementation-plan.md E3) -- maps a browser
+ * File's name/MIME type to the extension the asset is stored under in
+ * Cascade, and back again for GET /api/file's Content-Type. Keyed by
+ * extension (not MIME string) since that's what upsertFile's path needs;
+ * MIME is only consulted as a fallback when the filename has none.
+ */
+const IMAGE_EXTENSIONS: Record<string, string> = {
+  png: "image/png",
+  jpg: "image/jpeg",
+  jpeg: "image/jpeg",
+  gif: "image/gif",
+  webp: "image/webp",
+  svg: "image/svg+xml",
+};
+const MIME_TO_EXTENSION: Record<string, string> = Object.fromEntries(
+  Object.entries(IMAGE_EXTENSIONS).map(([ext, mime]) => [mime, ext]),
+);
+
+/** Extension for a newly uploaded image, or null if it's not one of IMAGE_EXTENSIONS. */
+function imageExtensionFor(fileName: string, mimeType: string): string | null {
+  const fromName = fileName.slice(fileName.lastIndexOf(".") + 1).toLowerCase();
+  if (fromName in IMAGE_EXTENSIONS) return fromName;
+  return MIME_TO_EXTENSION[mimeType] ?? null;
+}
+
+/** Content-Type for GET /api/file, from the stored asset's own extension. */
+function contentTypeForPath(path: string): string {
+  const ext = path.slice(path.lastIndexOf(".") + 1).toLowerCase();
+  return IMAGE_EXTENSIONS[ext] ?? "application/octet-stream";
 }
 
 /** Plain-text excerpt from canonical body HTML, mirroring _shared.vm's extractDocFields (strip tags, truncate to 200). */
@@ -182,6 +217,26 @@ async function handleApi(request: Request, env: WorkerEnv): Promise<Response> {
       return json({ pages: entries });
     }
 
+    if (request.method === "GET" && route === "file") {
+      const path = url.searchParams.get("path");
+      if (!path) {
+        return json({ error: "bad-request", message: "path query param is required" }, { status: 400 });
+      }
+      // Same-origin read proxy for images uploaded through E3 (see POST
+      // /api/upload below): the stored/published <img src> is a root-relative
+      // Cascade path, which is only reachable on the real public web server
+      // (its hostname isn't configured anywhere in this app -- see the
+      // buildBookNav comment above for the same constraint on nav.json). This
+      // route lets the editor's own preview -- BlockNote's resolveFileUrl and
+      // PageView's read-only render -- display the bytes right now, live from
+      // Cascade, instead of showing a broken image until the real site
+      // publishes. Access already gated this whole /api/* surface above.
+      const file = await readFile(config, path);
+      return new Response(file.data, {
+        headers: { "content-type": contentTypeForPath(path), "cache-control": "private, max-age=300" },
+      });
+    }
+
     if (request.method === "GET" && route === "page") {
       const path = url.searchParams.get("path");
       if (!path) {
@@ -256,6 +311,38 @@ async function handleApi(request: Request, env: WorkerEnv): Promise<Response> {
       return json({ path, version: result.version });
     }
 
+    if (request.method === "DELETE" && route === "page") {
+      const path = url.searchParams.get("path");
+      if (!path) {
+        return json({ error: "bad-request", message: "path query param is required" }, { status: 400 });
+      }
+
+      // Same ownership guard as PUT/move: never let the web UI touch a git-owned page.
+      const current = await readPage(config, path);
+      if (current.metadata.origin === "git") {
+        return json(
+          { error: "git-owned", repo: current.metadata.sourceRepoPath },
+          { status: 409 },
+        );
+      }
+
+      // Soft delete only (deletePage()'s default: unpublish, keep the Cascade
+      // asset -- reversible). The web UI never offers hard-delete (editor-
+      // implementation-plan.md section 10 item 4); that stays a git-path
+      // `delete: true` frontmatter affordance.
+      await deletePage(config, path);
+
+      // The page asset is now unpublished, but nav.json is a separate
+      // published artifact (nav-format.vm queries published pages at publish
+      // time) -- it won't drop the now-orphaned entry until republished.
+      const navPath = `docs/_system/nav/${bookSlugFromPath(path)}`;
+      if (await pageExists(config, navPath)) {
+        await publishAsset(config, "page", navPath);
+      }
+
+      return json({ ok: true, path });
+    }
+
     if (request.method === "POST" && route === "page") {
       const body = (await request.json()) as { parentPath?: unknown; title?: unknown; tags?: unknown };
       if (typeof body.parentPath !== "string" || typeof body.title !== "string" || body.title.trim() === "") {
@@ -318,6 +405,38 @@ async function handleApi(request: Request, env: WorkerEnv): Promise<Response> {
       }
 
       return json({ path });
+    }
+
+    if (request.method === "POST" && route === "upload") {
+      const form = await request.formData();
+      const file = form.get("file");
+      const pagePath = form.get("path");
+      if (!(file instanceof File) || typeof pagePath !== "string" || pagePath === "") {
+        return json(
+          { error: "bad-request", message: "multipart form with 'file' and 'path' (the page being edited) is required" },
+          { status: 400 },
+        );
+      }
+
+      const MAX_BYTES = 15 * 1024 * 1024;
+      if (file.size > MAX_BYTES) {
+        return json({ error: "bad-request", message: "Image exceeds the 15MB upload limit" }, { status: 400 });
+      }
+      const ext = imageExtensionFor(file.name, file.type);
+      if (!ext) {
+        return json({ error: "bad-request", message: "Only image uploads (png/jpg/gif/webp/svg) are supported" }, { status: 400 });
+      }
+
+      const uploadPath = `docs/uploads/${bookSlugFromPath(pagePath)}/${crypto.randomUUID()}.${ext}`;
+      const data = Buffer.from(await file.arrayBuffer());
+      await upsertFile(config, uploadPath, data);
+
+      // Root-relative, matching the Cascade path verbatim -- the same
+      // convention the git path and packages/runtime already rely on (nav.ts/
+      // search.ts build hrefs the same way). This is what gets stored in the
+      // page's bodyHtml; the editor's own live preview resolves it through
+      // GET /api/file instead (see DocEditor's resolveFileUrl/PageView).
+      return json({ path: uploadPath, url: `/${uploadPath}` });
     }
 
     if (request.method === "POST" && route === "page/move") {

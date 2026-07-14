@@ -46,6 +46,9 @@ export default function Home() {
             onPageMoved={(fromPath, toPath) => {
               setOpenPath((current) => (current === fromPath ? toPath : current));
             }}
+            onPageDeleted={(path) => {
+              setOpenPath((current) => (current === path ? null : current));
+            }}
           />
         }
         content={content}

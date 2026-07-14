@@ -463,6 +463,22 @@ button {
   border-radius: 4px;
   padding: 0.1rem 0.3rem;
 }
+.tree-row-delete {
+  margin-left: auto;
+  border: none;
+  background: none;
+  padding: 0 0.3rem;
+  font-size: 0.8rem;
+  line-height: 1;
+  opacity: 0;
+  cursor: pointer;
+}
+.tree-row:hover .tree-row-delete {
+  opacity: 0.6;
+}
+.tree-row-delete:hover {
+  opacity: 1 !important;
+}
 
 /* ---------- cmdk search palette ---------- */
 [cmdk-overlay] {

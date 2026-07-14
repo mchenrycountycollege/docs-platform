@@ -9,7 +9,9 @@ import { useEffect, useRef, useState } from "react";
 import {
   ApiUnauthorizedError,
   getPage,
+  imageDisplayUrl,
   savePage,
+  uploadImage,
   type PageResult,
   type SavePageConflict,
 } from "../../lib/api";
@@ -34,7 +36,19 @@ export interface DocEditorProps {
  * E2/E3 -- this component only edits an existing page's body.
  */
 export function DocEditor({ path, onSaved, onCancel }: DocEditorProps) {
-  const editor = useCreateBlockNote({ schema });
+  const editor = useCreateBlockNote({
+    schema,
+    // E3 image upload: stores the file under docs/uploads/<book>/... and
+    // returns the root-relative canonical path (same convention as the git
+    // path / packages/runtime), which is what ends up in the saved bodyHtml.
+    uploadFile: async (file) => (await uploadImage(file, path)).url,
+    // That canonical path only resolves on the real public web server (its
+    // hostname isn't wired into this app -- see worker.ts's GET /api/file
+    // comment), so display inside the editor goes through the same-origin
+    // proxy instead. Doesn't affect what gets saved -- blocksToFullHTML
+    // exports the block's stored url, not this resolved display url.
+    resolveFileUrl: async (url) => imageDisplayUrl(url),
+  });
 
   const [state, setState] = useState<LoadState>({ status: "loading" });
   const [conflict, setConflict] = useState<SavePageConflict | null>(null);

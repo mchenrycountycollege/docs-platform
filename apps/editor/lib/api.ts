@@ -246,6 +246,82 @@ export async function moveItem(input: MoveItemInput): Promise<MoveItemResult> {
   return { ok: false, kind: "error", message };
 }
 
+export type DeletePageResult =
+  | { ok: true }
+  | { ok: false; kind: "git-owned"; repo?: string }
+  | { ok: false; kind: "error"; message: string };
+
+/** Soft delete (orphan+unpublish) only -- the web UI never offers hard-delete (editor-implementation-plan.md E3). */
+export async function deletePage(path: string): Promise<DeletePageResult> {
+  const res = await fetch(`/api/page?path=${encodeURIComponent(path)}`, { method: "DELETE" });
+  if (res.status === 401) throw new ApiUnauthorizedError();
+  const data: unknown = await res.json();
+  if (res.ok) return { ok: true };
+  if (res.status === 409) {
+    const body = data as { error: string; repo?: string };
+    if (body.error === "git-owned") {
+      return { ok: false, kind: "git-owned", repo: body.repo };
+    }
+  }
+  const message =
+    data !== null && typeof data === "object" && "message" in data
+      ? String((data as { message: unknown }).message)
+      : `HTTP ${res.status}`;
+  return { ok: false, kind: "error", message };
+}
+
+/** Root-relative path (as stored/served) of the uploaded image; use imageDisplayUrl() to render it inside the editor app. */
+export interface UploadImageResult {
+  path: string;
+  url: string;
+}
+
+/** Uploads an image for the page at `pagePath` (used to derive the book it's filed under -- editor-implementation-plan.md E3). */
+export async function uploadImage(file: File, pagePath: string): Promise<UploadImageResult> {
+  const form = new FormData();
+  form.set("file", file);
+  form.set("path", pagePath);
+  const res = await fetch("/api/upload", { method: "POST", body: form });
+  if (res.status === 401) throw new ApiUnauthorizedError();
+  const data: unknown = await res.json();
+  if (!res.ok) {
+    const message =
+      data !== null && typeof data === "object" && "message" in data
+        ? String((data as { message: unknown }).message)
+        : `HTTP ${res.status}`;
+    throw new Error(message);
+  }
+  return data as UploadImageResult;
+}
+
+/**
+ * The stored/published <img src> is a root-relative Cascade path, only
+ * reachable on the real public web server (see worker.ts's GET /api/file
+ * comment). Inside this app -- BlockNote's resolveFileUrl and PageView's
+ * read-only render -- images must instead go through the same-origin proxy.
+ * Absolute/data/blob URLs (anything not root-relative) pass through
+ * unchanged -- they're already displayable as-is.
+ */
+export function imageDisplayUrl(src: string): string {
+  if (!src.startsWith("/")) return src;
+  return `/api/file?path=${encodeURIComponent(src.slice(1))}`;
+}
+
+/**
+ * Rewrites <img src> attributes in canonical bodyHtml through imageDisplayUrl()
+ * before handing it to dangerouslySetInnerHTML (PageView's read-only render --
+ * DocEditor's BlockNote view instead uses resolveFileUrl, see its
+ * useCreateBlockNote call). A regex over the already-normalizeHtml-sanitized
+ * string is sufficient here (consistent double-quoted attributes), rather
+ * than a DOM pass, since we're producing a string for dangerouslySetInnerHTML
+ * either way.
+ */
+export function withDisplayableImages(html: string): string {
+  return html.replace(/(<img\b[^>]*\bsrc=")([^"]*)(")/gi, (_match, pre: string, src: string, post: string) => {
+    return `${pre}${imageDisplayUrl(src)}${post}`;
+  });
+}
+
 export async function reorderItems(items: { path: string; type: "page" | "folder" }[]): Promise<void> {
   const res = await fetch("/api/page/reorder", {
     method: "POST",

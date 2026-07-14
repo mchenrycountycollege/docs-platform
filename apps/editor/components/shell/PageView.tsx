@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { DocEditor } from "../editor/DocEditor";
-import { ApiUnauthorizedError, getPage, reconcilePage, type PageResult } from "../../lib/api";
+import { ApiUnauthorizedError, getPage, reconcilePage, withDisplayableImages, type PageResult } from "../../lib/api";
 import { Toc } from "./Toc";
 
 type LoadState =
@@ -153,7 +153,7 @@ export function usePageView(path: string | null): { content: ReactNode; rail: Re
         </p>
       )}
 
-      <div className="docs-body" ref={bodyRef} dangerouslySetInnerHTML={{ __html: page.bodyHtml }} />
+      <div className="docs-body" ref={bodyRef} dangerouslySetInnerHTML={{ __html: withDisplayableImages(page.bodyHtml) }} />
     </article>
   );
 
