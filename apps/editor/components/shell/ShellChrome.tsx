@@ -1,7 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useTheme } from "./useTheme";
 
 /**
@@ -27,7 +27,16 @@ export function ShellChrome({
 }) {
   const [, toggleTheme] = useTheme();
   const [navOpen, setNavOpen] = useState(false);
-  const isMac = typeof navigator !== "undefined" && /Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent);
+  // Read navigator only after mount (matching useTheme's pattern above) --
+  // this is a "use client" component, but Next's static export still
+  // prerenders it to HTML at build time in Node, where navigator is either
+  // absent or doesn't match the visiting browser's. Branching on it directly
+  // in the render body bakes a value in that can disagree with the
+  // client-side render, tripping React's hydration-mismatch error (#418).
+  const [isMac, setIsMac] = useState(false);
+  useEffect(() => {
+    setIsMac(/Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent));
+  }, []);
 
   return (
     <div className={`shell${navOpen ? " nav-open" : ""}`}>
