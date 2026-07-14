@@ -217,11 +217,13 @@ export interface MoveItemInput {
   title?: string;
 }
 
-export type MoveItemResult =
-  | { ok: true; path: string }
-  | { ok: false; kind: "git-owned"; repo?: string }
-  | { ok: false; kind: "error"; message: string };
+export type MoveItemResult = { ok: true; path: string } | { ok: false; message: string };
 
+/**
+ * Moving/renaming a git-owned page takes it over (same as a content save --
+ * see worker.ts's `page/move` handler) rather than being refused, so this
+ * never returns a "git-owned" rejection the way deletePage does.
+ */
 export async function moveItem(input: MoveItemInput): Promise<MoveItemResult> {
   const res = await fetch("/api/page/move", {
     method: "POST",
@@ -233,17 +235,11 @@ export async function moveItem(input: MoveItemInput): Promise<MoveItemResult> {
   if (res.ok) {
     return { ok: true, path: (data as { path: string }).path };
   }
-  if (res.status === 409) {
-    const body = data as { error: string; repo?: string };
-    if (body.error === "git-owned") {
-      return { ok: false, kind: "git-owned", repo: body.repo };
-    }
-  }
   const message =
     data !== null && typeof data === "object" && "message" in data
       ? String((data as { message: unknown }).message)
       : `HTTP ${res.status}`;
-  return { ok: false, kind: "error", message };
+  return { ok: false, message };
 }
 
 export type DeletePageResult =

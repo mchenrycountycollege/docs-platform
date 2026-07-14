@@ -505,14 +505,10 @@ async function handleApi(request: Request, env: WorkerEnv): Promise<Response> {
       }
       const toPath = `${toParentPath}/${slug}`;
 
+      let takeover = false;
       if (type === "page") {
         const current = await readPage(config, fromPath);
-        if (current.metadata.origin === "git") {
-          return json(
-            { error: "git-owned", repo: current.metadata.sourceRepoPath },
-            { status: 409 },
-          );
-        }
+        takeover = current.metadata.origin === "git";
       }
 
       if (fromPath !== toPath) {
@@ -524,10 +520,21 @@ async function handleApi(request: Request, env: WorkerEnv): Promise<Response> {
         // changing); an inline rename sends the new human title alongside
         // the slugified newName so the DD's `title` field (and nav.json's
         // docTitle) stay in sync with what the tree now shows.
-        if (typeof body.title === "string" && body.title.trim() !== "") {
+        const wantsTitleUpdate = typeof body.title === "string" && body.title.trim() !== "";
+        if (wantsTitleUpdate || takeover) {
+          // Same ownership takeover as PUT /page (editor-implementation-plan.md
+          // section 3, extended): moving/renaming a git-owned page from the web
+          // UI takes it over too -- flips origin to "web" and drops
+          // sourceRepoPath, rather than refusing the move outright. Without this
+          // the next git publish would move it right back to its frontmatter
+          // path with no warning.
           const current = await readPage(config, toPath);
-          const fields: StructuredDataFields = { ...current.fields, title: body.title };
-          const metadata: MetadataFields = { ...current.metadata, authorEmail: email };
+          const fields: StructuredDataFields = wantsTitleUpdate
+            ? { ...current.fields, title: body.title as string }
+            : current.fields;
+          const metadata: MetadataFields = takeover
+            ? { ...current.metadata, origin: "web", sourceRepoPath: undefined, authorEmail: email }
+            : { ...current.metadata, authorEmail: email };
           await editPage(config, toPath, fields, metadata, current.version);
         }
         await publishPageAndArtifacts(config, toPath, bookSlugFromPath(toPath));

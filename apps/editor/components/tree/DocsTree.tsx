@@ -203,7 +203,7 @@ export function DocsTree({ onOpenPage, onPageMoved, onPageDeleted }: DocsTreePro
     if (node.itemType === "folder") {
       const result = await moveItem({ type: "folder", fromPath: node.path, toParentPath: parentPath, newName: trimmed });
       if (!result.ok) {
-        setError(result.kind === "git-owned" ? "That item can't be renamed here." : result.message);
+        setError(result.message);
         return;
       }
       await refreshFolder(parentPath);
@@ -216,11 +216,7 @@ export function DocsTree({ onOpenPage, onPageMoved, onPageDeleted }: DocsTreePro
         title: trimmed,
       });
       if (!result.ok) {
-        setError(
-          result.kind === "git-owned"
-            ? `This page is managed in ${result.repo ?? "a git repository"} and can't be renamed here.`
-            : result.message,
-        );
+        setError(result.message);
         return;
       }
       onPageMoved?.(node.path, result.path);
@@ -249,11 +245,7 @@ export function DocsTree({ onOpenPage, onPageMoved, onPageDeleted }: DocsTreePro
         newName: nameSegment(dragged.path),
       });
       if (!result.ok) {
-        setError(
-          result.kind === "git-owned"
-            ? `This page is managed in ${result.repo ?? "a git repository"} and can't be moved here.`
-            : result.message,
-        );
+        setError(result.message);
         await refreshFolder(srcParentPath); // resync -- the drag visually happened but the write didn't
         return;
       }
