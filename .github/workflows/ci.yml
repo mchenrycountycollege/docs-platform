@@ -23,7 +23,12 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          # pnpm@11.10.0 itself needs Node >=22.13 to run (it uses the
+          # node:sqlite builtin, added in 22.5 -- confirmed live: CI failed
+          # with ERR_UNKNOWN_BUILTIN_MODULE on Node 20). This is pnpm's own
+          # runtime requirement, separate from the app's `engines.node`
+          # (>=20) in the root package.json.
+          node-version: 22
           cache: pnpm
 
       - run: pnpm install --frozen-lockfile
