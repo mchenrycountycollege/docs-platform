@@ -1,7 +1,8 @@
 "use client";
 
-import type { ReactNode } from "react";
+import type { CSSProperties, ReactNode } from "react";
 import { useEffect, useState } from "react";
+import { useSidebarWidth } from "./useSidebarWidth";
 import { useTheme } from "./useTheme";
 
 /**
@@ -27,6 +28,26 @@ export function ShellChrome({
 }) {
   const [, toggleTheme] = useTheme();
   const [navOpen, setNavOpen] = useState(false);
+  const { width: sidebarWidth, onDragStart, onDragMove, onDragEnd } = useSidebarWidth();
+  const [resizing, setResizing] = useState(false);
+
+  useEffect(() => {
+    if (!resizing) return;
+    function handleMove(e: PointerEvent) {
+      onDragMove(e.clientX);
+    }
+    function handleUp() {
+      setResizing(false);
+      onDragEnd();
+    }
+    document.addEventListener("pointermove", handleMove);
+    document.addEventListener("pointerup", handleUp);
+    return () => {
+      document.removeEventListener("pointermove", handleMove);
+      document.removeEventListener("pointerup", handleUp);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [resizing]);
   // Read navigator only after mount (matching useTheme's pattern above) --
   // this is a "use client" component, but Next's static export still
   // prerenders it to HTML at build time in Node, where navigator is either
@@ -39,7 +60,10 @@ export function ShellChrome({
   }, []);
 
   return (
-    <div className={`shell${navOpen ? " nav-open" : ""}`}>
+    <div
+      className={`shell${navOpen ? " nav-open" : ""}`}
+      style={{ "--sidebar-width": `${sidebarWidth}px` } as CSSProperties}
+    >
       <header className="topbar">
         <button
           aria-expanded={navOpen}
@@ -86,6 +110,17 @@ export function ShellChrome({
       </header>
       <nav aria-label="Documentation navigation" className="sidebar">
         {sidebar}
+        <div
+          className={`sidebar-resize-handle${resizing ? " dragging" : ""}`}
+          role="separator"
+          aria-orientation="vertical"
+          aria-label="Resize navigation sidebar"
+          onPointerDown={(e) => {
+            e.preventDefault();
+            setResizing(true);
+            onDragStart(e.clientX);
+          }}
+        />
       </nav>
       <main className="content-col">{content}</main>
       {rail && <aside aria-label="Page information" className="rail">{rail}</aside>}

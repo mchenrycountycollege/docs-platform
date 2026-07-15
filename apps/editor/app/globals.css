@@ -39,12 +39,12 @@ button {
 /* ---------- shell ---------- */
 .shell {
   display: grid;
-  grid-template-columns: 280px minmax(0, 1fr);
+  grid-template-columns: var(--sidebar-width, 280px) minmax(0, 1fr);
   min-height: 100vh;
 }
 @media (min-width: 1180px) {
   .shell {
-    grid-template-columns: 280px minmax(0, 1fr) 240px;
+    grid-template-columns: var(--sidebar-width, 280px) minmax(0, 1fr) 240px;
   }
 }
 
@@ -159,6 +159,7 @@ button {
   border-right: 1px solid var(--border);
   background: var(--bg-sidebar);
   overflow-y: auto;
+  overflow-x: hidden;
   position: sticky;
   top: 53px;
   height: calc(100vh - 53px);
@@ -178,6 +179,45 @@ button {
   }
   .shell.nav-open .sidebar {
     transform: translateX(0);
+  }
+}
+
+/* Drag handle for resizing the sidebar -- a right-edge signifier instead of
+   letting long tree item names force a horizontal scrollbar (see
+   .tree-row-name below, which truncates instead). Desktop-grid only: the
+   sidebar is a fixed-width slide-in drawer below 861px, so there's nothing
+   to resize there. */
+.sidebar-resize-handle {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 8px;
+  height: 100%;
+  cursor: col-resize;
+  z-index: 26;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  touch-action: none;
+  background: transparent;
+}
+.sidebar-resize-handle::before {
+  content: "";
+  width: 3px;
+  height: 36px;
+  border-radius: 999px;
+  background: var(--border);
+  opacity: 0;
+  transition: opacity 120ms ease, background 120ms ease;
+}
+.sidebar-resize-handle:hover::before,
+.sidebar-resize-handle.dragging::before {
+  opacity: 1;
+  background: var(--accent);
+}
+@media (max-width: 860px) {
+  .sidebar-resize-handle {
+    display: none;
   }
 }
 .sidebar-actions {
@@ -208,6 +248,9 @@ button {
   flex: 1;
   min-height: 0;
   padding: 0 0.5rem 1rem;
+  /* Long book/page names truncate via .tree-row-name instead of widening
+     rows, so the virtualized list never needs its own horizontal scrollbar. */
+  overflow-x: hidden;
 }
 .sidebar-error {
   margin: 0 0.85rem 0.6rem;
@@ -440,6 +483,17 @@ button {
   padding: 0 0.4rem 0 0;
   font-size: 0.88rem;
   color: var(--text);
+  min-width: 0;
+}
+.tree-row > span:first-child {
+  flex-shrink: 0;
+}
+.tree-row-name {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
 }
 .tree-row:hover {
   background: var(--accent-soft);

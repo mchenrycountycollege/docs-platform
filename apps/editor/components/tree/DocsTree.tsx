@@ -401,6 +401,7 @@ function Row({ node, style, dragHandle }: NodeRendererProps<TreeNode>) {
         />
       ) : (
         <span
+          className="tree-row-name"
           onDoubleClick={(e) => {
             e.stopPropagation();
             if (node.isEditable) node.edit();
