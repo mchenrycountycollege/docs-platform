@@ -16,7 +16,11 @@
    Exception: --font-display / --font-body below are editor-only (Lexend),
    intentionally diverged from the docs-platform template's copy, which still
    uses Hepta Slab / Hanken Grotesk for the public site. Do not copy these two
-   lines back into the template -- only the color tokens above stay in sync. */
+   lines back into the template -- only the color tokens above stay in sync.
+   They resolve via var(--font-lexend), the CSS variable apps/editor/app/
+   layout.tsx's next/font/google Lexend load exposes on <html> -- Lexend
+   itself isn't declared here since this file has no self-hosted font to
+   point at outside that build-time transform. */
 
 :root {
   --bg: #f8f6fb;
@@ -37,8 +41,8 @@
   --shadow: 0 12px 32px -12px rgba(40, 7, 89, 0.22);
   --focus-ring: #47348b;
 
-  --font-display: "Lexend", -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
-  --font-body: "Lexend", -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+  --font-display: var(--font-lexend), -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+  --font-body: var(--font-lexend), -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
   --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
 }
 
