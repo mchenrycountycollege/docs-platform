@@ -2,6 +2,7 @@ import { buildTree, deriveBookSlug, fetchNav, renderBreadcrumb, renderSidebar } 
 import { initSearch } from "./search.js";
 import { initChrome } from "./chrome.js";
 import { initToc } from "./toc.js";
+import { initBionic } from "./bionic.js";
 import type { RuntimeConfig } from "./types.js";
 
 function readConfig(): RuntimeConfig | null {
@@ -53,6 +54,7 @@ function boot(): void {
 
   initSearch({ searchUrl: config.searchUrl });
   initToc();
+  initBionic();
 }
 
 if (document.readyState === "loading") {
