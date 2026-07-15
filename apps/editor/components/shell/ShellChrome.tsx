@@ -19,12 +19,16 @@ export function ShellChrome({
   content,
   rail,
   onOpenSearch,
+  bionicOn,
+  onToggleBionic,
 }: {
   breadcrumb: ReactNode;
   sidebar: ReactNode;
   content: ReactNode;
   rail?: ReactNode;
   onOpenSearch: () => void;
+  bionicOn: boolean;
+  onToggleBionic: () => void;
 }) {
   const [, toggleTheme] = useTheme();
   const [navOpen, setNavOpen] = useState(false);
@@ -95,6 +99,22 @@ export function ShellChrome({
           </svg>
           Search docs
           <kbd>{isMac ? "⌘K" : "Ctrl K"}</kbd>
+        </button>
+        <button
+          aria-label="Toggle bionic reading"
+          aria-pressed={bionicOn}
+          className="icon-btn"
+          type="button"
+          onClick={onToggleBionic}
+        >
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+            <text x="0" y="12" fontFamily="sans-serif" fontSize="11" fontWeight="700" fill="currentColor">
+              B
+            </text>
+            <text x="8" y="12" fontFamily="sans-serif" fontSize="11" fontWeight="400" fill="currentColor">
+              r
+            </text>
+          </svg>
         </button>
         <button aria-label="Toggle color theme" className="icon-btn" type="button" onClick={toggleTheme}>
           <svg width="16" height="16" viewBox="0 0 16 16" fill="none">

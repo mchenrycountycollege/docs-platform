@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { DocEditor } from "../editor/DocEditor";
 import { ApiUnauthorizedError, getPage, reconcilePage, withDisplayableImages, type PageResult } from "../../lib/api";
+import { applyBionic } from "./useBionic";
 import { Toc } from "./Toc";
 
 type LoadState =
@@ -33,12 +34,13 @@ const RECONCILE_DELAY_MS = 6000;
  * reader's layout) -- both slots share this one load/edit state, so this is
  * a hook rather than two components that would need to duplicate it.
  */
-export function usePageView(path: string | null): { content: ReactNode; rail: ReactNode | null } {
+export function usePageView(path: string | null, bionicOn: boolean): { content: ReactNode; rail: ReactNode | null } {
   const [state, setState] = useState<LoadState>({ status: "empty" });
   const [editing, setEditing] = useState(false);
   const bodyRef = useRef<HTMLDivElement>(null);
   const requestId = useRef(0);
   const reconcileTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const pristineBodyHtml = useRef<string | null>(null);
 
   useEffect(() => {
     if (reconcileTimer.current) clearTimeout(reconcileTimer.current);
@@ -69,6 +71,32 @@ export function usePageView(path: string | null): { content: ReactNode; rail: Re
       if (reconcileTimer.current) clearTimeout(reconcileTimer.current);
     };
   }, [path]);
+
+  // React only re-sets .docs-body's innerHTML via dangerouslySetInnerHTML
+  // when the bodyHtml string itself changes (new page, save, or reconcile) --
+  // that's a fresh, unbolded render we treat as the new pristine copy. A bare
+  // on/off toggle doesn't touch bodyHtml, so it can't rely on React to revert
+  // the DOM; the second effect below does that manually from the captured copy.
+  const currentBodyHtml = state.status === "ready" && !editing ? state.page.bodyHtml : null;
+
+  useEffect(() => {
+    const body = bodyRef.current;
+    if (!body || currentBodyHtml === null) return;
+    pristineBodyHtml.current = body.innerHTML;
+    if (bionicOn) applyBionic(body);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentBodyHtml]);
+
+  useEffect(() => {
+    const body = bodyRef.current;
+    if (!body || pristineBodyHtml.current === null) return;
+    if (bionicOn) {
+      applyBionic(body);
+    } else {
+      body.innerHTML = pristineBodyHtml.current;
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [bionicOn]);
 
   function handleSaved(saved: PageResult) {
     if (!path) return;

@@ -6,6 +6,7 @@ import { Breadcrumb } from "../components/shell/Breadcrumb";
 import { usePageView } from "../components/shell/PageView";
 import { SearchPalette } from "../components/shell/SearchPalette";
 import { ShellChrome } from "../components/shell/ShellChrome";
+import { useBionicPreference } from "../components/shell/useBionic";
 import { useBookNav } from "../components/shell/useBookNav";
 import { DocsTree } from "../components/tree/DocsTree";
 
@@ -34,12 +35,15 @@ export default function Home() {
 
   const bookSlug = openPath ? deriveBookSlug(openPath) : null;
   const { tree } = useBookNav(bookSlug);
-  const { content, rail } = usePageView(openPath);
+  const [bionicOn, toggleBionic] = useBionicPreference();
+  const { content, rail } = usePageView(openPath, bionicOn);
 
   return (
     <>
       <ShellChrome
         breadcrumb={<Breadcrumb tree={tree} currentPath={openPath} />}
+        bionicOn={bionicOn}
+        onToggleBionic={toggleBionic}
         sidebar={
           <DocsTree
             onOpenPage={setOpenPath}
