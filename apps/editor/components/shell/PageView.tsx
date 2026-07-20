@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { DocEditor } from "../editor/DocEditor";
 import { ApiUnauthorizedError, getPage, reconcilePage, withDisplayableImages, type PageResult } from "../../lib/api";
 import { applyBionic } from "./useBionic";
+import { BackToTop } from "./BackToTop";
 import { Toc } from "./Toc";
 
 type LoadState =
@@ -192,6 +193,7 @@ export function usePageView(path: string | null, bionicOn: boolean): { content: 
       )}
 
       <div className="docs-body" ref={bodyRef} dangerouslySetInnerHTML={bodyHtmlProp} />
+      <BackToTop />
     </article>
   );
 

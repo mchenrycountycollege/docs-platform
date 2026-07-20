@@ -473,6 +473,28 @@ button {
   border-left-color: var(--accent);
 }
 
+.back-to-top {
+  position: fixed;
+  right: 1.5rem;
+  bottom: 1.5rem;
+  z-index: 20;
+  width: 2.4rem;
+  height: 2.4rem;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--bg-raised);
+  color: var(--text-muted);
+  box-shadow: var(--shadow);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+.back-to-top:hover {
+  color: var(--accent);
+  border-color: var(--accent-soft-border);
+}
+
 /* ---------- react-arborist tree restyle ---------- */
 .tree-row {
   display: flex;
