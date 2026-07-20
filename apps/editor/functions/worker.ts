@@ -193,6 +193,10 @@ async function handleApi(request: Request, env: WorkerEnv): Promise<Response> {
     if (request.method === "GET" && route === "tree") {
       const path = url.searchParams.get("path") ?? "docs";
       const folder = await readFolder(config, path);
+      // docs/_system holds derived artifacts (nav, etc.) that the editor UI
+      // itself writes -- it's not real content, so keep it out of the tree
+      // the same way listAllPagePaths already does for search.
+      const visibleChildren = folder.children.filter((child) => child.path !== "docs/_system");
       // readFolder's own displayName is derived from the path segment (see
       // its comment in assets.ts) -- for pages, swap in the real DD `title`
       // so the tree shows what editors actually typed and an inline rename
@@ -201,7 +205,7 @@ async function handleApi(request: Request, env: WorkerEnv): Promise<Response> {
       // (lazy per-expand loading), so this stays cheap even though it's an
       // extra read per page.
       const children = await Promise.all(
-        folder.children.map(async (child) => {
+        visibleChildren.map(async (child) => {
           if (child.type !== "page") return child;
           // A page whose structured data doesn't match the current Documentation
           // Page DD (e.g. a stray/partial asset from a script or a manual edit)
