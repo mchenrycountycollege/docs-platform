@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { DocEditor } from "../editor/DocEditor";
 import { ApiUnauthorizedError, getPage, reconcilePage, withDisplayableImages, type PageResult } from "../../lib/api";
 import { applyBionic } from "./useBionic";
@@ -98,6 +98,17 @@ export function usePageView(path: string | null, bionicOn: boolean): { content: 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [bionicOn]);
 
+  // Must be referentially stable across renders that don't change the body
+  // itself (sidebar tree/breadcrumb/search updates, theme toggle, etc.) --
+  // React re-applies dangerouslySetInnerHTML whenever this object is a new
+  // reference, even if the string content is identical, which would blow
+  // away Toc's imperative heading.id assignments (and Bionic's <b>-wrapped
+  // text) on the very next unrelated re-render.
+  const bodyHtmlProp = useMemo(
+    () => ({ __html: withDisplayableImages(currentBodyHtml ?? "") }),
+    [currentBodyHtml],
+  );
+
   function handleSaved(saved: PageResult) {
     if (!path) return;
     // Instant half: show the just-authored copy immediately, no round trip.
@@ -180,7 +191,7 @@ export function usePageView(path: string | null, bionicOn: boolean): { content: 
         </p>
       )}
 
-      <div className="docs-body" ref={bodyRef} dangerouslySetInnerHTML={{ __html: withDisplayableImages(page.bodyHtml) }} />
+      <div className="docs-body" ref={bodyRef} dangerouslySetInnerHTML={bodyHtmlProp} />
     </article>
   );
 

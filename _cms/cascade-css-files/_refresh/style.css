@@ -6647,7 +6647,6 @@ p.adm-content {
 .left-sidebar .sidenav-bg {
   background: var(--white);
   padding: 0;
-  min-height: 297px;
 }
 .left-sidebar h2.sidenav-title {
   color: var(--purple-dark) !important;
@@ -7795,7 +7794,7 @@ h1.home-h1 {
   margin-bottom: 30px;
 }
 
-.onecol-content h1 {
+.onecol-content > h1 {
   line-height: 1.2;
   margin: 16px 0 10px;
   padding-left: 0.9375rem;
@@ -7804,6 +7803,10 @@ h1.home-h1 {
 .onecol-content p {
   color: #000000e6;
   /* font-size: 1.3em; */
+}
+.onecol-content article > section > p {
+  padding-left: 0.9375rem;
+  padding-right: 0.9375rem;
 }
 .onecol-content a.register {
   color: var(--purple-primary);
@@ -8873,7 +8876,7 @@ iframe {
     font-size: 1em;
   }
   .onecol-content p,
-  .onecol-content h1 {
+  .onecol-content > h1 {
     padding-right: 40px;
   }
   .orbit-caption {
@@ -9640,6 +9643,7 @@ iframe {
 }
 nav.breadcrumb {
   margin-left: 20px;
+  width: 100%;
 }
 .breadcrumb {
   margin-bottom: 15px;
@@ -15881,4 +15885,20 @@ p.center {
     margin: 6px;
     background-color: #cacaca;
     border-radius: 50%;
+}
+
+/* Divider lines between sidebar-detail sections (Details/Contact/Share/Save) on the
+   events page — refresh preview only. hh-events.css sets margin-bottom: 20px on these
+   rows for production too, so this stays here rather than in hh-events.css. */
+.hh-events .sidebar-detail .row {
+  margin-bottom: 0;
+  padding-bottom: 1.25rem;
+  border-bottom: var(--border-width) solid var(--gray-light);
+}
+.hh-events .sidebar-detail .row + .row {
+  margin-top: 1.25rem;
+}
+.hh-events .sidebar-detail .row:last-child {
+  border-bottom: 0;
+  padding-bottom: 0;
 }
