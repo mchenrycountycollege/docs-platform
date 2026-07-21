@@ -184,20 +184,26 @@ button {
 
 /* Drag handle for resizing the sidebar -- a right-edge signifier instead of
    letting long tree item names force a horizontal scrollbar (see
-   .tree-row-name below, which truncates instead). Straddles the sidebar's
-   border evenly (right: -8px, width: 16px) so the hit target isn't limited
-   to the 1px border line itself, and the grip glyph stays visible at rest
-   rather than only appearing on hover, so the affordance is discoverable
-   without having to stumble onto it. Desktop-grid only: the sidebar is a
-   fixed-width slide-in drawer below 861px, so there's nothing to resize
-   there. */
+   .tree-row-name below, which truncates instead). A sibling of .sidebar
+   rather than a child of it, and positioned `fixed` rather than `absolute`
+   relative to it: .sidebar has overflow-x: hidden (see above), which would
+   clip the right half of the grip glyph since it's meant to straddle the
+   column border evenly, half in the sidebar and half over the content
+   column. `left: var(--sidebar-width)` (set inline on .shell) plus
+   `translateX(-50%)` centers it exactly on that border regardless of the
+   current width, and `top`/`height` mirror .sidebar's own sticky offset so
+   it lines up with the sidebar's visible bounds. The glyph stays visible at
+   rest rather than only appearing on hover, so the affordance is
+   discoverable without having to stumble onto it. Desktop-grid only: the
+   sidebar is a fixed-width slide-in drawer below 861px, so there's nothing
+   to resize there. */
 .sidebar-resize-handle {
-  position: absolute;
-  top: 50%;
-  right: -8px;
+  position: fixed;
+  top: 53px;
+  left: var(--sidebar-width, 280px);
+  height: calc(100vh - 53px);
   width: 16px;
-  height: 48px;
-  transform: translateY(-50%);
+  transform: translateX(-50%);
   cursor: col-resize;
   z-index: 26;
   display: flex;
