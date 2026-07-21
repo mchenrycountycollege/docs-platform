@@ -31,9 +31,9 @@ export interface DocEditorProps {
 /**
  * BlockNote wrapper for editing a single docs page (editor-implementation-plan.md
  * sub-phase E1). Handles: loading canonical HTML into blocks, save with
- * server-authoritative normalize + optimistic-concurrency conflicts, and the
- * git-owned read-only banner. Structure ops (create/rename/move/delete) are
- * E2/E3 -- this component only edits an existing page's body.
+ * server-authoritative normalize + optimistic-concurrency conflicts.
+ * Structure ops (create/rename/move/delete) are E2/E3 -- this component only
+ * edits an existing page's body.
  */
 export function DocEditor({ path, onSaved, onCancel }: DocEditorProps) {
   const editor = useCreateBlockNote({
@@ -96,8 +96,8 @@ export function DocEditor({ path, onSaved, onCancel }: DocEditorProps) {
       const result = await savePage({ path, bodyHtml, expectedVersion: state.page.version });
       if (result.ok) {
         // The proxy takes ownership on every web save (see worker.ts's PUT
-        // /page handler) -- mirror that here so a git-owned page's badge
-        // flips immediately instead of waiting on PageView's reconcile
+        // /page handler) -- mirror that here so the rail's source-file box
+        // clears immediately instead of waiting on PageView's reconcile
         // fetch, which only diffs bodyHtml/version and would miss this.
         const saved: PageResult = {
           ...state.page,
@@ -141,17 +141,9 @@ export function DocEditor({ path, onSaved, onCancel }: DocEditorProps) {
   }
 
   const { page } = state;
-  const isGitOwned = page.origin === "git";
 
   return (
     <article className="content">
-      {isGitOwned && (
-        <p className="banner banner-git">
-          Currently managed in <code>{page.sourceRepoPath ?? "a git repository"}</code>. Saving here takes ownership
-          from git — the next publish of that source file will be rejected until it sets <code>takeover: true</code>.
-        </p>
-      )}
-
       {conflict && (
         <div className="banner banner-warn">
           <p style={{ margin: "0 0 0.5rem" }}>

@@ -157,7 +157,6 @@ export function usePageView(path: string | null, bionicOn: boolean): { content: 
   }
 
   const { page } = state;
-  const isGitOwned = page.origin === "git";
 
   if (editing) {
     return {
@@ -184,14 +183,6 @@ export function usePageView(path: string | null, bionicOn: boolean): { content: 
         </button>
       </header>
 
-      {isGitOwned && (
-        <p className="banner banner-git">
-          Currently managed in <code>{page.sourceRepoPath ?? "a git repository"}</code>. Saving a change here takes
-          ownership from git — the next publish of that source file will be rejected until it sets{" "}
-          <code>takeover: true</code>.
-        </p>
-      )}
-
       <div className="docs-body" ref={bodyRef} dangerouslySetInnerHTML={bodyHtmlProp} />
       <BackToTop />
     </article>
@@ -199,20 +190,12 @@ export function usePageView(path: string | null, bionicOn: boolean): { content: 
 
   const rail = (
     <>
-      <div className="rail-box">
-        <p className="rail-label">Page info</p>
-        {isGitOwned ? (
-          <span className="origin-badge">
-            <svg width="11" height="11" viewBox="0 0 11 11" fill="none">
-              <path d="M5.5 1v9M1 5.5h9" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
-            </svg>
-            Published via git
-          </span>
-        ) : (
-          <span className="source-path">Edited in this app</span>
-        )}
-        {page.sourceRepoPath && <span className="source-path">{page.sourceRepoPath}</span>}
-      </div>
+      {page.sourceRepoPath && (
+        <div className="rail-box">
+          <p className="rail-label">Source file</p>
+          <span className="source-path">{page.sourceRepoPath}</span>
+        </div>
+      )}
       <Toc containerRef={bodyRef} bodyHtml={page.bodyHtml} />
     </>
   );

@@ -25,7 +25,6 @@
 ## Provenance metadata (docId/origin/sourceRepoPath/editorName/authorEmail)
 ## lives in the Metadata Set, same wrapper family the Query API results in
 ## _shared.vm's extractDocFields already read via .metadata.getDynamicField.
-#set($origin = $currentPage.metadata.getDynamicField("origin").value)
 #set($sourceRepoPathNode = $currentPage.metadata.getDynamicField("sourceRepoPath"))
 #set($sourceRepoPath = $sourceRepoPathNode.value)
 
@@ -50,18 +49,12 @@
     </article>
 </main>
 <aside aria-label="Page information" class="rail" id="docs-rail">
+    #if($sourceRepoPath && $sourceRepoPath.length() > 0)
     <div class="rail-box">
-        <p class="rail-label">Page info</p>
-        #if($origin == "git")
-        <span class="origin-badge">
-            <svg width="11" height="11" viewBox="0 0 11 11" fill="none"><path d="M5.5 1v9M1 5.5h9" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
-            Published via git
-        </span>
-        #end
-        #if($sourceRepoPath && $sourceRepoPath.length() > 0)
+        <p class="rail-label">Source file</p>
         <span class="source-path">$_EscapeTool.xml($sourceRepoPath)</span>
-        #end
     </div>
+    #end
     <div class="rail-box" id="page-toc-box" style="display: none;">
         <p class="rail-label">On this page</p>
         <ul class="toc-list" id="page-toc"></ul>
