@@ -519,7 +519,7 @@ button {
   font-size: 0.82rem;
   font-weight: 600;
   letter-spacing: 0.02em;
-  text-transform: uppercase;
+  text-transform: capitalize;
   color: var(--text-muted);
 }
 .tree-row input {
