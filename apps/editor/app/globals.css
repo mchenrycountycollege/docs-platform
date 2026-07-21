@@ -184,15 +184,20 @@ button {
 
 /* Drag handle for resizing the sidebar -- a right-edge signifier instead of
    letting long tree item names force a horizontal scrollbar (see
-   .tree-row-name below, which truncates instead). Desktop-grid only: the
-   sidebar is a fixed-width slide-in drawer below 861px, so there's nothing
-   to resize there. */
+   .tree-row-name below, which truncates instead). Straddles the sidebar's
+   border evenly (right: -8px, width: 16px) so the hit target isn't limited
+   to the 1px border line itself, and the grip glyph stays visible at rest
+   rather than only appearing on hover, so the affordance is discoverable
+   without having to stumble onto it. Desktop-grid only: the sidebar is a
+   fixed-width slide-in drawer below 861px, so there's nothing to resize
+   there. */
 .sidebar-resize-handle {
   position: absolute;
-  top: 0;
-  right: 0;
-  width: 8px;
-  height: 100%;
+  top: 50%;
+  right: -8px;
+  width: 16px;
+  height: 48px;
+  transform: translateY(-50%);
   cursor: col-resize;
   z-index: 26;
   display: flex;
@@ -200,20 +205,15 @@ button {
   justify-content: center;
   touch-action: none;
   background: transparent;
+  color: var(--text-muted);
+  transition: color 120ms ease;
 }
-.sidebar-resize-handle::before {
-  content: "";
-  width: 3px;
-  height: 36px;
-  border-radius: 999px;
-  background: var(--border);
-  opacity: 0;
-  transition: opacity 120ms ease, background 120ms ease;
+.sidebar-resize-grip-body {
+  fill: var(--bg-raised);
 }
-.sidebar-resize-handle:hover::before,
-.sidebar-resize-handle.dragging::before {
-  opacity: 1;
-  background: var(--accent);
+.sidebar-resize-handle:hover,
+.sidebar-resize-handle.dragging {
+  color: var(--accent);
 }
 @media (max-width: 860px) {
   .sidebar-resize-handle {

@@ -140,7 +140,12 @@ export function ShellChrome({
             setResizing(true);
             onDragStart(e.clientX);
           }}
-        />
+        >
+          <svg width="12" height="34" viewBox="0 0 12 34" fill="none" aria-hidden="true">
+            <rect x="0.75" y="0.75" width="10.5" height="32.5" rx="5.25" className="sidebar-resize-grip-body" stroke="currentColor" strokeWidth="1" />
+            <path d="M4 13.5h4M4 17h4M4 20.5h4" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
+          </svg>
+        </div>
       </nav>
       <main className="content-col">{content}</main>
       {rail && <aside aria-label="Page information" className="rail">{rail}</aside>}
