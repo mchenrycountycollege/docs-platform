@@ -330,6 +330,12 @@ a { color: var(--accent); }
   padding: 2.25rem 1.5rem 3rem;
   border-left: 1px solid var(--border);
   display: none;
+  /* Same sticky treatment as .sidebar: pinned below the 53px topbar, with
+     its own scrollbar if the ToC outgrows the viewport. */
+  position: sticky;
+  top: 53px;
+  height: calc(100vh - 53px);
+  overflow-y: auto;
 }
 @media (min-width: 1180px) { .rail { display: block; } }
 .rail-box {
