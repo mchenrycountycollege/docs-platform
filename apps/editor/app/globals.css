@@ -63,7 +63,7 @@ button {
 }
 .brand {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   gap: 0.4rem;
   font-family: var(--font-display);
   font-size: 1.15rem;
@@ -73,6 +73,12 @@ button {
 }
 .brand strong {
   font-weight: 700;
+}
+/* Served at 2x its display size so it stays crisp on retina screens. */
+.brand-logo {
+  display: block;
+  height: 30px;
+  width: auto;
 }
 .brand span {
   color: var(--text-muted);
@@ -658,11 +664,12 @@ button {
   border-radius: 12px;
   box-shadow: var(--shadow);
 }
-.login-wordmark {
-  font-family: var(--font-display);
-  font-size: 1.35rem;
-  font-weight: 700;
-  color: var(--text);
+/* Served at 2x its display size so it stays crisp on retina screens. */
+.login-logo {
+  display: block;
+  width: 210px;
+  height: auto;
+  margin: 0 auto 0.25rem;
 }
 .login-hint {
   margin: 0;

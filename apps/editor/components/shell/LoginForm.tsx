@@ -45,7 +45,8 @@ export function LoginForm({ onLoggedIn }: { onLoggedIn: (me: Me) => void }) {
   return (
     <div className="login-screen">
       <form className="login-card" onSubmit={handleSubmit}>
-        <div className="login-wordmark">MACS Docs</div>
+        {/* eslint-disable-next-line @next/next/no-img-element -- static export, no image optimizer */}
+        <img className="login-logo" src="/macs-docs-logo.png" alt="MACS Docs" width="560" height="623" />
         <p className="login-hint">Sign in with your Cascade CMS username and password.</p>
         <label className="login-field">
           <span>Username</span>
