@@ -95,6 +95,25 @@ button {
 .icon-btn:hover {
   color: var(--text);
 }
+.topbar-user {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-shrink: 0;
+}
+.topbar-username {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  max-width: 9rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+@media (max-width: 640px) {
+  .topbar-username {
+    display: none;
+  }
+}
 .menu-toggle {
   display: none;
 }
@@ -434,6 +453,13 @@ button {
   letter-spacing: 0.06em;
   color: var(--text-muted);
   margin: 0 0 0.55rem;
+}
+.rail-author {
+  display: block;
+  font-size: 0.8rem;
+  color: var(--text);
+  word-break: break-word;
+  line-height: 1.5;
 }
 .source-path {
   display: block;

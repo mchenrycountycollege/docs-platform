@@ -21,6 +21,8 @@ export function ShellChrome({
   onOpenSearch,
   bionicOn,
   onToggleBionic,
+  username,
+  onSignOut,
 }: {
   breadcrumb: ReactNode;
   sidebar: ReactNode;
@@ -29,6 +31,9 @@ export function ShellChrome({
   onOpenSearch: () => void;
   bionicOn: boolean;
   onToggleBionic: () => void;
+  /** Signed-in Cascade username; absent while the /api/me probe hasn't resolved. */
+  username?: string;
+  onSignOut: () => void;
 }) {
   const [, toggleTheme] = useTheme();
   const [navOpen, setNavOpen] = useState(false);
@@ -127,6 +132,26 @@ export function ShellChrome({
             <circle cx="8" cy="8" r="3.1" stroke="currentColor" strokeWidth="1.3" />
           </svg>
         </button>
+        <div className="topbar-user">
+          {username && <span className="topbar-username">{username}</span>}
+          <button
+            aria-label="Sign out"
+            className="icon-btn"
+            title={username ? `Sign out (${username})` : "Sign out"}
+            type="button"
+            onClick={onSignOut}
+          >
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+              <path
+                d="M6.5 2H3.5v12h3M10.5 11.2L13.7 8l-3.2-3.2M13.4 8H6.2"
+                stroke="currentColor"
+                strokeWidth="1.4"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+          </button>
+        </div>
       </header>
       <nav aria-label="Documentation navigation" className="sidebar">
         {sidebar}

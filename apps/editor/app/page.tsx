@@ -2,7 +2,7 @@
 
 import { deriveBookSlug } from "@docs-platform/doc-shell";
 import { useEffect, useState } from "react";
-import { setOnUnauthorized, whoAmI, type Me } from "../lib/api";
+import { logout, setOnUnauthorized, whoAmI, type Me } from "../lib/api";
 import { Breadcrumb } from "../components/shell/Breadcrumb";
 import { LoginForm } from "../components/shell/LoginForm";
 import { usePageView } from "../components/shell/PageView";
@@ -27,13 +27,29 @@ export default function Home() {
   // another tab) flip the whole shell back to the login form. "checking"
   // renders nothing rather than flashing the form at signed-in users.
   const [auth, setAuth] = useState<"checking" | "in" | "out">("checking");
+  const [me, setMe] = useState<Me | null>(null);
   useEffect(() => {
     setOnUnauthorized(() => setAuth("out"));
     whoAmI()
-      .then((me: Me | null) => setAuth(me ? "in" : "out"))
+      .then((who: Me | null) => {
+        setMe(who);
+        setAuth(who ? "in" : "out");
+      })
       .catch(() => setAuth("out"));
     return () => setOnUnauthorized(null);
   }, []);
+
+  async function handleSignOut() {
+    // Clear local state even if the network call fails -- the cookie clear is
+    // best-effort, and the login form is the right place to land either way.
+    try {
+      await logout();
+    } finally {
+      setMe(null);
+      setOpenPath(null);
+      setAuth("out");
+    }
+  }
 
   useEffect(() => {
     function onKeyDown(e: KeyboardEvent) {
@@ -57,7 +73,16 @@ export default function Home() {
   const { content, rail } = usePageView(auth === "in" ? openPath : null, bionicOn);
 
   if (auth === "checking") return null;
-  if (auth === "out") return <LoginForm onLoggedIn={() => setAuth("in")} />;
+  if (auth === "out") {
+    return (
+      <LoginForm
+        onLoggedIn={(who) => {
+          setMe(who);
+          setAuth("in");
+        }}
+      />
+    );
+  }
 
   return (
     <>
@@ -65,6 +90,8 @@ export default function Home() {
         breadcrumb={<Breadcrumb tree={tree} currentPath={openPath} />}
         bionicOn={bionicOn}
         onToggleBionic={toggleBionic}
+        username={me?.username}
+        onSignOut={() => void handleSignOut()}
         sidebar={
           <DocsTree
             onOpenPage={setOpenPath}

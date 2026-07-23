@@ -125,7 +125,13 @@ export function usePageView(path: string | null, bionicOn: boolean): { content: 
         .then((stored) => {
           setState((current) => {
             if (current.status !== "ready" || current.page.path !== path) return current;
-            return stored.bodyHtml === current.page.bodyHtml && stored.version === current.page.version
+            // authorEmail is part of the comparison because the optimistic
+            // copy carries the *previous* editor's attribution (DocEditor
+            // spreads the pre-save page) -- without it, a save whose HTML
+            // round-trips unchanged would leave the stale byline on screen.
+            return stored.bodyHtml === current.page.bodyHtml &&
+              stored.version === current.page.version &&
+              stored.authorEmail === current.page.authorEmail
               ? current
               : { status: "ready", page: stored };
           });
@@ -188,12 +194,23 @@ export function usePageView(path: string | null, bionicOn: boolean): { content: 
     </article>
   );
 
+  // Both write paths stamp authorEmail (web: session username-or-email, git:
+  // commit author); editorName is a legacy field only the Phase-0 smoke
+  // script ever set, kept as a fallback for those early assets.
+  const lastEditedBy = page.authorEmail ?? page.editorName;
+
   const rail = (
     <>
       {page.sourceRepoPath && (
         <div className="rail-box">
           <p className="rail-label">Source file</p>
           <span className="source-path">{page.sourceRepoPath}</span>
+        </div>
+      )}
+      {lastEditedBy && (
+        <div className="rail-box">
+          <p className="rail-label">Last edited by</p>
+          <span className="rail-author">{lastEditedBy}</span>
         </div>
       )}
       <Toc containerRef={bodyRef} bodyHtml={page.bodyHtml} />
