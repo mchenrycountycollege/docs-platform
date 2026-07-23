@@ -1,6 +1,6 @@
 import { parseFrontmatter, type ParsedDoc } from "@docs-platform/doc-core";
 import { deletePage, type CascadeConfig } from "@docs-platform/cascade-client";
-import { readManifest, removeManifestEntry } from "./manifest.js";
+import { readManifest, removeManifestEntry } from "@docs-platform/cascade-client";
 
 export interface ArchiveInput {
   /** Content of the file at the `before` SHA (recovered via `git show`), since the file no longer exists on disk. */

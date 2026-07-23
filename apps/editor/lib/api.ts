@@ -171,6 +171,11 @@ export function getSearchIndex(): Promise<SearchEntry[]> {
   return searchIndexPromise;
 }
 
+/** Drop the cached search index (after a delete) so the palette re-fetches instead of offering dead pages until reload. */
+export function invalidateSearchIndex(): void {
+  searchIndexPromise = null;
+}
+
 async function putPageFields(input: {
   path: string;
   expectedVersion: string;
@@ -306,7 +311,7 @@ export type DeletePageResult =
   | { ok: false; kind: "git-owned"; repo?: string }
   | { ok: false; kind: "error"; message: string };
 
-/** Soft delete (orphan+unpublish) only -- the web UI never offers hard-delete (editor-implementation-plan.md E3). */
+/** Hard delete: the page moves to Cascade's Trash and comes off the published site (editor-implementation-plan.md E3, revised 2026-07-23). */
 export async function deletePage(path: string): Promise<DeletePageResult> {
   const res = await fetch(`/api/page?path=${encodeURIComponent(path)}`, { method: "DELETE" });
   if (res.status === 401) throw unauthorized();
@@ -316,6 +321,50 @@ export async function deletePage(path: string): Promise<DeletePageResult> {
     const body = data as { error: string; repo?: string };
     if (body.error === "git-owned") {
       return { ok: false, kind: "git-owned", repo: body.repo };
+    }
+  }
+  const message =
+    data !== null && typeof data === "object" && "message" in data
+      ? String((data as { message: unknown }).message)
+      : `HTTP ${res.status}`;
+  return { ok: false, kind: "error", message };
+}
+
+/**
+ * Counts (and git-ownership) for the whole subtree under a folder, fetched
+ * before the delete confirm dialog -- the tree's own children can't supply
+ * this (it lazy-loads one folder per expand, so collapsed subtrees are
+ * unknown client-side). Advisory only: DELETE /api/folder re-checks
+ * server-side.
+ */
+export interface FolderDeletePreflight {
+  pages: number;
+  chapters: number;
+  files: number;
+  gitOwned: { count: number; examplePath: string; repo?: string } | null;
+}
+
+export function getFolderDeletePreflight(path: string): Promise<FolderDeletePreflight> {
+  return getJson<FolderDeletePreflight>(`/api/folder/delete-preflight?path=${encodeURIComponent(path)}`);
+}
+
+export type DeleteFolderResult =
+  | { ok: true; deletedPages: number }
+  | { ok: false; kind: "git-owned"; count: number; examplePath?: string; repo?: string }
+  | { ok: false; kind: "error"; message: string };
+
+/** Recursive hard delete of a chapter or book: the whole subtree moves to Cascade's Trash and comes off the published site. */
+export async function deleteFolder(path: string): Promise<DeleteFolderResult> {
+  const res = await fetch(`/api/folder?path=${encodeURIComponent(path)}`, { method: "DELETE" });
+  if (res.status === 401) throw unauthorized();
+  const data: unknown = await res.json();
+  if (res.ok) {
+    return { ok: true, deletedPages: (data as { deletedPages?: number }).deletedPages ?? 0 };
+  }
+  if (res.status === 409) {
+    const body = data as { error: string; count?: number; examplePath?: string; repo?: string };
+    if (body.error === "git-owned") {
+      return { ok: false, kind: "git-owned", count: body.count ?? 1, examplePath: body.examplePath, repo: body.repo };
     }
   }
   const message =

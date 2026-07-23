@@ -1,17 +1,23 @@
 import {
   createFolder,
   createPage,
+  deleteFolder,
   deletePage,
   editPage,
   ensureBookNavPage,
   folderExists,
+  MalformedPageError,
   moveAsset,
   pageExists,
   publishAsset,
+  publishBookArtifacts,
+  publishGlobalArtifacts,
   publishPageAndArtifacts,
   readFile,
   readFolder,
   readPage,
+  removeManifestEntries,
+  removeManifestEntry,
   upsertFile,
   type AssetType,
   type CascadeConfig,
@@ -160,6 +166,130 @@ async function listAllPagePaths(config: CascadeConfig): Promise<string[]> {
   const books = root.children.filter((c) => c.type === "folder" && c.path !== "docs/_system");
   const perBook = await Promise.all(books.map((b) => listBookChildren(config, b.path)));
   return perBook.flatMap((b) => b.pagePaths);
+}
+
+/**
+ * Why a folder delete can't just be forwarded to Cascade blindly: the confirm
+ * dialog needs child counts the tree doesn't have (it lazy-loads one folder
+ * per expand), and the git-owned guard has to consider every descendant page,
+ * not the folder asset itself (folders carry no origin metadata). Both the
+ * GET preflight route and DELETE /api/folder run this same walk -- the GET is
+ * only advisory for the dialog; the DELETE re-checks authoritatively.
+ */
+interface FolderDeletePreflight {
+  /** Descendant pages (malformed ones included -- they die with the folder too). */
+  pages: number;
+  /** Descendant folders (chapters when deleting a book). */
+  chapters: number;
+  /** Descendant file attachments. */
+  files: number;
+  /** docIds of every readable descendant page, for manifest cleanup after the delete. */
+  docIds: string[];
+  /** Every descendant page path -- waitForPagesGone() polls these after the delete (never returned to the client). */
+  pagePaths: string[];
+  /** Set when any descendant page is git-owned -- blocks the delete with a 409. */
+  gitOwned: { count: number; examplePath: string; repo?: string } | null;
+}
+
+async function listDescendants(
+  config: CascadeConfig,
+  folderPath: string,
+): Promise<{ pagePaths: string[]; folderPaths: string[]; filePaths: string[] }> {
+  const folder = await readFolder(config, folderPath);
+  const pagePaths: string[] = [];
+  const folderPaths: string[] = [];
+  const filePaths: string[] = [];
+  // Docs are two levels deep in practice (see buildBookNav's comment), but
+  // walk unbounded rather than hard-coding that.
+  await Promise.all(
+    folder.children.map(async (child) => {
+      if (child.type === "folder") {
+        folderPaths.push(child.path);
+        const nested = await listDescendants(config, child.path);
+        pagePaths.push(...nested.pagePaths);
+        folderPaths.push(...nested.folderPaths);
+        filePaths.push(...nested.filePaths);
+      } else if (child.type === "page") {
+        pagePaths.push(child.path);
+      } else {
+        filePaths.push(child.path);
+      }
+    }),
+  );
+  return { pagePaths, folderPaths, filePaths };
+}
+
+async function folderDeletePreflight(config: CascadeConfig, folderPath: string): Promise<FolderDeletePreflight> {
+  const { pagePaths, folderPaths, filePaths } = await listDescendants(config, folderPath);
+  const pages = await Promise.all(
+    pagePaths.map(async (p) => {
+      try {
+        return await readPage(config, p);
+      } catch (err) {
+        // A page whose stored data no longer matches the current DD can't be
+        // *read*, but it deletes with the folder just fine -- count it as a
+        // deletable web-owned page (no docId to clean up) instead of letting
+        // one broken asset block the whole folder.
+        if (err instanceof MalformedPageError) {
+          console.warn(`[api] folder delete: treating malformed page ${p} as web-owned`);
+          return null;
+        }
+        throw err;
+      }
+    }),
+  );
+
+  const docIds: string[] = [];
+  let gitOwned: FolderDeletePreflight["gitOwned"] = null;
+  for (const page of pages) {
+    if (!page) continue;
+    if (page.metadata.docId) docIds.push(page.metadata.docId);
+    if (page.metadata.origin === "git") {
+      gitOwned ??= { count: 0, examplePath: page.path, repo: page.metadata.sourceRepoPath };
+      gitOwned.count++;
+    }
+  }
+  return { pages: pagePaths.length, chapters: folderPaths.length, files: filePaths.length, docIds, pagePaths, gitOwned };
+}
+
+/**
+ * Confirmed against a live instance: folder delete removes the whole subtree
+ * in one call, but *descendants* disappear asynchronously -- the folder
+ * itself is gone immediately while its pages still read back for a few
+ * seconds afterward. Republishing nav/search-index in that window would bake
+ * the doomed pages right back into the artifacts (their Formats query live
+ * state at publish time), so wait -- bounded -- for the descendants to
+ * actually vanish before republishing.
+ */
+async function waitForPagesGone(config: CascadeConfig, pagePaths: string[]): Promise<void> {
+  for (let attempt = 0; attempt < 8; attempt++) {
+    const exists = await Promise.all(pagePaths.map((p) => pageExists(config, p)));
+    if (!exists.some(Boolean)) return;
+    await new Promise((resolve) => setTimeout(resolve, 1500));
+  }
+  console.warn(
+    "[api] folder delete: descendants still readable after waiting; derived artifacts may briefly list deleted pages",
+  );
+}
+
+/**
+ * Paths a folder delete must refuse even though the tree never offers them
+ * (nothing stops a direct API call): the docs root, the derived-artifact
+ * area, and the shared uploads root. Per-book docs/uploads/<slug> stays
+ * deletable -- it dies automatically with its book below.
+ */
+function folderDeletePathError(path: string): string | null {
+  const segments = path.split("/").filter(Boolean);
+  if (segments[0] !== "docs" || segments.length < 2) {
+    return "only folders under docs/ can be deleted";
+  }
+  if (segments[1] === "_system") {
+    return "docs/_system holds derived artifacts, not deletable content";
+  }
+  if (segments.length === 2 && segments[1] === "uploads") {
+    return "docs/uploads is the shared image area; a book's own uploads are removed when the book is deleted";
+  }
+  return null;
 }
 
 /**
@@ -437,19 +567,22 @@ async function handleAuthedApi(request: Request, env: WorkerEnv, session: Sessio
         );
       }
 
-      // Soft delete only (deletePage()'s default: unpublish, keep the Cascade
-      // asset -- reversible). The web UI never offers hard-delete (editor-
-      // implementation-plan.md section 10 item 4); that stays a git-path
-      // `delete: true` frontmatter affordance.
-      await deletePage(config, path);
+      // Hard delete (editor-implementation-plan.md section 10 item 4,
+      // reversed 2026-07-23): the asset moves to Cascade's Trash -- an admin
+      // can restore it there until it's purged -- and its published output is
+      // unpublished in the same call (deletePage's deleteParameters).
+      await deletePage(config, path, { hard: true });
 
-      // The page asset is now unpublished, but nav.json is a separate
-      // published artifact (nav-format.vm queries published pages at publish
-      // time) -- it won't drop the now-orphaned entry until republished.
-      const navPath = `docs/_system/nav/${bookSlugFromPath(path)}`;
-      if (await pageExists(config, navPath)) {
-        await publishAsset(config, "page", navPath);
+      // The page is truly gone, so drop its docId from the shared manifest --
+      // a formerly git-owned page that a web save took over still has an
+      // entry there, and a later git-side archive would chase the dead path.
+      if (current.metadata.docId) {
+        await removeManifestEntry(config, current.metadata.docId);
       }
+
+      // nav.json, search-index.json, and tags.json are separate published
+      // artifacts that keep listing the deleted page until republished.
+      await publishBookArtifacts(config, bookSlugFromPath(path));
 
       return json({ ok: true, path });
     }
@@ -516,6 +649,84 @@ async function handleAuthedApi(request: Request, env: WorkerEnv, session: Sessio
       }
 
       return json({ path });
+    }
+
+    if (request.method === "GET" && route === "folder/delete-preflight") {
+      const path = url.searchParams.get("path");
+      if (!path) {
+        return json({ error: "bad-request", message: "path query param is required" }, { status: 400 });
+      }
+      const pathError = folderDeletePathError(path);
+      if (pathError) {
+        return json({ error: "bad-request", message: pathError }, { status: 400 });
+      }
+      const { pages, chapters, files, gitOwned } = await folderDeletePreflight(config, path);
+      return json({ pages, chapters, files, gitOwned });
+    }
+
+    if (request.method === "DELETE" && route === "folder") {
+      const path = url.searchParams.get("path");
+      if (!path) {
+        return json({ error: "bad-request", message: "path query param is required" }, { status: 400 });
+      }
+      const pathError = folderDeletePathError(path);
+      if (pathError) {
+        return json({ error: "bad-request", message: pathError }, { status: 400 });
+      }
+
+      // Same ownership guard as DELETE /api/page, applied to every descendant
+      // page (the folder asset itself carries no origin metadata). Re-run
+      // here even though the UI already called the preflight route -- that
+      // GET is only advisory, and a git page could land in this folder
+      // between the two calls.
+      const preflight = await folderDeletePreflight(config, path);
+      if (preflight.gitOwned) {
+        return json(
+          {
+            error: "git-owned",
+            count: preflight.gitOwned.count,
+            examplePath: preflight.gitOwned.examplePath,
+            repo: preflight.gitOwned.repo,
+          },
+          { status: 409 },
+        );
+      }
+
+      // Recursive hard delete: the whole subtree moves to Cascade's Trash and
+      // its published output is unpublished (deleteFolder's deleteParameters).
+      await deleteFolder(config, path);
+      await removeManifestEntries(config, preflight.docIds);
+
+      const segments = path.split("/").filter(Boolean);
+      if (segments[1] === "uploads") {
+        // A per-book image folder (docs/uploads/<slug>): images appear in no
+        // nav/search artifact, so there is nothing to republish (and nothing
+        // to wait for).
+      } else if (segments.length >= 3) {
+        await waitForPagesGone(config, preflight.pagePaths);
+        // A chapter: the book's nav.json must drop the deleted subtree, and
+        // the global search-index/tags must drop its pages.
+        await publishBookArtifacts(config, bookSlugFromPath(path));
+      } else {
+        // A whole book: its nav container is now pointless -- hard-delete it
+        // (which also unpublishes the published <slug>.json) instead of
+        // republishing it, remove the book's uploads folder, then refresh the
+        // global artifacts. publishBookArtifacts would be wrong here: its
+        // ensureBookNavPage would recreate the container we just removed.
+        const bookSlug = bookSlugFromPath(path);
+        const navPath = `docs/_system/nav/${bookSlug}`;
+        if (await pageExists(config, navPath)) {
+          await deletePage(config, navPath, { hard: true });
+        }
+        const uploadsPath = `docs/uploads/${bookSlug}`;
+        if (await folderExists(config, uploadsPath)) {
+          await deleteFolder(config, uploadsPath);
+        }
+        await waitForPagesGone(config, preflight.pagePaths);
+        await publishGlobalArtifacts(config);
+      }
+
+      return json({ ok: true, path, deletedPages: preflight.pages });
     }
 
     if (request.method === "POST" && route === "upload") {

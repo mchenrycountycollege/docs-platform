@@ -7,8 +7,11 @@ import {
   ApiUnauthorizedError,
   createFolder as apiCreateFolder,
   createPage as apiCreatePage,
+  deleteFolder,
   deletePage,
+  getFolderDeletePreflight,
   getTree,
+  invalidateSearchIndex,
   moveItem,
   reorderItems,
   type FolderEntry,
@@ -88,8 +91,8 @@ export interface DocsTreeProps {
   onOpenPage: (path: string) => void;
   /** Called after a page this component moved/renamed lands at a new path, so the caller can re-point an already-open editor. */
   onPageMoved?: (fromPath: string, toPath: string) => void;
-  /** Called after a page this component unpublished, so the caller can close it if it was the one open. */
-  onPageDeleted?: (path: string) => void;
+  /** Called after a page or folder this component deleted, so the caller can close an open page at (or under) that path. */
+  onDeleted?: (path: string) => void;
 }
 
 /** Row-level actions Row needs but can't receive as props (react-arborist owns Row's call signature) -- see the component doc comment. */
@@ -110,7 +113,7 @@ const TreeActionsContext = createContext<{ onDelete: (node: TreeNode) => void } 
  * which this proxy doesn't expose a way to change). File attachments aren't
  * draggable/renameable yet either -- that's E3.
  */
-export function DocsTree({ onOpenPage, onPageMoved, onPageDeleted }: DocsTreeProps) {
+export function DocsTree({ onOpenPage, onPageMoved, onDeleted }: DocsTreeProps) {
   const [root, setRoot] = useState<TreeNode>({
     id: ROOT_PATH,
     name: ROOT_PATH,
@@ -279,25 +282,88 @@ export function DocsTree({ onOpenPage, onPageMoved, onPageDeleted }: DocsTreePro
     if (isReparent) await refreshFolder(srcParentPath);
   }
 
+  /** The git-flow pointer shown whenever a delete is refused for git-owned content. */
+  function gitOwnedDeleteMessage(what: string, repo: string | undefined): string {
+    return (
+      `${what} is managed in ${repo ?? "a git repository"} and can't be deleted here -- ` +
+      `remove the source file in that repository with \`delete: true\` in its frontmatter instead.`
+    );
+  }
+
   async function handleDelete(node: TreeNode) {
-    if (node.itemType !== "page") return;
+    if (node.itemType === "page") {
+      const confirmed = window.confirm(
+        `Delete "${node.name}"? It is removed from the tree, search, and the public site, and moves to Cascade's ` +
+          `Trash -- an administrator can restore it there until the Trash is purged.`,
+      );
+      if (!confirmed) return;
+
+      const parentPath = dirnameOf(node.path);
+      const result = await deletePage(node.path);
+      if (!result.ok) {
+        setError(
+          result.kind === "git-owned" ? gitOwnedDeleteMessage("This page", result.repo) : result.message,
+        );
+        return;
+      }
+      onDeleted?.(node.path);
+      invalidateSearchIndex();
+      await refreshFolder(parentPath);
+      return;
+    }
+
+    if (node.itemType !== "folder") return;
+
+    // Books are folders directly under docs/, chapters one level below --
+    // same depth reasoning as canCreateChapter above.
+    const kind = depthOf(node.path) === 2 ? "book" : "chapter";
+
+    // The tree only knows about children it has lazily loaded, so the counts
+    // for the confirm dialog come from a server-side walk. The server
+    // re-checks ownership at delete time; this preflight is just for the UX.
+    let preflight;
+    try {
+      preflight = await getFolderDeletePreflight(node.path);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+      return;
+    }
+    if (preflight.gitOwned) {
+      const { count, examplePath, repo } = preflight.gitOwned;
+      setError(
+        gitOwnedDeleteMessage(
+          `This ${kind} contains ${count} git-managed page(s) (e.g. ${examplePath}) and`,
+          repo,
+        ),
+      );
+      return;
+    }
+
+    const contents = [
+      `${preflight.pages} page(s)`,
+      ...(preflight.chapters > 0 ? [`${preflight.chapters} chapter(s)`] : []),
+      ...(preflight.files > 0 ? [`${preflight.files} file(s)`] : []),
+    ].join(", ");
     const confirmed = window.confirm(
-      `Unpublish "${node.name}"? It stops appearing in the tree, search, and the public site, but stays in Cascade -- ` +
-        `you (or anyone) can undo this by editing and saving it again. This does not permanently delete it.`,
+      `Delete the ${kind} "${node.name}" and everything inside it (${contents})? Everything is removed from the ` +
+        `public site and moves to Cascade's Trash -- an administrator can restore it there until the Trash is purged.`,
     );
     if (!confirmed) return;
 
     const parentPath = dirnameOf(node.path);
-    const result = await deletePage(node.path);
+    const result = await deleteFolder(node.path);
     if (!result.ok) {
       setError(
+        // A git page can appear between the preflight and the delete -- the
+        // server re-checked and refused, so surface the same message.
         result.kind === "git-owned"
-          ? `This page is managed in ${result.repo ?? "a git repository"} and can't be deleted here.`
+          ? gitOwnedDeleteMessage(`This ${kind} contains ${result.count} git-managed page(s) and`, result.repo)
           : result.message,
       );
       return;
     }
-    onPageDeleted?.(node.path);
+    onDeleted?.(node.path);
+    invalidateSearchIndex();
     await refreshFolder(parentPath);
   }
 
@@ -410,11 +476,11 @@ function Row({ node, style, dragHandle }: NodeRendererProps<TreeNode>) {
           {data.name}
         </span>
       )}
-      {data.itemType === "page" && (
+      {(data.itemType === "page" || data.itemType === "folder") && (
         <button
           type="button"
           className="tree-row-delete"
-          title="Unpublish this page (reversible -- stays in Cascade)"
+          title="Delete (moves to Cascade's Trash)"
           onClick={(e) => {
             e.stopPropagation();
             actions?.onDelete(data);

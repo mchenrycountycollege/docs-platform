@@ -2,7 +2,7 @@ import { readFileSync, writeFileSync } from "node:fs";
 import matter from "gray-matter";
 import { pageExists, readPage, type CascadeConfig } from "@docs-platform/cascade-client";
 import { htmlToMarkdown, parseFrontmatter } from "@docs-platform/doc-core";
-import { readManifest } from "./manifest.js";
+import { readManifest } from "@docs-platform/cascade-client";
 
 export interface SyncDocResult {
   /** True if the local file was rewritten with the live web-edited content. */

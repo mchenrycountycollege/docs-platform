@@ -98,8 +98,12 @@ export default function Home() {
             onPageMoved={(fromPath, toPath) => {
               setOpenPath((current) => (current === fromPath ? toPath : current));
             }}
-            onPageDeleted={(path) => {
-              setOpenPath((current) => (current === path ? null : current));
+            onDeleted={(path) => {
+              // Prefix match, not just equality: deleting a chapter/book must
+              // also close a page that was open somewhere inside it.
+              setOpenPath((current) =>
+                current === path || current?.startsWith(`${path}/`) ? null : current,
+              );
             }}
           />
         }

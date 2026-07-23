@@ -11,7 +11,16 @@ import type { CascadeConfig } from "./types.js";
  */
 export async function publishPageAndArtifacts(config: CascadeConfig, path: string, bookSlug: string): Promise<void> {
   await publishAsset(config, "page", path);
+  await publishBookArtifacts(config, bookSlug);
+}
 
+/**
+ * Republish a book's nav.json (creating the per-book nav container page on
+ * first use) and then the global artifacts. Split out from
+ * publishPageAndArtifacts so delete flows can refresh the derived artifacts
+ * without publishing a page that no longer exists.
+ */
+export async function publishBookArtifacts(config: CascadeConfig, bookSlug: string): Promise<void> {
   // ensureBookNavPage() already publishes the nav page itself the first time
   // it creates one (confirmed against a live instance: publishing it again
   // immediately after fails with "This asset already exists in the publish
@@ -25,6 +34,15 @@ export async function publishPageAndArtifacts(config: CascadeConfig, path: strin
     await publishAsset(config, "page", navPath);
   }
 
+  await publishGlobalArtifacts(config);
+}
+
+/**
+ * Republish the two global search-index.json/tags.json artifacts. Used on its
+ * own after a whole book is deleted (its nav container is gone too, so
+ * publishBookArtifacts would wrongly recreate it).
+ */
+export async function publishGlobalArtifacts(config: CascadeConfig): Promise<void> {
   // These two one-time global pages are created by hand
   // (implementation-checklist.md Phase 7). Their Cascade asset path has no
   // `.json` extension -- confirmed against a live instance -- that's purely

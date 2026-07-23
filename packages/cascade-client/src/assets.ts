@@ -474,12 +474,45 @@ export async function deletePage(
     // identifier in the URL (matching read's `{type}/{siteName}/{path}`
     // form), not in the body -- an in-body `identifier` (by-path or
     // otherwise) gives "Unable to identify an entity ... type 'null'".
+    // deleteParameters.unpublish asks Cascade to remove the published file
+    // from the web server as part of the same delete (without it, deleting
+    // a published asset strands its published output live). Confirmed
+    // against a live instance (2026-07-23): the delete succeeds with this
+    // body and the asset is gone from the site tree immediately. Whether the
+    // unpublish half is honored couldn't be probed from this repo (the
+    // public web server's hostname isn't configured anywhere here -- Cascade
+    // has silently ignored misplaced body keys before, see unpublishAsset
+    // below), so eyeball the published URL 404ing once after deploy.
     await retryOnQueueConflict(/currently being published/i, () =>
-      request<EditResponse>(config, "POST", `delete/page/${config.siteName}/${scoped}`, {}),
+      request<EditResponse>(config, "POST", `delete/page/${config.siteName}/${scoped}`, {
+        deleteParameters: { unpublish: true, doWorkflow: false },
+      }),
     );
     return;
   }
   await unpublishAsset(config, "page", scoped);
+}
+
+/**
+ * Hard-delete a folder and everything inside it (Cascade folder delete is
+ * recursive; the subtree lands in Cascade's Trash). Always hard -- there is
+ * no soft variant because "unpublish a folder" has no meaning of its own;
+ * deciding whether a folder should die is the caller's job (the web editor's
+ * DELETE /api/folder route preflights ownership/counts first).
+ * Confirmed against a live instance (2026-07-23): one call removes the whole
+ * subtree, but *descendants* disappear asynchronously -- the folder itself is
+ * gone immediately while its pages still read back for a few seconds. Callers
+ * that rebuild derived artifacts afterward must wait for the descendants to
+ * actually vanish (see the worker's waitForPagesGone). Same unverified-
+ * unpublish caveat as deletePage's hard path.
+ */
+export async function deleteFolder(config: CascadeConfig, path: string): Promise<void> {
+  const scoped = assertInScope(path);
+  await retryOnQueueConflict(/currently being published/i, () =>
+    request<EditResponse>(config, "POST", `delete/folder/${config.siteName}/${scoped}`, {
+      deleteParameters: { unpublish: true, doWorkflow: false },
+    }),
+  );
 }
 
 export async function publishAsset(

@@ -1,4 +1,13 @@
-export { readManifest, removeManifestEntry, updateManifestEntry, type Manifest } from "./manifest.js";
+// Manifest helpers moved to cascade-client (the web editor worker needs them
+// without dragging this package's node-only git code into its bundle);
+// re-exported here so existing consumers keep working.
+export {
+  readManifest,
+  removeManifestEntries,
+  removeManifestEntry,
+  updateManifestEntry,
+  type Manifest,
+} from "@docs-platform/cascade-client";
 export {
   archiveDoc,
   decideArchiveAction,

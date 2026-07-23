@@ -11,7 +11,7 @@ import {
   type StructuredDataFields,
 } from "@docs-platform/cascade-client";
 import { mapDocPath, markdownToHtml, normalizeHtml, parseFrontmatter, slugify } from "@docs-platform/doc-core";
-import { readManifest, updateManifestEntry } from "./manifest.js";
+import { readManifest, updateManifestEntry } from "@docs-platform/cascade-client";
 
 export class OwnershipConflictError extends Error {
   constructor(path: string) {

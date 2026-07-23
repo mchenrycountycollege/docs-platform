@@ -1,13 +1,12 @@
 import {
-  CascadeApiError,
-  VersionConflictError,
   createRawPage,
   editRawPage,
   ensureFolder,
   pageExists,
   readRawPage,
-  type CascadeConfig,
-} from "@docs-platform/cascade-client";
+} from "./assets.js";
+import type { CascadeConfig } from "./types.js";
+import { CascadeApiError, VersionConflictError } from "./types.js";
 
 const MANIFEST_PATH = "docs/_system/manifest.json";
 const MAX_RETRIES = 4;
@@ -88,9 +87,22 @@ export async function updateManifestEntry(config: CascadeConfig, docId: string, 
 
 /** Remove docId from the shared manifest (a hard delete -- the page is truly gone, not just unpublished). */
 export async function removeManifestEntry(config: CascadeConfig, docId: string): Promise<void> {
+  await removeManifestEntries(config, [docId]);
+}
+
+/**
+ * Remove several docIds in one read-mutate-write pass -- used by folder
+ * (chapter/book) deletion, where every descendant page dies at once and a
+ * per-docId mutateManifest would be N sequential edit round-trips racing the
+ * conflict-retry loop against itself.
+ */
+export async function removeManifestEntries(config: CascadeConfig, docIds: string[]): Promise<void> {
+  if (docIds.length === 0) return;
   await mutateManifest(config, (entries) => {
-    if (!(docId in entries)) return entries;
-    const { [docId]: _removed, ...rest } = entries;
+    const doomed = docIds.filter((docId) => docId in entries);
+    if (doomed.length === 0) return entries;
+    const rest = { ...entries };
+    for (const docId of doomed) delete rest[docId];
     return rest;
   });
 }

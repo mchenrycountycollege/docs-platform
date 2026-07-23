@@ -113,7 +113,9 @@ function names now available.)
 | `POST /api/page` | Create page (generate `docId`, stamp `origin:"web"` + identity) | `ensureFolder` + `createPage` + `publishAsset` |
 | `PUT /api/page` | Edit page (optimistic `expectedVersion`) | `readPage` (compare) → `normalizeHtml` → `editPage` → `publishAsset` |
 | `POST /api/page/move` | Reparent and/or reorder | `moveAsset` and/or `editPage` (order) |
-| `DELETE /api/page?path=` | **Built E3.** Orphan+unpublish (only mode exposed via the editor — see §10 item 4), git-owned guarded same as PUT; republishes the book's `nav.json` afterward so the orphaned entry drops out immediately | `readPage` (ownership check) → `deletePage` (default soft mode) → `publishAsset` (nav) |
+| `DELETE /api/page?path=` | **Built E3, revised 2026-07-23 (see §10 item 4).** Hard delete: the asset moves to Cascade's Trash and its published output is unpublished in the same call (`deleteParameters`). Git-owned guarded same as PUT. Drops the page's docId from the shared manifest, then republishes the book's `nav.json` + global `search-index.json`/`tags.json` | `readPage` (ownership check) → `deletePage({hard:true})` → `removeManifestEntry` → `publishBookArtifacts` |
+| `GET /api/folder/delete-preflight?path=` | **Added 2026-07-23.** Recursive subtree counts (`{ pages, chapters, files, gitOwned }`) for the folder-delete confirm dialog — the tree lazy-loads one folder per expand, so it can't count collapsed subtrees itself. Advisory only; DELETE re-checks | `readFolder` (recursive walk) + `readPage` per descendant page |
+| `DELETE /api/folder?path=` | **Added 2026-07-23.** Recursive hard delete of a chapter or book (subtree → Cascade Trash, published output unpublished). 409 `git-owned` if *any* descendant page is git-origin (folders carry no origin metadata themselves). Rejects `docs`, `docs/_system/**`, and the `docs/uploads` root. Cleans up: manifest docIds; a deleted book's own nav container page and `docs/uploads/<slug>` folder; then republishes book artifacts (chapter) or the global artifacts (book) | preflight walk → `deleteFolder` → `removeManifestEntries` → `publishBookArtifacts` / `deletePage({hard:true})` (nav) + `deleteFolder` (uploads) + `publishGlobalArtifacts` |
 | `POST /api/folder` | Create book/chapter | `createFolder` / `ensureFolder` (+ `ensureBookNavPage` for a new book) |
 | `POST /api/upload` | **Built E3.** Multipart `{ file, path }` (`path` = the page being edited, to derive the book). Stores under `docs/uploads/<book>/<uuid>.<ext>` (images only, 15MB cap), returns `{ path, url }` where `url` is the root-relative canonical path (same convention as `packages/runtime`'s hrefs) — that's what lands in the saved `bodyHtml` | `upsertFile` (bytes) → `publishAsset` |
 | `GET /api/file?path=` | **Added E3.** Streams a File asset's raw bytes with an inferred image Content-Type. Exists solely so the editor's *own* preview (BlockNote's `resolveFileUrl`, `PageView`'s read-only render) can display an uploaded image right now — the canonical root-relative `src` only resolves on the real public web server, whose hostname isn't configured anywhere in this app (same constraint as `GET /api/nav`, see below) | `readFile` |
@@ -331,21 +333,31 @@ and so the riskiest thing (HTML round-trip) is proven before UI polish.
 
 - **E3 — Delete + image upload (parent Phase 3, part 2). — BUILT 2026-07-14,
   pending live/Access verification.**
-  - **Delete:** a small trash button on each page row in `DocsTree` (visible on
-    row hover, via a `TreeActionsContext` so the react-arborist-owned `Row`
-    renderer can reach a handler defined in `DocsTree` without becoming a
-    fresh component identity every render), `window.confirm`'d with wording
-    that states plainly this only unpublishes (stays in Cascade, reversible;
-    matches E2's existing `window.prompt`-based create/rename UX rather than
-    introducing a custom modal). Wired through `lib/api.ts`'s `deletePage()`
-    to `DELETE /api/page?path=` — same git-owned guard as PUT/move, and after
-    unpublishing it republishes the book's `nav.json` (otherwise the orphaned
-    page would linger in the nav artifact). If the deleted page was open,
-    `app/page.tsx`'s `onPageDeleted` clears `openPath`. **Note:** the editor's
-    own tree still lists an unpublished page afterward (it reads live Cascade
-    state, not published state — same as every other row) — the confirm
-    dialog's wording is what sets the correct expectation, not a UI badge;
-    revisit only if that proves confusing in practice.
+  - **Delete (revised 2026-07-23 — real deletes, folders included; supersedes
+    the original unpublish-only build):** a small trash button on every page
+    *and folder* row in `DocsTree` (visible on row hover, via a
+    `TreeActionsContext` so the react-arborist-owned `Row` renderer can reach
+    a handler defined in `DocsTree` without becoming a fresh component
+    identity every render), `window.confirm`'d (matches E2's existing
+    `window.prompt`-based create/rename UX rather than introducing a custom
+    modal). Deletes are **hard**: the asset (or whole subtree) moves to
+    Cascade's Trash — admin-restorable there until purged — and its published
+    output is unpublished in the same REST call (`deleteParameters`), so the
+    row disappears from the tree, search, and the public site immediately.
+    Pages go through `lib/api.ts`'s `deletePage()` → `DELETE /api/page?path=`
+    (same git-owned guard as before). Chapters/books go through
+    `getFolderDeletePreflight()` (server-side recursive walk supplies the
+    child counts the confirm dialog states, and detects git-owned descendant
+    pages — those block the delete with a pointer to the git flow's
+    `delete: true` frontmatter) then `deleteFolder()` → `DELETE
+    /api/folder?path=`. After either delete the worker cleans up every
+    derived artifact: manifest docId(s), the book's `nav.json`, global
+    `search-index.json`/`tags.json`; deleting a whole book also hard-deletes
+    its nav container page and `docs/uploads/<slug>`. The client invalidates
+    the cached cmdk search index, and `app/page.tsx`'s `onDeleted` clears
+    `openPath` on a *prefix* match so deleting a folder closes a page open
+    inside it. The old "tree still lists an unpublished page" caveat is gone
+    — the asset no longer exists, so the refreshed tree simply drops it.
   - **Image upload:** `POST /api/upload` takes a multipart `{ file, path }`
     (`path` = the page being edited, to derive the book slug) and calls
     `upsertFile` under `docs/uploads/<book>/<uuid>.<ext>` (images only —
@@ -615,12 +627,19 @@ later; nothing in the build below depends on the hostname.
 3. ~~Draft/autosave behavior~~ — **settled 2026-07-13**: explicit
    "Save/Publish" only in E1 (no autosave-on-blur). Autosave is a possible
    E4 polish item, not a requirement.
-4. ~~Hard-delete policy in the UI~~ — **settled 2026-07-13**: web editors
-   only ever orphan+unpublish (E3's `DELETE /api/page` default). Hard delete
-   is **not** exposed in the UI at all; it stays a git-path-only affordance
-   (`delete: true` in frontmatter, per the parent plan's delete/rename
-   semantics). Simplifies E3 — no hard-delete confirmation dialog needed.
-   (Default: orphan-only in the UI; hard delete deferred.)
+4. ~~Hard-delete policy in the UI~~ — **settled 2026-07-13 as orphan+unpublish
+   only; REVERSED 2026-07-23**: the unpublish-only trash button read as broken
+   in practice (the tree lists live Cascade state, so the "deleted" page never
+   visibly went away — exactly the confusion the E3 note said to revisit on),
+   and chapters/books had no delete at all. The web editor now performs
+   **real hard deletes** for pages, chapters, and books (asset/subtree →
+   Cascade's Trash, admin-restorable until purged; published output
+   unpublished in the same call). Folder deletes are recursive with a
+   count-stating confirm dialog. Git-owned content remains undeletable from
+   the web (409 for a page, or for any folder with a git-origin descendant
+   page) — hard-deleting it from git's source of truth stays the git path's
+   `delete: true` frontmatter affordance. See the revised E3 entry and the
+   `DELETE /api/page` / `DELETE /api/folder` route table rows.
 5. ~~Editor UI model~~ — **settled 2026-07-14, see §4a**: **editor-as-front-door
    + shared shell**. The editor is not a standalone admin panel; it's a second,
    authenticated front door that renders the same reader shell (sidebar /
