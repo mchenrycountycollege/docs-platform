@@ -27,6 +27,19 @@
 ## _shared.vm's extractDocFields already read via .metadata.getDynamicField.
 #set($sourceRepoPathNode = $currentPage.metadata.getDynamicField("sourceRepoPath"))
 #set($sourceRepoPath = $sourceRepoPathNode.value)
+## Attribution: both write paths stamp authorEmail (git publish: commit
+## author or frontmatter override; web editor: session username-or-email).
+## editorName is vestigial -- only the Phase-0 smoke script ever set it --
+## kept as a fallback for those early assets. When the field is unset,
+## getDynamicField returns null and .value leaves the variable undefined,
+## which the #if guard below treats the same as empty (matching the
+## $sourceRepoPath pattern above).
+#set($authorEmailNode = $currentPage.metadata.getDynamicField("authorEmail"))
+#set($lastEditedBy = $authorEmailNode.value)
+#if(!$lastEditedBy || $lastEditedBy.length() == 0)
+    #set($editorNameNode = $currentPage.metadata.getDynamicField("editorName"))
+    #set($lastEditedBy = $editorNameNode.value)
+#end
 
 <nav aria-label="Documentation navigation" class="sidebar" id="docs-sidebar">
     <!-- hydrated client-side from _system/nav/<book>.json -->
@@ -53,6 +66,12 @@
     <div class="rail-box">
         <p class="rail-label">Source file</p>
         <span class="source-path">$_EscapeTool.xml($sourceRepoPath)</span>
+    </div>
+    #end
+    #if($lastEditedBy && $lastEditedBy.length() > 0)
+    <div class="rail-box">
+        <p class="rail-label">Last edited by</p>
+        <span class="rail-author">$_EscapeTool.xml($lastEditedBy)</span>
     </div>
     #end
     <div class="rail-box" id="page-toc-box" style="display: none;">
