@@ -23488,19 +23488,25 @@ function toStructuredData(fields) {
 function fromStructuredData(wire) {
   const title = wire.structuredDataNodes.find((n) => n.identifier === "title")?.text;
   const order2 = wire.structuredDataNodes.find((n) => n.identifier === "order")?.text;
-  const body3 = wire.structuredDataNodes.find((n) => n.identifier === "body")?.text;
+  const bodyNode = wire.structuredDataNodes.find((n) => n.identifier === "body");
   if (title === void 0)
     throw new Error("structuredData missing 'title' node");
   if (order2 === void 0)
     throw new Error("structuredData missing 'order' node");
-  if (body3 === void 0)
+  if (bodyNode === void 0)
     throw new Error("structuredData missing 'body' node");
   const tags = wire.structuredDataNodes.filter((n) => n.identifier === "tags" && n.text !== void 0).map((n) => n.text);
   return {
     title,
     order: unpadOrder(order2),
     tags,
-    bodyHtml: body3
+    // Cascade drops the `text` property entirely for a node whose value was
+    // an empty string on create/edit (confirmed against a live instance --
+    // same "empty string counts as absent" behavior documented for
+    // createRawPage's xhtml). A brand-new page has bodyHtml: "", so the node
+    // itself is still present (it's in the DD) but `.text` is undefined --
+    // that's an empty body, not a malformed page.
+    bodyHtml: bodyNode.text ?? ""
   };
 }
 function toMetadata(fields) {
