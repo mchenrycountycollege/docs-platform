@@ -6,6 +6,7 @@ import { ApiUnauthorizedError, getPage, reconcilePage, withDisplayableImages, ty
 import { applyBionic } from "./useBionic";
 import { BackToTop } from "./BackToTop";
 import { Toc } from "./Toc";
+import { pagePathToUrl } from "./usePageUrlSync";
 
 type LoadState =
   | { status: "empty" }
@@ -19,6 +20,9 @@ type LoadState =
 // realistically settled, short enough the author isn't left looking at a
 // stale copy for long if normalizeHtml did adjust anything.
 const RECONCILE_DELAY_MS = 6000;
+
+/** How long "Copy link" stays flipped to "Copied!" before reverting. */
+const COPIED_RESET_MS = 2000;
 
 /**
  * The reader-shell "route" for one page (editor-implementation-plan.md E4):
@@ -42,9 +46,13 @@ export function usePageView(path: string | null, bionicOn: boolean): { content: 
   const requestId = useRef(0);
   const reconcileTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pristineBodyHtml = useRef<string | null>(null);
+  const [copied, setCopied] = useState(false);
+  const copiedTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     if (reconcileTimer.current) clearTimeout(reconcileTimer.current);
+    if (copiedTimer.current) clearTimeout(copiedTimer.current);
+    setCopied(false);
     if (!path) {
       setState({ status: "empty" });
       setEditing(false);
@@ -70,6 +78,7 @@ export function usePageView(path: string | null, bionicOn: boolean): { content: 
 
     return () => {
       if (reconcileTimer.current) clearTimeout(reconcileTimer.current);
+      if (copiedTimer.current) clearTimeout(copiedTimer.current);
     };
   }, [path]);
 
@@ -109,6 +118,25 @@ export function usePageView(path: string | null, bionicOn: boolean): { content: 
     () => ({ __html: withDisplayableImages(currentBodyHtml ?? "") }),
     [currentBodyHtml],
   );
+
+  async function handleCopyLink(pagePath: string) {
+    const url = `${window.location.origin}${pagePathToUrl(pagePath)}`;
+    // navigator.clipboard only exists in a secure context (https / localhost).
+    // Over plain http or in an older browser there's nothing to write to, so
+    // fall back to a prompt the recipient can copy out of by hand.
+    if (!navigator.clipboard) {
+      window.prompt("Copy this link:", url);
+      return;
+    }
+    try {
+      await navigator.clipboard.writeText(url);
+      setCopied(true);
+      if (copiedTimer.current) clearTimeout(copiedTimer.current);
+      copiedTimer.current = setTimeout(() => setCopied(false), COPIED_RESET_MS);
+    } catch {
+      window.prompt("Copy this link:", url);
+    }
+  }
 
   function handleSaved(saved: PageResult) {
     if (!path) return;
@@ -184,9 +212,19 @@ export function usePageView(path: string | null, bionicOn: boolean): { content: 
             </ul>
           )}
         </div>
-        <button type="button" className="edit-toggle" onClick={() => setEditing(true)}>
-          Edit this page
-        </button>
+        <div className="content-actions">
+          <button
+            type="button"
+            className="copy-link"
+            aria-live="polite"
+            onClick={() => void handleCopyLink(page.path)}
+          >
+            {copied ? "Copied!" : "Copy link"}
+          </button>
+          <button type="button" className="edit-toggle" onClick={() => setEditing(true)}>
+            Edit this page
+          </button>
+        </div>
       </header>
 
       <div className="docs-body" ref={bodyRef} dangerouslySetInnerHTML={bodyHtmlProp} />

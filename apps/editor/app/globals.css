@@ -351,6 +351,29 @@ button {
   text-underline-offset: 2px;
 }
 
+.content-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-shrink: 0;
+}
+/* Secondary weight next to the primary "Edit this page" -- same box, outline
+   instead of fill, so the pair doesn't read as two equal calls to action. */
+.copy-link {
+  border: 1px solid var(--accent-soft-border);
+  background: transparent;
+  color: var(--text);
+  border-radius: 8px;
+  padding: 0.45rem 0.9rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.copy-link:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
 .edit-toggle {
   border: 1px solid var(--accent);
   background: var(--accent);

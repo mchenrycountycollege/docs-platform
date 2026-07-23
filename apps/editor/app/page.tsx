@@ -10,6 +10,7 @@ import { SearchPalette } from "../components/shell/SearchPalette";
 import { ShellChrome } from "../components/shell/ShellChrome";
 import { useBionicPreference } from "../components/shell/useBionic";
 import { useBookNav } from "../components/shell/useBookNav";
+import { usePageUrlSync } from "../components/shell/usePageUrlSync";
 import { DocsTree } from "../components/tree/DocsTree";
 
 // The front door (editor-implementation-plan.md section 4a, "editor-as-
@@ -21,6 +22,12 @@ import { DocsTree } from "../components/tree/DocsTree";
 export default function Home() {
   const [openPath, setOpenPath] = useState<string | null>(null);
   const [searchOpen, setSearchOpen] = useState(false);
+
+  // Makes the open page shareable: mirrors openPath into `?p=<asset-path>`
+  // and seeds it back from the URL on load. Deliberately above the auth gate
+  // -- a signed-out recipient's link seeds openPath, LoginForm renders in
+  // place (the URL survives), and the page loads the moment auth flips in.
+  usePageUrlSync(openPath, setOpenPath);
 
   // Auth gate (cascade-auth-migration-plan.md section 3): probe the session
   // once on mount, and let any /api 401 mid-session (expiry, logout in
