@@ -19,7 +19,7 @@ const lexend = Lexend({
 });
 
 export const metadata: Metadata = {
-  title: "MACS Docs · editor",
+  title: "MACS Docs",
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {
