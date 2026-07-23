@@ -6,6 +6,15 @@ scraped: 2026-02-16
 version: cascade-cms-latest
 ---
 
+> **Local correction (verified live, 2026-07-23):** the "Roles" field on Add
+> Group below is **required**, not optional — you cannot submit the form
+> without selecting a System Role. If the group's purpose is purely
+> site-content access and no suitable minimal System Role exists yet, create
+> an empty-abilities System Role first (Administration → Roles → Add Role →
+> type System → leave every ability unchecked) rather than reusing an
+> existing broad/admin one just to satisfy the field. See
+> `.claude/agents/cascade-developer.md` → "Known Gotchas" for the full note.
+
 main{ display: flex; flex-direction: column; gap: 1em; }
 
 Permissions

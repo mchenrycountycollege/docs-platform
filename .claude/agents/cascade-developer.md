@@ -55,6 +55,12 @@ Always check what already exists before creating new files:
 - `_cms/base-assets/` — existing base asset XML patterns
 - `_cms/data-definitions-prod/` — **the live source of truth for what's actually deployed.** The Hannon Hill developer adds new structured-data fields/content-row-types directly to these files as they ship them. Before adding a content row type or field to a Data Definition, check here first for what already exists — don't assume the design spec's field list is exhaustive if the production DD has grown since the spec was written.
 
+## Known Gotchas (from live use, not called out in the vendor docs)
+
+- **Add Group requires a System Role — it cannot be left blank.** The Groups KB doc (`docs/general/groups-cascade-cms-knowledge-base.md`) describes the Add Group screen's **Roles** field as if selecting one were optional/routine, but in practice the form forces a selection. That field only accepts **System Roles** (never Site Roles — Site Roles are attached to a *site*, not a group, via the site's own Site Settings). When a group's purpose is purely site-content access (e.g. a low-privilege contributor group) and no suitable minimal System Role already exists, **create an empty-abilities System Role first** (Administration → Roles → Add Role → type System → leave every ability unchecked) and select that — do not reach for an existing broad/admin System Role just to satisfy the required field.
+- **Role vs. Access Rights are two separate mechanisms — don't conflate them.** A Role (System or Site) controls *abilities* (which tools/actions a user can use). **Access Rights** (set via **More → Access** on a folder/asset) control *which folders* a user/group can read or write. Scoping a contributor group to "only the docs path" requires setting Access Rights on that folder — a Site Role by itself does not restrict access to a sub-path.
+- **System Role vs. Site Role**: System Roles apply Administration-Area-wide and are never attachable to a site. Site Roles apply only within a site and are attached to that site's own Site Settings screen (Manage Site → Site Settings), not on the Group or Role screens themselves.
+
 ## Constraints
 
 - DO NOT read, reference, or use any file inside `_out-of-scope/` — treat it as a hard exclusion zone, identical to a `.gitignore` entry. If the user points you there, decline and explain it is excluded.

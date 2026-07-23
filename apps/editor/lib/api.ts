@@ -60,14 +60,73 @@ export type SavePageResult = SavePageOk | SavePageConflict | SavePageGitOwned | 
 
 export class ApiUnauthorizedError extends Error {
   constructor() {
-    super("Not signed in (401) -- reload to re-trigger the Access login flow");
+    super("Not signed in (401)");
     this.name = "ApiUnauthorizedError";
   }
 }
 
+let onUnauthorizedHandler: (() => void) | null = null;
+
+/**
+ * Shared 401 handling (cascade-auth-migration-plan.md section 3): the app
+ * shell registers a handler that flips the UI back to the login view, so a
+ * session expiring mid-use lands on the login form instead of a broken tree
+ * -- every wrapper below routes its 401 through unauthorized().
+ */
+export function setOnUnauthorized(handler: (() => void) | null): void {
+  onUnauthorizedHandler = handler;
+}
+
+function unauthorized(): ApiUnauthorizedError {
+  onUnauthorizedHandler?.();
+  return new ApiUnauthorizedError();
+}
+
+export interface Me {
+  username: string;
+  email?: string;
+}
+
+/** Session probe for the app gate: the signed-in identity, or null when there's no valid session (does NOT trigger the onUnauthorized handler). */
+export async function whoAmI(): Promise<Me | null> {
+  const res = await fetch("/api/me");
+  if (res.status === 401) return null;
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  return (await res.json()) as Me;
+}
+
+export type LoginResult =
+  | { ok: true; username: string; email?: string }
+  /** kind mirrors the server's status: "unauthorized" = wrong credentials, "forbidden" = account lacks docs-site access. */
+  | { ok: false; kind: "unauthorized" | "forbidden" | "error"; message: string };
+
+export async function login(username: string, password: string): Promise<LoginResult> {
+  const res = await fetch("/api/login", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ username, password }),
+  });
+  const data: unknown = await res.json().catch(() => null);
+  if (res.ok) {
+    const me = data as Me;
+    return { ok: true, username: me.username, email: me.email };
+  }
+  const message =
+    data !== null && typeof data === "object" && "message" in data
+      ? String((data as { message: unknown }).message)
+      : `HTTP ${res.status}`;
+  if (res.status === 401) return { ok: false, kind: "unauthorized", message };
+  if (res.status === 403) return { ok: false, kind: "forbidden", message };
+  return { ok: false, kind: "error", message };
+}
+
+export async function logout(): Promise<void> {
+  await fetch("/api/logout", { method: "POST" });
+}
+
 async function getJson<T>(url: string): Promise<T> {
   const res = await fetch(url);
-  if (res.status === 401) throw new ApiUnauthorizedError();
+  if (res.status === 401) throw unauthorized();
   const data: unknown = await res.json();
   if (!res.ok) {
     const message =
@@ -125,7 +184,7 @@ async function putPageFields(input: {
     headers: { "content-type": "application/json" },
     body: JSON.stringify(input),
   });
-  if (res.status === 401) throw new ApiUnauthorizedError();
+  if (res.status === 401) throw unauthorized();
 
   const data: unknown = await res.json();
 
@@ -178,7 +237,7 @@ export async function createPage(input: { parentPath: string; title: string; tag
     headers: { "content-type": "application/json" },
     body: JSON.stringify(input),
   });
-  if (res.status === 401) throw new ApiUnauthorizedError();
+  if (res.status === 401) throw unauthorized();
   const data: unknown = await res.json();
   if (!res.ok) {
     const message =
@@ -196,7 +255,7 @@ export async function createFolder(input: { parentPath: string; name: string }):
     headers: { "content-type": "application/json" },
     body: JSON.stringify(input),
   });
-  if (res.status === 401) throw new ApiUnauthorizedError();
+  if (res.status === 401) throw unauthorized();
   const data: unknown = await res.json();
   if (!res.ok) {
     const message =
@@ -230,7 +289,7 @@ export async function moveItem(input: MoveItemInput): Promise<MoveItemResult> {
     headers: { "content-type": "application/json" },
     body: JSON.stringify(input),
   });
-  if (res.status === 401) throw new ApiUnauthorizedError();
+  if (res.status === 401) throw unauthorized();
   const data: unknown = await res.json();
   if (res.ok) {
     return { ok: true, path: (data as { path: string }).path };
@@ -250,7 +309,7 @@ export type DeletePageResult =
 /** Soft delete (orphan+unpublish) only -- the web UI never offers hard-delete (editor-implementation-plan.md E3). */
 export async function deletePage(path: string): Promise<DeletePageResult> {
   const res = await fetch(`/api/page?path=${encodeURIComponent(path)}`, { method: "DELETE" });
-  if (res.status === 401) throw new ApiUnauthorizedError();
+  if (res.status === 401) throw unauthorized();
   const data: unknown = await res.json();
   if (res.ok) return { ok: true };
   if (res.status === 409) {
@@ -278,7 +337,7 @@ export async function uploadImage(file: File, pagePath: string): Promise<UploadI
   form.set("file", file);
   form.set("path", pagePath);
   const res = await fetch("/api/upload", { method: "POST", body: form });
-  if (res.status === 401) throw new ApiUnauthorizedError();
+  if (res.status === 401) throw unauthorized();
   const data: unknown = await res.json();
   if (!res.ok) {
     const message =
@@ -324,7 +383,7 @@ export async function reorderItems(items: { path: string; type: "page" | "folder
     headers: { "content-type": "application/json" },
     body: JSON.stringify({ items }),
   });
-  if (res.status === 401) throw new ApiUnauthorizedError();
+  if (res.status === 401) throw unauthorized();
   const data: unknown = await res.json();
   if (!res.ok) {
     const message =

@@ -20,10 +20,17 @@ import {
 } from "@docs-platform/cascade-client";
 import { normalizeHtml, slugify } from "@docs-platform/doc-core";
 import type { NavFolder, NavPage, SearchEntry } from "@docs-platform/doc-shell";
-import { AccessAuthError, verifyAccessJwt } from "./lib/access-auth.js";
+import { validateCascadeLogin } from "./lib/cascade-login.js";
 import { cascadeConfigFromEnv } from "./lib/cascade-config.js";
 import type { Env } from "./lib/env.js";
 import { errorResponse, json } from "./lib/http.js";
+import {
+  clearSessionCookie,
+  createSessionCookie,
+  SessionAuthError,
+  verifySession,
+  type SessionIdentity,
+} from "./lib/session.js";
 
 /** docs/<book-slug>/... -- publishPageAndArtifacts needs the book slug to publish its nav.json. */
 function bookSlugFromPath(path: string): string {
@@ -175,21 +182,84 @@ interface WorkerEnv extends Env {
   ASSETS: Fetcher;
 }
 
+/**
+ * POST /api/login -- the one place the user's own Cascade credentials are
+ * ever seen (cascade-auth-migration-plan.md section 2.2). Validates them
+ * against Cascade, checks docs-site membership, and mints the app session
+ * cookie. Distinct 401 vs 403 bodies: the login form shows different
+ * messages for "wrong password" and "your account was never granted the
+ * docs site" (the latter is the one people will actually hit).
+ */
+async function handleLogin(request: Request, env: Env): Promise<Response> {
+  const body = (await request.json().catch(() => null)) as { username?: unknown; password?: unknown } | null;
+  if (typeof body?.username !== "string" || typeof body?.password !== "string" || body.username === "" || body.password === "") {
+    return json({ error: "bad-request", message: "username and password are required" }, { status: 400 });
+  }
+
+  const result = await validateCascadeLogin(body.username, body.password, env);
+  if (result.ok === "unauthorized") {
+    return json({ error: "unauthorized", message: "The username or password is incorrect" }, { status: 401 });
+  }
+  if (result.ok === "forbidden") {
+    return json({ error: "forbidden", message: "This Cascade account doesn't have access to the docs site" }, { status: 403 });
+  }
+
+  const cookie = await createSessionCookie(body.username, result.email, env);
+  return json({ username: body.username, email: result.email }, { headers: { "set-cookie": cookie } });
+}
+
 async function handleApi(request: Request, env: WorkerEnv): Promise<Response> {
-  let email: string;
+  const url = new URL(request.url);
+  const route = url.pathname.replace(/^\/api\/?/, "");
+
+  // Login/logout are reachable without a session -- everything else 401s
+  // first. Logout needs no auth: clearing a cookie is harmless, and a
+  // half-expired session should still be able to sign out cleanly.
+  if (request.method === "POST" && route === "login") {
+    try {
+      return await handleLogin(request, env);
+    } catch (err) {
+      return errorResponse(err);
+    }
+  }
+  if (request.method === "POST" && route === "logout") {
+    return json({ ok: true }, { headers: { "set-cookie": clearSessionCookie() } });
+  }
+
+  let session: SessionIdentity;
   try {
-    ({ email } = await verifyAccessJwt(request, env));
+    session = await verifySession(request, env);
   } catch (err) {
-    if (err instanceof AccessAuthError) {
+    if (err instanceof SessionAuthError) {
       return json({ error: "unauthorized", message: err.message }, { status: 401 });
     }
     throw err;
   }
+
+  const response = await handleAuthedApi(request, env, session);
+  // Sliding session (plan section 2.4): verifySession minted a fresh cookie
+  // when <7 days remained -- attach it to whatever this request returned.
+  if (session.refreshedCookie) {
+    response.headers.append("set-cookie", session.refreshedCookie);
+  }
+  return response;
+}
+
+async function handleAuthedApi(request: Request, env: WorkerEnv, session: SessionIdentity): Promise<Response> {
+  // What gets stamped into pages' authorEmail metadata: the account's real
+  // email when the login-time lookup got one, else the bare Cascade username
+  // (plan section 4 -- option b with fallback to c; never fabricate an
+  // address by appending a domain).
+  const authorEmail = session.email ?? session.username;
   const url = new URL(request.url);
   const route = url.pathname.replace(/^\/api\/?/, "");
   const config = cascadeConfigFromEnv(env);
 
   try {
+    if (request.method === "GET" && route === "me") {
+      return json({ username: session.username, email: session.email });
+    }
+
     if (request.method === "GET" && route === "tree") {
       const path = url.searchParams.get("path") ?? "docs";
       const folder = await readFolder(config, path);
@@ -336,7 +406,7 @@ async function handleApi(request: Request, env: WorkerEnv): Promise<Response> {
         ...current.metadata,
         origin: "web",
         sourceRepoPath: undefined,
-        authorEmail: email,
+        authorEmail,
       };
 
       // editPage() re-reads the page itself and compares against
@@ -403,7 +473,7 @@ async function handleApi(request: Request, env: WorkerEnv): Promise<Response> {
 
       const order = await nextPageOrder(config, body.parentPath);
       const fields: StructuredDataFields = { title: body.title, order, tags, bodyHtml: "" };
-      const metadata: MetadataFields = { docId: crypto.randomUUID(), origin: "web", authorEmail: email };
+      const metadata: MetadataFields = { docId: crypto.randomUUID(), origin: "web", authorEmail };
       await createPage(config, path, fields, metadata);
       await publishPageAndArtifacts(config, path, bookSlugFromPath(path));
       const created = await readPage(config, path);
@@ -537,8 +607,8 @@ async function handleApi(request: Request, env: WorkerEnv): Promise<Response> {
             ? { ...current.fields, title: body.title as string }
             : current.fields;
           const metadata: MetadataFields = takeover
-            ? { ...current.metadata, origin: "web", sourceRepoPath: undefined, authorEmail: email }
-            : { ...current.metadata, authorEmail: email };
+            ? { ...current.metadata, origin: "web", sourceRepoPath: undefined, authorEmail }
+            : { ...current.metadata, authorEmail };
           await editPage(config, toPath, fields, metadata, current.version);
         }
         await publishPageAndArtifacts(config, toPath, bookSlugFromPath(toPath));

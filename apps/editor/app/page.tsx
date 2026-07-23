@@ -2,7 +2,9 @@
 
 import { deriveBookSlug } from "@docs-platform/doc-shell";
 import { useEffect, useState } from "react";
+import { setOnUnauthorized, whoAmI, type Me } from "../lib/api";
 import { Breadcrumb } from "../components/shell/Breadcrumb";
+import { LoginForm } from "../components/shell/LoginForm";
 import { usePageView } from "../components/shell/PageView";
 import { SearchPalette } from "../components/shell/SearchPalette";
 import { ShellChrome } from "../components/shell/ShellChrome";
@@ -20,6 +22,19 @@ export default function Home() {
   const [openPath, setOpenPath] = useState<string | null>(null);
   const [searchOpen, setSearchOpen] = useState(false);
 
+  // Auth gate (cascade-auth-migration-plan.md section 3): probe the session
+  // once on mount, and let any /api 401 mid-session (expiry, logout in
+  // another tab) flip the whole shell back to the login form. "checking"
+  // renders nothing rather than flashing the form at signed-in users.
+  const [auth, setAuth] = useState<"checking" | "in" | "out">("checking");
+  useEffect(() => {
+    setOnUnauthorized(() => setAuth("out"));
+    whoAmI()
+      .then((me: Me | null) => setAuth(me ? "in" : "out"))
+      .catch(() => setAuth("out"));
+    return () => setOnUnauthorized(null);
+  }, []);
+
   useEffect(() => {
     function onKeyDown(e: KeyboardEvent) {
       const isMac = /Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent);
@@ -34,9 +49,15 @@ export default function Home() {
   }, []);
 
   const bookSlug = openPath ? deriveBookSlug(openPath) : null;
-  const { tree } = useBookNav(bookSlug);
+  // Hooks must run unconditionally, so the gate returns are below them; the
+  // shell's children only fetch once rendered, so nothing hits /api while
+  // logged out.
+  const { tree } = useBookNav(auth === "in" ? bookSlug : null);
   const [bionicOn, toggleBionic] = useBionicPreference();
-  const { content, rail } = usePageView(openPath, bionicOn);
+  const { content, rail } = usePageView(auth === "in" ? openPath : null, bionicOn);
+
+  if (auth === "checking") return null;
+  if (auth === "out") return <LoginForm onLoggedIn={() => setAuth("in")} />;
 
   return (
     <>
