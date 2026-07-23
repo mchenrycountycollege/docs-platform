@@ -101,8 +101,17 @@ export async function validateCascadeLogin(username: string, password: string, e
   // account may access, so containing the docs site proves the account was
   // deliberately granted it (via the wiki-contributors group in Cascade).
   if (!siteNames.includes(env.CASCADE_SITE_NAME)) {
+    // Count only, not the site list itself -- enough to distinguish "sees no
+    // sites at all" from "sees sites, just not ours" in the deployment tail.
+    console.warn(
+      `[auth] Credentials valid for ${username}, but ${env.CASCADE_SITE_NAME} is not among the ${siteNames.length} site(s) Cascade returned; rejecting with forbidden`,
+    );
     return { ok: "forbidden" };
   }
 
-  return { ok: true, email: await readOwnEmail(env, username, password) };
+  const email = await readOwnEmail(env, username, password);
+  console.log(
+    `[auth] Cascade login validated for ${username}; email lookup ${email ? "succeeded" : "failed -- username will be stamped as authorEmail"}`,
+  );
+  return { ok: true, email };
 }

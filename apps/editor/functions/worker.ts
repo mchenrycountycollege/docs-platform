@@ -196,14 +196,19 @@ async function handleLogin(request: Request, env: Env): Promise<Response> {
     return json({ error: "bad-request", message: "username and password are required" }, { status: 400 });
   }
 
+  // Branch logs are for `wrangler pages deployment tail` during manual
+  // browser testing (username only -- the password never leaves `body`).
   const result = await validateCascadeLogin(body.username, body.password, env);
   if (result.ok === "unauthorized") {
+    console.warn(`[api] login: 401 for ${body.username} (Cascade did not confirm the credentials)`);
     return json({ error: "unauthorized", message: "The username or password is incorrect" }, { status: 401 });
   }
   if (result.ok === "forbidden") {
+    console.warn(`[api] login: 403 for ${body.username} (valid Cascade account without docs-site access)`);
     return json({ error: "forbidden", message: "This Cascade account doesn't have access to the docs site" }, { status: 403 });
   }
 
+  console.log(`[api] login: 200 for ${body.username}`);
   const cookie = await createSessionCookie(body.username, result.email, env);
   return json({ username: body.username, email: result.email }, { headers: { "set-cookie": cookie } });
 }
