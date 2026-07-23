@@ -93,7 +93,7 @@ export function ShellChrome({
             setNavOpen(false);
           }}
         >
-          <strong>MCC</strong>
+          <strong>MACS</strong>
           <span>docs editor</span>
         </a>
         {breadcrumb}

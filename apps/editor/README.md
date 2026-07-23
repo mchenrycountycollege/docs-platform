@@ -1,6 +1,6 @@
 # docs-platform editor
 
-The authenticated "front door" for MCC Docs (see
+The authenticated "front door" for MACS Docs (see
 [`../../project-management/editor-implementation-plan.md`](../../project-management/editor-implementation-plan.md)
 for the full design). It's the same reader experience as the public docs
 site, plus edit powers, gated behind Cloudflare Access.

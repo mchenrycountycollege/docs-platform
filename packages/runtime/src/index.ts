@@ -35,7 +35,7 @@ function boot(): void {
   // implementation-checklist.md Phase 2), so <system-page-title/> in the
   // Template would render blank. Setting it here from the config the
   // Format already emits avoids adding that coupling to the write path.
-  document.title = `${config.title} · MCC Docs`;
+  document.title = `${config.title} · MACS Docs`;
 
   const sidebarEl = document.getElementById("docs-sidebar");
   const breadcrumbEl = document.getElementById("breadcrumb");

@@ -45,7 +45,7 @@ export function LoginForm({ onLoggedIn }: { onLoggedIn: (me: Me) => void }) {
   return (
     <div className="login-screen">
       <form className="login-card" onSubmit={handleSubmit}>
-        <div className="login-wordmark">MCC Docs</div>
+        <div className="login-wordmark">MACS Docs</div>
         <p className="login-hint">Sign in with your Cascade CMS username and password.</p>
         <label className="login-field">
           <span>Username</span>
