@@ -71,19 +71,11 @@ button {
   text-decoration: none;
   white-space: nowrap;
 }
-.brand strong {
-  font-weight: 700;
-}
 /* Served at 2x its display size so it stays crisp on retina screens. */
 .brand-logo {
   display: block;
   height: 30px;
   width: auto;
-}
-.brand span {
-  color: var(--text-muted);
-  font-family: var(--font-body);
-  font-size: 0.85rem;
 }
 .icon-btn {
   border: 1px solid var(--border);

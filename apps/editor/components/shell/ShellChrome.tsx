@@ -95,7 +95,6 @@ export function ShellChrome({
         >
           {/* eslint-disable-next-line @next/next/no-img-element -- static export, no image optimizer */}
           <img className="brand-logo" src="/macs-docs-nav.png" alt="MACS docs" width="322" height="96" />
-          <span>editor</span>
         </a>
         {breadcrumb}
         <button className="search-trigger" type="button" onClick={onOpenSearch}>
