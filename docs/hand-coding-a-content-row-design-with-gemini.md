@@ -132,3 +132,5 @@ In every case, the fix is the same move: paste the broken fragment back to Gemin
 ## When to stop hand-coding
 
 This workflow is meant for genuine one-offs. If you notice yourself building the same layout for a third time, or a design starts needing content that isn't just "some text and an image" (a repeating list of items with several fields each, for example), flag it — that's a sign it should become a real Cascade component (a proper structured-data field with its own reusable design) instead of copy-pasted markup living inside a text field. That's a quick ask for whoever maintains the Cascade build; you don't need to know anything about how that side works to ask for it.
+
+**Content Cards is exactly this outcome already built.** If what you're hand-coding is a repeating set of items with a title, a bit of text, maybe an image, and a link, stop and use the **Cards** Content Row type instead — see [Using Content Cards in Cascade](using-content-cards-in-cascade.md).
