@@ -311,9 +311,13 @@ export type DeletePageResult =
   | { ok: false; kind: "git-owned"; repo?: string }
   | { ok: false; kind: "error"; message: string };
 
-/** Hard delete: the page moves to Cascade's Trash and comes off the published site (editor-implementation-plan.md E3, revised 2026-07-23). */
-export async function deletePage(path: string): Promise<DeletePageResult> {
-  const res = await fetch(`/api/page?path=${encodeURIComponent(path)}`, { method: "DELETE" });
+/**
+ * Hard delete: the page moves to Cascade's Trash and comes off the published site (editor-implementation-plan.md E3, revised 2026-07-23).
+ * `force` deletes a git-owned page instead of returning the "git-owned" rejection.
+ */
+export async function deletePage(path: string, opts: { force?: boolean } = {}): Promise<DeletePageResult> {
+  const force = opts.force ? "&force=1" : "";
+  const res = await fetch(`/api/page?path=${encodeURIComponent(path)}${force}`, { method: "DELETE" });
   if (res.status === 401) throw unauthorized();
   const data: unknown = await res.json();
   if (res.ok) return { ok: true };

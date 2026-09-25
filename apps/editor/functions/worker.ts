@@ -558,9 +558,12 @@ async function handleAuthedApi(request: Request, env: WorkerEnv, session: Sessio
         return json({ error: "bad-request", message: "path query param is required" }, { status: 400 });
       }
 
-      // Same ownership guard as PUT/move: never let the web UI touch a git-owned page.
+      // Ownership guard: refuse a git-owned page unless the caller explicitly
+      // opts in with force=1 (the UI asks a second confirm first). PUT/move
+      // take a git page over implicitly; delete stays opt-in because the
+      // source file still exists and a later edit to it republishes the page.
       const current = await readPage(config, path);
-      if (current.metadata.origin === "git") {
+      if (current.metadata.origin === "git" && url.searchParams.get("force") !== "1") {
         return json(
           { error: "git-owned", repo: current.metadata.sourceRepoPath },
           { status: 409 },

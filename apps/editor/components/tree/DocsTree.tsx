@@ -299,11 +299,22 @@ export function DocsTree({ onOpenPage, onPageMoved, onDeleted }: DocsTreeProps) 
       if (!confirmed) return;
 
       const parentPath = dirnameOf(node.path);
-      const result = await deletePage(node.path);
-      if (!result.ok) {
-        setError(
-          result.kind === "git-owned" ? gitOwnedDeleteMessage("This page", result.repo) : result.message,
+      let result = await deletePage(node.path);
+      if (!result.ok && result.kind === "git-owned") {
+        // Git-owned pages get a second, explicit confirm before the forced delete.
+        const forceConfirmed = window.confirm(
+          `"${node.name}" is managed in ${result.repo ?? "a git repository"}. Delete it here anyway? The source ` +
+            `file stays in that repository, so the page comes back if that file is edited and republished -- ` +
+            `set \`delete: true\` in its frontmatter (or remove it) to keep it gone.`,
         );
+        if (!forceConfirmed) {
+          setError(gitOwnedDeleteMessage("This page", result.repo));
+          return;
+        }
+        result = await deletePage(node.path, { force: true });
+      }
+      if (!result.ok) {
+        setError(result.kind === "git-owned" ? gitOwnedDeleteMessage("This page", result.repo) : result.message);
         return;
       }
       onDeleted?.(node.path);
