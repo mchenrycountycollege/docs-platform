@@ -143,7 +143,7 @@ export function DocEditor({ path, onSaved, onCancel }: DocEditorProps) {
   const { page } = state;
 
   return (
-    <article className="content">
+    <article className="content content-editing">
       {conflict && (
         <div className="banner banner-warn">
           <p style={{ margin: "0 0 0.5rem" }}>

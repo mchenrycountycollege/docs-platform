@@ -290,6 +290,12 @@ button {
   max-width: 66ch;
   margin: 0 auto;
 }
+/* Edit mode gets more room: BlockNote reserves ~54px each side for its
+   drag handles, and tables need space to be editable without wrapping
+   every cell. 66ch stays the reading width for the read view. */
+.content-editing {
+  max-width: min(100%, 1100px);
+}
 .content-header {
   display: flex;
   align-items: flex-start;
