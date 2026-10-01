@@ -1,0 +1,41 @@
+<!--
+  Content Cards — Data Definition delta for "Two Column"
+
+  These are ADDITIONS to the existing Two Column Data Definition, not a
+  replacement. They have already been applied to
+  _cms/data-definitions-prod/two-column.xml; this file is the reviewable
+  delta and the paste source for the Cascade DD editor.
+
+  Two insertion points, both inside the <group identifier="content"> block:
+
+    1. The <dropdown-item> goes in the "type" dropdown, immediately after
+       the existing "Listing" item.
+    2. The <text identifier="cards-style"> and <group identifier="card">
+       go as siblings inside the content group, immediately before the
+       <shared-field identifier="spotlight-cards"> line.
+
+  field-id values follow the hand-authored convention already used by the
+  art-exhibit group (ae0000NN...). The cd0000NN prefix is unique within
+  this DD — verified against every existing field-id before assignment.
+-->
+
+<!-- ===== INSERTION POINT 1: inside the "type" dropdown ===== -->
+
+<dropdown-item label="Cards" show-fields="content/heading, content/cards-style, content/card" value="cards"/>
+
+<!-- ===== INSERTION POINT 2: sibling fields inside the content group ===== -->
+
+<text default="stacked" field-id="cd000001ac1e00960e8b616d00000001" help-text="Stacked = image on top, 2 across (3 on a full-width page). Compact = tinted panel with a small optional thumbnail, best for link lists and quick facts." identifier="cards-style" label="Card Style" type="radiobutton">
+    <radio-item label="Stacked grid" value="stacked"/>
+    <radio-item label="Compact list" value="compact"/>
+</text>
+<group collapsed="true" identifier="card" label="Card" multiple="true">
+    <text field-id="cd000002ac1e00960e8b616d00000002" help-text="Short label above the title, e.g. Associate Degree. Optional." identifier="eyebrow" label="Eyebrow"/>
+    <text field-id="cd000003ac1e00960e8b616d00000003" help-text="The only required field on a card." identifier="title" label="Title" required="true"/>
+    <text field-id="cd000004ac1e00960e8b616d00000004" help-text="One or two sentences. Keep it short — cards in a row size to the tallest one." identifier="body" label="Body" wysiwyg="true"/>
+    <asset field-id="cd000005ac1e00960e8b616d00000005" help-text="Optional. Stacked cards crop to 16:9 (640 x 360 px is plenty); compact cards crop to a 76 px square. Either give every card in the row an image or give none of them one." identifier="image" label="Image" type="file"/>
+    <text field-id="cd000006ac1e00960e8b616d00000006" help-text="Describe the image for screen readers. Leave blank if the image is decorative and the title already says what it shows." identifier="alt" label="Alternative Text"/>
+    <asset field-id="cd000007ac1e00960e8b616d00000007" help-text="Optional. Links the whole card. Choose a page, file, or link on this site." identifier="link" label="Link" type="page,file,symlink"/>
+    <text field-id="cd000008ac1e00960e8b616d00000008" help-text="For off-site destinations only, e.g. https://catalog.mchenry.edu/... Ignored if a Link is chosen above." identifier="link-url" label="External Link URL" size="50"/>
+    <text field-id="cd000009ac1e00960e8b616d00000009" help-text="Optional call-to-action text, e.g. Program details. Only appears if the card has a link." identifier="link-label" label="Link Label"/>
+</group>

@@ -29,7 +29,9 @@
         <text default="wysiwyg" field-id="9489f3fcac1e009675b1d73abed06465" identifier="type" label="Type" type="dropdown">
             <dropdown-item label="Content Editor" show-fields="content/wysiwyg" value="wysiwyg"/>
             <dropdown-item label="Listing" show-fields="content/listing" value="listing"/>
+            <dropdown-item label="Cards" show-fields="content/heading, content/cards-style, content/card" value="cards"/>
             <dropdown-item label="Help Block" show-fields="content/help-block" value="help-block"/>
+            <dropdown-item label="Callout" show-fields="content/callout-block" value="callout"/>
             <dropdown-item label="Spotlight Cards" show-fields="content/spotlight-cards" value="spotlight-cards"/>
             <dropdown-item label="Accordions" show-fields="content/accordion" value="accordions"/>
             <dropdown-item label="Dual Accordions" show-fields="content/dualAccordions" value="dualAccordions"/>
@@ -40,6 +42,7 @@
             <dropdown-item label="Sponsor Logos (Golf Invitational)" show-fields="content/heading, content/sponsor-block-chooser" value="golf-sponsor-tier"/>
             <dropdown-item label="Weekly Menu" show-fields="content/heading, content/weekly-menu" value="weekly-menu"/>
             <dropdown-item show-fields="content/profiles" value="Profiles"/>
+            <dropdown-item label="Art Gallery Exhibits" show-fields="content/art-exhibit" value="art-exhibit"/>
         </text>
         <text field-id="50443f30ac1e00960e8b616d954cd92b" identifier="heading" label="Heading"/>
         <text configuration="Main Editor" field-id="9489f3fcac1e009675b1d73ae9a13e81" help-text="If inserting wufoo form, add title=&quot;&quot; value to the div for screen readers" identifier="wysiwyg" label="Content" wysiwyg="true"/>
@@ -52,8 +55,23 @@
             <asset field-id="9489f3fdac1e009675b1d73ab12e2d2b" identifier="link" label="Link" type="page,file,symlink"/>
             <text field-id="9489f3fdac1e009675b1d73a652c1053" help-text="If inserting wufoo form, add title=&quot;&quot; value to the div for screen readers" identifier="wysiwyg" label="Content" required="true" wysiwyg="true"/>
         </group>
+        <text default="stacked" field-id="cd000001ac1e00960e8b616d00000001" help-text="Stacked = image on top, 2 across (3 on a full-width page). Compact = tinted panel with a small optional thumbnail, best for link lists and quick facts." identifier="cards-style" label="Card Style" type="radiobutton">
+            <radio-item label="Stacked grid" value="stacked"/>
+            <radio-item label="Compact list" value="compact"/>
+        </text>
+        <group collapsed="true" identifier="card" label="Card" multiple="true">
+            <text field-id="cd000002ac1e00960e8b616d00000002" help-text="Short label above the title, e.g. Associate Degree. Optional." identifier="eyebrow" label="Eyebrow"/>
+            <text field-id="cd000003ac1e00960e8b616d00000003" help-text="The only required field on a card." identifier="title" label="Title" required="true"/>
+            <text field-id="cd000004ac1e00960e8b616d00000004" help-text="One or two sentences. Keep it short — cards in a row size to the tallest one." identifier="body" label="Body" wysiwyg="true"/>
+            <asset field-id="cd000005ac1e00960e8b616d00000005" help-text="Optional. Stacked cards crop to 16:9 (640 x 360 px is plenty); compact cards crop to a 76 px square. Either give every card in the row an image or give none of them one." identifier="image" label="Image" type="file"/>
+            <text field-id="cd000006ac1e00960e8b616d00000006" help-text="Describe the image for screen readers. Leave blank if the image is decorative and the title already says what it shows." identifier="alt" label="Alternative Text"/>
+            <asset field-id="cd000007ac1e00960e8b616d00000007" help-text="Optional. Links the whole card. Choose a page, file, or link on this site." identifier="link" label="Link" type="page,file,symlink"/>
+            <text field-id="cd000008ac1e00960e8b616d00000008" help-text="For off-site destinations only, e.g. https://catalog.mchenry.edu/... Ignored if a Link is chosen above." identifier="link-url" label="External Link URL" size="50"/>
+            <text field-id="cd000009ac1e00960e8b616d00000009" help-text="Optional call-to-action text, e.g. Program details. Only appears if the card has a link." identifier="link-label" label="Link Label"/>
+        </group>
         <shared-field field-id="05810d15ac1e00962212845d4989b69c" identifier="spotlight-cards" maximum-number="2" minimum-number="1" path="site://Spotlights/Spotlight Cards"/>
         <asset field-id="9489f3fdac1e009675b1d73a02ffdece" identifier="help-block" label="Help Block" type="block"/>
+        <asset field-id="ca110001ac1e00960e8b616dca110001" identifier="callout-block" label="Callout Block" restrict-to-folder="/_cms/blocks/callout" type="block"/>
         <group collapsed="true" identifier="accordion" label="Accordion" multiple="true">
             <text field-id="b2b0d108ac1e00960e8b616d7dd67660" help-text="Must be unique on this page" identifier="anchor" label="Anchor"/>
             <text field-id="469e5ab3ac1e00960e8b616da205ca22" identifier="label" label="Label" required="true"/>
@@ -98,6 +116,22 @@
                 </group>
             </group>
         </group>
+        <group collapsed="true" identifier="art-exhibit" label="Art Gallery Exhibits" multiple="true">
+            <text field-id="ae000001ac1e00960e8b616d00000001" help-text="e.g., Galleries One and Two — displayed as the section heading" identifier="gallery-room" label="Gallery Room Name" required="true"/>
+            <text field-id="ae000002ac1e00960e8b616d00000002" help-text="Lowercase, no spaces (e.g., epping). Used for in-page jump links." identifier="anchor" label="Anchor ID"/>
+            <text field-id="ae000003ac1e00960e8b616d00000003" help-text="Displayed in italics beneath the room heading" identifier="exhibit-title" label="Exhibit Title" required="true"/>
+            <text field-id="ae000004ac1e00960e8b616d00000004" identifier="exhibit-date-start" label="Start Date" required="true" type="datetime"/>
+            <text field-id="ae000004bac1e00960e8b616d00000004" identifier="exhibit-date-end" label="End Date (optional)" type="datetime"/>
+            <text field-id="ae000005ac1e00960e8b616d00000005" help-text="e.g., Awards Reception: Thursday, May 7, at 6 p.m. in the" identifier="reception-text" label="Reception Details (before location)"/>
+            <text field-id="ae000006ac1e00960e8b616d00000006" help-text="e.g., MCC Conference Center, A213 — linked if URL is provided" identifier="reception-location" label="Reception Location Name"/>
+            <text field-id="ae000007ac1e00960e8b616d00000007" help-text="Full URL to campus map or event page. Leave blank for no link." identifier="reception-url" label="Reception Location URL"/>
+            <text field-id="ae000008ac1e00960e8b616d00000008" identifier="free-and-open" label="Free and Open to the Public?" type="checkbox">
+                <checkbox-item label="Yes" value="yes"/>
+            </text>
+            <asset field-id="ae000009ac1e00960e8b616d00000009" help-text="267 × 400 px recommended (portrait orientation)" identifier="image" label="Exhibit Poster / Image" required="true" type="file"/>
+            <text field-id="ae000010ac1e00960e8b616d00000010" identifier="alt" label="Image Alt Text" required="true"/>
+            <text field-id="ae000011ac1e00960e8b616d00000011" help-text="e.g., Image Credit: Designed by MCC Graphic Design students" identifier="caption" label="Image Caption / Credit"/>
+        </group>
     </group>
     <text default="Yes" field-id="6538421aac1e006c1122fea8a7d6d7d8" identifier="showSidebar" label="Show Sidebar?" required="true" type="radiobutton">
         <radio-item label="Yes" show-fields="sidebar" value="Yes"/>
@@ -136,26 +170,11 @@
             <text field-id="78af0c8cac1e006c5a7adcdfa443b303" identifier="content" label="Content"/>
         </group>
         <group collapsed="true" identifier="email" label="Email">
-            <text field-id="78af0c8cac1e006c5a7adcdf28a559ef" identifier="content" label="Content"/>
+            <text field-id="3a524e40ac1e006c6867b46dba159fba" identifier="label" label="Label"/>
+            <text field-id="78af0c8cac1e006c5a7adcdf28a559ef" identifier="content" label="Email"/>
         </group>
         <group collapsed="true" identifier="contact-content" label="Content">
             <text field-id="78af0c8cac1e006c5a7adcdf516c96ac" identifier="content" label="Content" wysiwyg="true"/>
-        </group>
-        <group collapsed="true" identifier="facebook" label="Facebook">
-            <text field-id="78af0c8cac1e006c5a7adcdfa9044cab" identifier="label" label="Label"/>
-            <text field-id="9b011d67ac1e006c27e1f505df037fd6" identifier="url" label="URL Link"/>
-        </group>
-        <group collapsed="true" identifier="twitter" label="Twitter">
-            <text field-id="78af0c8cac1e006c5a7adcdfb60b5af3" identifier="label" label="Label"/>
-            <text field-id="9b011d67ac1e006c27e1f505c05962fb" identifier="url" label="URL Link"/>
-        </group>
-        <group collapsed="true" identifier="instagram" label="Instagram">
-            <text field-id="78af0c8cac1e006c5a7adcdf87c4c602" identifier="label" label="Label"/>
-            <text field-id="9b011d67ac1e006c27e1f5054900b2c2" identifier="url" label="URL Link"/>
-        </group>
-        <group collapsed="true" identifier="linkedin" label="LinkedIn">
-            <text field-id="9b011d67ac1e006c27e1f505c3ab5e6d" identifier="label" label="Label"/>
-            <text field-id="9b011d67ac1e006c27e1f505e8948f73" identifier="url" label="URL Link"/>
         </group>
         <group collapsed="true" identifier="cta" label="CTA">
             <text field-id="78af0c8cac1e006c5a7adcdf8ca041d8" identifier="label" label="Label"/>

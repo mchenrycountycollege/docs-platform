@@ -1,0 +1,254 @@
+/* =====================================================================
+   Content Cards Component
+   Row type: "cards" on the Two Column Data Definition
+   Styles: .content-cards--stacked (A)  ·  .content-cards--compact (D)
+
+   This exact block goes into BOTH stylesheets, unchanged:
+     _cms/cascade-css-files/app.css              (legacy)
+     _cms/cascade-css-files/_refresh/style.css   (refresh)
+
+   Every site value is written as var(--token, hardcoded-fallback).
+   Refresh defines the tokens and wins; legacy defines none, so the
+   fallback applies. One block, two skins, nothing to keep in sync.
+
+   The grid is <div>/<article>, deliberately not <ul>/<li> — both
+   stylesheets set `.mid-main ul li { margin: 5px 0 0 20px }` at a
+   specificity a single class selector cannot beat.
+   ===================================================================== */
+
+.content-cards-wrap {
+  /* Cards size against the main column, not the viewport, so they behave
+     the same whether the page shows a sidebar (large-8) or not (large-12). */
+  container-type: inline-size;
+  container-name: content-cards;
+  margin: 0 0 2rem;
+}
+
+.content-cards__heading {
+  margin: 0 0 1rem;
+}
+
+.content-cards {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.25rem;
+  margin: 0;
+}
+
+/* A single card spans the column instead of sitting in a half-width track.
+   Two classes so it outranks the grid-template rules in the @container
+   blocks below regardless of source order. */
+.content-cards.content-cards--single {
+  grid-template-columns: 1fr;
+}
+
+.content-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  background: var(--white, #ffffff);
+  border: 1px solid var(--gray-light, #e6e6e6);
+  border-radius: var(--border-radius, 6px);
+  overflow: hidden;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.content-card:hover,
+.content-card:focus-within {
+  transform: translateY(-2px);
+  border-color: var(--purple-tint, #e4e0ef);
+  box-shadow: 0 8px 18px rgba(71, 52, 139, 0.16);
+}
+
+.content-card__media {
+  margin: 0;
+  padding: 0;
+  background: var(--gray-lighter, #ebebeb);
+  overflow: hidden;
+}
+
+.content-card__img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.content-card__text {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2, 0.5rem);
+  padding: 1.125rem 1.25rem 1.375rem;
+}
+
+.content-card__eyebrow {
+  margin: 0;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--purple-primary, #47348b);
+}
+
+.content-card__title {
+  margin: 0;
+  font-size: 1.1875rem;
+  font-weight: 700;
+  line-height: 1.25;
+  color: var(--purple-dark, #280759);
+  text-wrap: balance;
+}
+
+.content-card__title a {
+  color: inherit;
+  text-decoration: none;
+}
+
+/* Stretched link — the title anchor covers the whole card, so the entire
+   card is clickable while the accessibility tree still sees one link. */
+.content-card__title a::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+}
+
+.content-card__title a:hover,
+.content-card__title a:focus {
+  text-decoration: underline;
+}
+
+.content-card__body {
+  margin: 0;
+  font-size: 0.9375rem;
+  line-height: 1.55;
+  color: var(--gray-text, #444);
+}
+
+/* Body is a WYSIWYG field — tame whatever the editor pastes in. */
+.content-card__body > :first-child { margin-top: 0; }
+.content-card__body > :last-child { margin-bottom: 0; }
+.content-card__body p { margin: 0 0 0.5rem; }
+.content-card__body h2,
+.content-card__body h3,
+.content-card__body h4,
+.content-card__body h5 {
+  font-size: 1rem;
+  line-height: 1.3;
+  margin: 0 0 0.25rem;
+}
+.content-card__body img { max-width: 100%; height: auto; }
+.content-card__body ul,
+.content-card__body ol { margin: 0 0 0.5rem 1.25rem; padding-left: 0; }
+
+/* A link inside the body must sit above the stretched title link,
+   or it becomes unclickable. */
+.content-card__body a {
+  position: relative;
+  z-index: 1;
+}
+
+.content-card__cta {
+  margin-top: auto;
+  padding-top: var(--space-2, 0.5rem);
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: var(--purple-medium, #5639a4);
+  text-decoration: none;
+}
+
+.content-card__cta::after {
+  content: " \203A";
+  font-weight: 400;
+}
+
+.content-card:hover .content-card__cta {
+  text-decoration: underline;
+}
+
+/* ---------------------------------------------------------------------
+   Style A — Stacked grid. Image on top, 16:9.
+   --------------------------------------------------------------------- */
+
+.content-cards--stacked .content-card__media {
+  aspect-ratio: 16 / 9;
+}
+
+/* Image is optional. With no image there is no media band at all, so the
+   card gets a rule in its place — a mixed row then reads as a deliberate
+   set rather than one card that failed to load. */
+.content-cards--stacked .content-card--no-media .content-card__text {
+  border-top: 4px solid var(--purple-primary, #47348b);
+  padding-top: 1.25rem;
+}
+
+/* ---------------------------------------------------------------------
+   Style D — Compact. Tinted panel, optional square thumbnail.
+   --------------------------------------------------------------------- */
+
+.content-cards--compact .content-card {
+  flex-direction: row;
+  background: var(--gray-lightest, #f3f3f3);
+  border-color: transparent;
+}
+
+.content-cards--compact .content-card__media {
+  flex: none;
+  width: 76px;
+  align-self: center;
+  margin: 0 0 0 1.125rem;
+  border-radius: var(--border-radius-sm, 3px);
+  aspect-ratio: 1 / 1;
+}
+
+.content-cards--compact .content-card__text {
+  padding: 1rem 1.125rem;
+}
+
+.content-cards--compact .content-card__title {
+  font-size: 1.0625rem;
+}
+
+.content-cards--compact .content-card__body {
+  font-size: 0.875rem;
+}
+
+/* No lift on compact cards — they are list rows, not objects. */
+.content-cards--compact .content-card:hover,
+.content-cards--compact .content-card:focus-within {
+  transform: none;
+  box-shadow: none;
+  background: var(--purple-tint, #e4e0ef);
+}
+
+/* ---------------------------------------------------------------------
+   Column-width breakpoints. These respond to the main column, so the
+   same rules hold with or without a sidebar. Without @container support
+   the grid stays single-column, which is a correct layout, just taller.
+   --------------------------------------------------------------------- */
+
+@container content-cards (min-width: 30rem) {
+  .content-cards--stacked,
+  .content-cards--compact {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@container content-cards (min-width: 52rem) {
+  .content-cards--stacked {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .content-card {
+    transition: none;
+  }
+  .content-card:hover,
+  .content-card:focus-within {
+    transform: none;
+  }
+}
+
+/* =====================================================================
+   End of Content Cards Component
+   ===================================================================== */

@@ -70,6 +70,13 @@
                 #end
             </article>
             <div style="clear:both"></div>
+        #elseif( $type == "cards" )
+            ## Content Cards row — stacked grid or compact list, chosen per row
+            ## by the "cards-style" radio. Every field except Title is optional,
+            ## including the image. See _cms/formats/_shared/content-cards.vm.
+            <div class="clearfix"></div>
+            #import("/_cms/formats/_shared/content-cards")
+            #outputContentCards($row)
         #elseif( $type == "help-block" )
             <div class="clearfix"></div>
             #set($helpBlock = $row.getChild("help-block").asset)
@@ -81,6 +88,17 @@
             #else
                 ## Regular help block - render normally
                 $!helpBlock.xHTML
+            #end
+        #elseif( $type == "callout" )
+            ## Callout content row — mirrors the Help Block asset-chooser
+            ## wiring pattern, but renders via a dedicated macro (not
+            ## $calloutBlock.xHTML) so the variant/icon/CTA markup renders
+            ## correctly. See _cms/formats/callout/callout.vm for details.
+            <div class="clearfix"></div>
+            #set($calloutBlock = $row.getChild("callout-block").asset)
+            #if($calloutBlock)
+                #import("/_cms/formats/callout/callout")
+                #outputCallout($calloutBlock)
             #end
         #elseif( $type == "spotlight-cards")
             #import("site://Spotlights/_cms/formats/_shared/spotlight-cards")

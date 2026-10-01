@@ -1,0 +1,144 @@
+## ============================================================================
+## Content Cards — "cards" content row type for the Two Column Data Definition
+##
+## One field set, two looks. The row's "cards-style" radio picks between:
+##   stacked  — image on top, 2-up (3-up on a full-width column)
+##   compact  — tinted panel, optional 76px square thumbnail
+## Every other field is shared, so an editor can switch styles without
+## re-entering any content.
+##
+## TITLE is the only required field. Everything else — including the image —
+## is optional and disappears cleanly when blank. Cards with no image render
+## with no media band at all; in stacked mode they pick up a purple top rule
+## (see .content-card--no-media) so a row that mixes both still reads as
+## deliberate rather than broken.
+##
+## Wired into both dispatchers:
+##   /_cms/formats/two-column/default.vm            (legacy)
+##   /_cms/formats/_refresh/two-column/default-two-column.vm  (refresh)
+## Companion CSS lives in both app.css and _refresh/style.css and is written
+## entirely as var(--token, fallback), so one block serves both skins.
+## ============================================================================
+#macro( outputContentCards $row )
+    #set( $cardsHeading = "" )
+    #set( $cardsStyle   = "stacked" )
+
+    #set( $headingNode = $row.getChild("heading") )
+    #if( $headingNode )
+        #set( $cardsHeading = $_EscapeTool.xml($headingNode.textValue) )
+    #end
+
+    #set( $styleNode = $row.getChild("cards-style") )
+    #if( $styleNode && !$_PropertyTool.isEmpty($styleNode.textValue) )
+        #set( $cardsStyle = $styleNode.textValue )
+    #end
+
+    #set( $cards = $row.getChildren("card") )
+    #if( $cards && $cards.size() > 0 )
+
+        ## A lone card should span the full column instead of sitting in a
+        ## half-width grid track. Velocity already knows the count, so this
+        ## is settled here rather than with a :has() selector in CSS.
+        #if( $cards.size() == 1 )
+            #set( $gridSingle = " content-cards--single" )
+        #else
+            #set( $gridSingle = "" )
+        #end
+
+        ## Card titles step down to h3 when the row supplies its own h2, so the
+        ## page never skips a heading level.
+        #if( !$_PropertyTool.isEmpty($cardsHeading) )
+            #set( $titleTag = "h3" )
+        #else
+            #set( $titleTag = "h2" )
+        #end
+
+        <div class="content-cards-wrap">
+            #if( !$_PropertyTool.isEmpty($cardsHeading) )
+                <h2 class="content-cards__heading">${cardsHeading}</h2>
+            #end
+            <div class="content-cards content-cards--${cardsStyle}${gridSingle}">
+                #foreach( $card in $cards )
+                    ## Reset every value on each pass. Velocity silently ignores
+                    ## #set when the right-hand side is null, so a field left
+                    ## blank would otherwise inherit the previous card's value.
+                    #set( $cEyebrow   = "" )
+                    #set( $cTitle     = "" )
+                    #set( $cBody      = "" )
+                    #set( $cAlt       = "" )
+                    #set( $cLinkLabel = "" )
+                    #set( $cImgSrc    = "" )
+                    #set( $cLink      = "" )
+                    #set( $imgAsset   = false )
+                    #set( $linkAsset  = false )
+
+                    #set( $cEyebrow   = $_EscapeTool.xml($card.getChild("eyebrow").textValue) )
+                    #set( $cTitle     = $_EscapeTool.xml($card.getChild("title").textValue) )
+                    #set( $cAlt       = $_EscapeTool.xml($card.getChild("alt").textValue) )
+                    #set( $cLinkLabel = $_EscapeTool.xml($card.getChild("link-label").textValue) )
+                    ## Body is a WYSIWYG field — already HTML, so it is not escaped.
+                    #set( $cBody      = $card.getChild("body").textValue )
+
+                    ## Cache the asset once — never chain .asset.property twice.
+                    #set( $imgNode = $card.getChild("image") )
+                    #if( $imgNode )
+                        #set( $imgAsset = $imgNode.asset )
+                    #end
+                    #if( $imgAsset )
+                        #set( $cImgSrc = $imgAsset.link )
+                    #end
+
+                    ## An internal Link wins; External Link URL is the fallback.
+                    #set( $linkNode = $card.getChild("link") )
+                    #if( $linkNode )
+                        #set( $linkAsset = $linkNode.asset )
+                    #end
+                    #if( $linkAsset )
+                        #set( $cLink = $linkAsset.link )
+                    #else
+                        #set( $urlNode = $card.getChild("link-url") )
+                        #if( $urlNode )
+                            #set( $cLink = $_EscapeTool.xml($urlNode.textValue) )
+                        #end
+                    #end
+
+                    ## Title is the one required field — a card without it is a
+                    ## half-filled group the editor abandoned, so skip it.
+                    #if( !$_PropertyTool.isEmpty($cTitle) )
+                        #if( $_PropertyTool.isEmpty($cImgSrc) )
+                            #set( $cardClass = "content-card content-card--no-media" )
+                        #else
+                            #set( $cardClass = "content-card" )
+                        #end
+                        <article class="${cardClass}">
+                            #if( !$_PropertyTool.isEmpty($cImgSrc) )
+                                <figure class="content-card__media">
+                                    ## alt="" is correct and intentional when the editor
+                                    ## leaves Alternative Text blank: the image is
+                                    ## illustrative and the adjacent title carries the
+                                    ## meaning, so announcing it twice adds noise.
+                                    <img class="content-card__img" src="${cImgSrc}" alt="${cAlt}" loading="lazy" />
+                                </figure>
+                            #end
+                            <div class="content-card__text">
+                                #if( !$_PropertyTool.isEmpty($cEyebrow) )
+                                    <p class="content-card__eyebrow">${cEyebrow}</p>
+                                #end
+                                <${titleTag} class="content-card__title">#if( !$_PropertyTool.isEmpty($cLink) )<a href="${cLink}">${cTitle}</a>#else${cTitle}#end</${titleTag}>
+                                #if( !$_PropertyTool.isEmpty($cBody) )
+                                    <div class="content-card__body">$!{cBody}</div>
+                                #end
+                                ## A span, not a second <a>. The title link is stretched
+                                ## across the whole card, so a real anchor here would
+                                ## hand screen readers a duplicate target for one destination.
+                                #if( !$_PropertyTool.isEmpty($cLink) && !$_PropertyTool.isEmpty($cLinkLabel) )
+                                    <span class="content-card__cta">${cLinkLabel}</span>
+                                #end
+                            </div>
+                        </article>
+                    #end
+                #end
+            </div>
+        </div>
+    #end
+#end

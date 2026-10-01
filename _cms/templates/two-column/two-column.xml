@@ -1,0 +1,60 @@
+<!DOCTYPE HTML>
+<html class="no-js" dir="ltr" lang="en">
+    <head>
+        <meta charset="utf-8"/>
+        <meta content="ie=edge" http-equiv="x-ua-compatible"/>
+        <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+        <system-page-meta-keywords/>
+        <system-page-meta-description/>
+        <system-region name="METADATA"/>
+        <system-region name="HEAD FILES"/>
+        <link href="https://catalog.mchenry.edu/widget-api/widget-api.min.css" rel="stylesheet"/>
+        <system-region name="GOOGLE SEARCH"/>
+        <system-region name="GOOGLE TAG MANAGER HEAD"/>
+    </head>
+    <body>
+        <system-region name="GOOGLE TAG MANAGER BODY"/>
+        <div class="wrapper-main">
+            <system-region name="EMERGENCY ALERTS"/>
+            <system-region name="TOP NAVIGATION"/>
+            <div class="relative-position">
+                <a class="exit-off-canvas" href="#">
+                    <span class="sr-only">close</span>
+                </a>
+                <system-region name="SOCIAL MEDIA BAR"/>
+                <section class="relative-position">
+                    <div class="row inner-mid-main admissions-wrapper">
+                        <system-region name="BREADCRUMBS"/>
+                        <system-region name="SIDEBAR"/>
+                        <system-region name="DEFAULT"/>
+                    </div>
+                </section>
+                <system-region name="BOTTOM"/>
+                <system-region name="FOOTER"/>
+            </div>
+        </div>
+        <!-- Code provided by Google added 2/1/22 lmd -->
+        <!--#protect<script type="text/javascript">
+  function googleTranslateElementInit() {
+    new google.translate.TranslateElement({pageLanguage: 'en', includedLanguages: 'en,es,pl', layout: google.translate.TranslateElement.InlineLayout.SIMPLE, autoDisplay: false}, 'google_translate_element');
+  }
+</script><script src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit" type="text/javascript"></script>#protect-->
+        <!-- Flag click handler -->
+        <!--#protect<script type="text/javascript">
+    $('.translation-links a').click(function() {
+      var lang = $(this).data('lang');
+      var $frame = $('.goog-te-menu-frame:first');
+      if (!$frame.size()) {
+        alert("Error: Could not find Google translate frame.");
+        return false;
+      }
+      $frame.contents().find('.goog-te-menu2-item span.text:contains('+lang+')').get(0).click();
+      return false;
+    });
+</script>
+#protect-->
+        <system-region name="BOTTOM SCRIPTS"/>
+        <system-region name="BOTTOM SCRIPTS2"/>
+        <system-region name="BOTTOM SCRIPTS4"/>
+    </body>
+</html>

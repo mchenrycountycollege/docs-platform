@@ -342,6 +342,36 @@ button {
   text-decoration-color: var(--accent-soft-border);
   text-underline-offset: 2px;
 }
+/* Markdown tables arrive as a bare <table> with no wrapper, so the table
+   itself is the scroll box -- display:block lets a wide one scroll sideways
+   on a phone instead of pushing the page wider. */
+.docs-body table {
+  display: block;
+  max-width: 100%;
+  overflow-x: auto;
+  border-collapse: collapse;
+  margin: 1.2rem 0;
+  font-size: 0.92rem;
+  line-height: 1.5;
+}
+.docs-body th,
+.docs-body td {
+  border: 1px solid var(--border);
+  padding: 0.55rem 0.8rem;
+  text-align: left;
+  vertical-align: top;
+}
+.docs-body th {
+  font-family: var(--font-display);
+  font-weight: 600;
+  background: var(--accent-soft);
+}
+.docs-body tbody tr:nth-child(even) {
+  background: var(--bg-raised);
+}
+.docs-body td code {
+  white-space: nowrap;
+}
 
 .content-actions {
   display: flex;
