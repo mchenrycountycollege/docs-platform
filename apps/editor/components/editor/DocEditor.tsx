@@ -87,6 +87,20 @@ export function DocEditor({ path, onSaved, onCancel }: DocEditorProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [path]);
 
+  // Escape backs out of edit mode (same as Cancel), after a confirm since
+  // unsaved edits are dropped. Skips Escapes something else already handled
+  // -- BlockNote's slash/suggestion menus preventDefault when they close --
+  // and ones fired inside a dialog like the cmdk search palette.
+  useEffect(() => {
+    function handleKeyDown(e: KeyboardEvent) {
+      if (e.key !== "Escape" || e.defaultPrevented || e.repeat || saving) return;
+      if (e.target instanceof Element && e.target.closest('[role="dialog"]')) return;
+      if (window.confirm("Leave the editor? Unsaved changes will be lost.")) onCancel?.();
+    }
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [saving, onCancel]);
+
   async function handleSave() {
     if (state.status !== "ready") return;
     setSaving(true);
