@@ -1,5 +1,5 @@
 const BIONIC_KEY = "docs-bionic";
-const SKIP_SELECTOR = "code, pre, script, style, svg";
+const SKIP_SELECTOR = "code, pre, script, style, svg, .code-copy";
 const WORD_RE = /[A-Za-z]+(?:['’][A-Za-z]+)*/g;
 
 export function bionicSplit(word: string): [bold: string, rest: string] {

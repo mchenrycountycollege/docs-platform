@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { DocEditor } from "../editor/DocEditor";
 import { ApiUnauthorizedError, getPage, reconcilePage, withDisplayableImages, type PageResult } from "../../lib/api";
 import { applyBionic } from "./useBionic";
+import { addCodeCopyButtons, handleCodeCopyClick } from "./codeBlocks";
 import { BackToTop } from "./BackToTop";
 import { Toc } from "./Toc";
 import { pagePathToUrl } from "./usePageUrlSync";
@@ -92,6 +93,7 @@ export function usePageView(path: string | null, bionicOn: boolean): { content: 
   useEffect(() => {
     const body = bodyRef.current;
     if (!body || currentBodyHtml === null) return;
+    addCodeCopyButtons(body);
     pristineBodyHtml.current = body.innerHTML;
     if (bionicOn) applyBionic(body);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -227,7 +229,12 @@ export function usePageView(path: string | null, bionicOn: boolean): { content: 
         </div>
       </header>
 
-      <div className="docs-body" ref={bodyRef} dangerouslySetInnerHTML={bodyHtmlProp} />
+      <div
+        className="docs-body"
+        ref={bodyRef}
+        dangerouslySetInnerHTML={bodyHtmlProp}
+        onClick={(e) => void handleCodeCopyClick(e.target)}
+      />
       <BackToTop />
     </article>
   );
