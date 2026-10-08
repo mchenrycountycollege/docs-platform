@@ -243,6 +243,10 @@ export function usePageView(path: string | null, bionicOn: boolean): { content: 
   // commit author); editorName is a legacy field only the Phase-0 smoke
   // script ever set, kept as a fallback for those early assets.
   const lastEditedBy = page.authorEmail ?? page.editorName;
+  // page.version is Cascade's lastModifiedDate (the concurrency token), so it
+  // doubles as the "when" for the byline -- and after a save it's already the
+  // new value, since DocEditor's optimistic copy carries result.version.
+  const lastEditedAt = formatEditedAt(page.version);
 
   const rail = (
     <>
@@ -256,6 +260,11 @@ export function usePageView(path: string | null, bionicOn: boolean): { content: 
         <div className="rail-box">
           <p className="rail-label">Last edited by</p>
           <span className="rail-author">{lastEditedBy}</span>
+          {lastEditedAt && (
+            <time className="rail-time" dateTime={page.version}>
+              {lastEditedAt}
+            </time>
+          )}
         </div>
       )}
       <Toc containerRef={bodyRef} bodyHtml={page.bodyHtml} />
@@ -263,4 +272,18 @@ export function usePageView(path: string | null, bionicOn: boolean): { content: 
   );
 
   return { content, rail };
+}
+
+/** "Oct 8, 2026, 10:48 AM CDT" in the viewer's time zone, or null if the token isn't a parseable date. */
+function formatEditedAt(version: string): string | null {
+  const date = new Date(version);
+  if (Number.isNaN(date.getTime())) return null;
+  return date.toLocaleString("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+    timeZoneName: "short",
+  });
 }
