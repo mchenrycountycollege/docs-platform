@@ -2,6 +2,7 @@
 
 import type { CSSProperties, ReactNode } from "react";
 import { useEffect, useState } from "react";
+import { useSidebarCollapsed } from "./useSidebarCollapsed";
 import { useSidebarWidth } from "./useSidebarWidth";
 import { useTheme } from "./useTheme";
 
@@ -37,6 +38,7 @@ export function ShellChrome({
 }) {
   const [, toggleTheme] = useTheme();
   const [navOpen, setNavOpen] = useState(false);
+  const [navCollapsed, toggleNavCollapsed] = useSidebarCollapsed();
   const { width: sidebarWidth, onDragStart, onDragMove, onDragEnd } = useSidebarWidth();
   const [resizing, setResizing] = useState(false);
 
@@ -70,7 +72,7 @@ export function ShellChrome({
 
   return (
     <div
-      className={`shell${navOpen ? " nav-open" : ""}`}
+      className={`shell${navOpen ? " nav-open" : ""}${navCollapsed ? " nav-collapsed" : ""}`}
       style={{ "--sidebar-width": `${sidebarWidth}px` } as CSSProperties}
     >
       <header className="topbar">
@@ -83,6 +85,24 @@ export function ShellChrome({
         >
           <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
             <path d="M2 4.5h14M2 9h14M2 13.5h14" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+          </svg>
+        </button>
+        {/* Desktop counterpart to .menu-toggle above: that one opens the
+            mobile slide-in drawer, this one hides/shows the desktop grid
+            column. Separate buttons so each aria-expanded stays truthful. */}
+        <button
+          aria-controls="docs-sidebar"
+          aria-expanded={!navCollapsed}
+          aria-label={navCollapsed ? "Show navigation" : "Hide navigation"}
+          className="icon-btn sidebar-toggle"
+          title={navCollapsed ? "Show navigation" : "Hide navigation"}
+          type="button"
+          onClick={toggleNavCollapsed}
+        >
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+            <rect x="1.5" y="2.5" width="13" height="11" rx="2" stroke="currentColor" strokeWidth="1.3" />
+            <path d="M6 2.5v11" stroke="currentColor" strokeWidth="1.3" />
+            {!navCollapsed && <path d="M2.5 5h2.2M2.5 7.2h2.2" stroke="currentColor" strokeWidth="1.1" strokeLinecap="round" />}
           </svg>
         </button>
         <a
@@ -153,7 +173,7 @@ export function ShellChrome({
           </button>
         </div>
       </header>
-      <nav aria-label="Documentation navigation" className="sidebar">
+      <nav aria-label="Documentation navigation" className="sidebar" id="docs-sidebar">
         {sidebar}
       </nav>
       <div

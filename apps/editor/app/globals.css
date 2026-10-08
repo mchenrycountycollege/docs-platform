@@ -239,8 +239,26 @@ button {
   color: var(--accent);
 }
 @media (max-width: 860px) {
-  .sidebar-resize-handle {
+  .sidebar-resize-handle,
+  .sidebar-toggle {
     display: none;
+  }
+}
+/* Desktop collapse (.sidebar-toggle in the topbar). Scoped to the grid
+   breakpoint so it can't fight the mobile drawer's own nav-open state; with
+   the sidebar display:none, .content-col auto-places into column 1. */
+@media (min-width: 861px) {
+  .shell.nav-collapsed {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .shell.nav-collapsed .sidebar,
+  .shell.nav-collapsed .sidebar-resize-handle {
+    display: none;
+  }
+}
+@media (min-width: 1180px) {
+  .shell.nav-collapsed {
+    grid-template-columns: minmax(0, 1fr) 240px;
   }
 }
 .sidebar-actions {
